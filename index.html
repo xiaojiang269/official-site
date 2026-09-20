@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>烤炉科技 - 官方网站</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #0f1419;
+            color: #fff;
+            line-height: 1.6;
+        }
+        .nav {
+            background: #1a1f2e;
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a3040;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #ff6b35;
+        }
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: #ff6b35;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: #fff;
+        }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+        .nav-links a {
+            color: #b8bcc8;
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: #fff;
+        }
+        .btn-contact {
+            background: #ff6b35;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-contact:hover {
+            background: #ff5a22;
+        }
+        .hero {
+            padding: 100px 40px;
+            background: linear-gradient(135deg, #1a1f2e 0%, #2a1f2e 100%);
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 80px;
+            align-items: center;
+        }
+        .hero-left {
+            flex: 1;
+        }
+        .hero-title {
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 28px;
+            letter-spacing: -1px;
+        }
+        .hero-title .highlight {
+            color: #ff6b35;
+        }
+        .hero-desc {
+            font-size: 17px;
+            color: #9ca3b0;
+            margin-bottom: 36px;
+            max-width: 520px;
+            line-height: 1.7;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 56px;
+        }
+        .btn-primary {
+            background: #ff6b35;
+            color: #fff;
+            padding: 14px 32px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            background: #ff5a22;
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #fff;
+            padding: 14px 32px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            border: 1px solid #3a4050;
+            transition: border-color 0.2s;
+        }
+        .btn-secondary:hover {
+            border-color: #fff;
+        }
+        .stats {
+            display: flex;
+            gap: 48px;
+        }
+        .stat-item .num {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .stat-item .label {
+            font-size: 14px;
+            color: #9ca3b0;
+        }
+        .hero-right {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+        .engine-card {
+            background: #1e2433;
+            border-radius: 20px;
+            padding: 28px;
+            width: 320px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .engine-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .engine-icon {
+            width: 52px;
+            height: 52px;
+            background: #ff6b35;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .engine-icon svg {
+            width: 26px;
+            height: 26px;
+            fill: #fff;
+        }
+        .engine-name {
+            font-size: 19px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .engine-status {
+            font-size: 13px;
+            color: #9ca3b0;
+        }
+        .metric-row {
+            margin-bottom: 18px;
+        }
+        .metric-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .metric-label {
+            color: #9ca3b0;
+            font-size: 14px;
+        }
+        .metric-value {
+            color: #ff6b35;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .metric-bar {
+            height: 6px;
+            background: #2a3040;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .metric-bar-fill {
+            height: 100%;
+            background: #ff6b35;
+            border-radius: 3px;
+        }
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            color: #4ade80;
+            font-size: 14px;
+        }
+        .service-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+        }
+        .product-section {
+            background: #fff;
+            padding: 100px 40px;
+            text-align: center;
+        }
+        .product-tag {
+            display: inline-block;
+            background: #fff0e8;
+            color: #ff6b35;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .product-title {
+            font-size: 40px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+        .product-desc {
+            font-size: 17px;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto 56px;
+        }
+        .product-card {
+            background: #1e2433;
+            border-radius: 24px;
+            padding: 60px 48px;
+            max-width: 900px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .product-icon {
+            width: 72px;
+            height: 72px;
+            background: #ff6b35;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 28px;
+        }
+        .product-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: #fff;
+        }
+        .product-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        .product-desc-card {
+            color: #9ca3b0;
+            max-width: 600px;
+            margin: 0 auto 32px;
+            line-height: 1.7;
+        }
+        .product-features {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 36px;
+            flex-wrap: wrap;
+        }
+        .feature-tag {
+            background: #2a3040;
+            padding: 9px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #b8bcc8;
+        }
+        .btn-enter {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ff6b35;
+            color: #fff;
+            padding: 16px 48px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 17px;
+            font-weight: 600;
+            transition: background 0.2s;
+            box-shadow: 0 8px 24px rgba(255, 107, 53, 0.3);
+        }
+        .btn-enter:hover {
+            background: #ff5a22;
+        }
+        .btn-enter svg {
+            width: 18px;
+            height: 18px;
+            fill: #fff;
+        }
+        .products-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 36px;
+            align-items: stretch;
+        }
+        .products-grid .product-card {
+            max-width: none;
+            width: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        @media (max-width: 760px) {
+            .nav {
+                padding: 14px 18px;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            .nav-links {
+                gap: 18px;
+                flex-wrap: wrap;
+            }
+            .hero {
+                padding: 60px 20px;
+                flex-direction: column;
+                gap: 44px;
+            }
+            .hero-title {
+                font-size: 36px;
+            }
+            .stats {
+                gap: 28px;
+            }
+            .engine-card {
+                width: 100%;
+                max-width: 400px;
+            }
+            .product-section {
+                padding: 60px 20px;
+            }
+            .product-card {
+                padding: 40px 24px;
+            }
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C12 2 7 7 7 12C7 14.8 9.2 17 12 17C14.8 17 17 14.8 17 12C17 7 12 2 12 2ZM12 15C10.3 15 9 13.7 9 12C9 9.5 10.5 7.5 12 5.5C13.5 7.5 15 9.5 15 12C15 13.7 13.7 15 12 15Z"/>
+                </svg>
+            </div>
+            <span>烤炉科技</span>
+        </div>
+        <div class="nav-links">
+            <a href="#home">首页</a>
+            <a href="#product">产品</a>
+            <a href="#about">关于我们</a>
+            <a href="#contact">联系我们</a>
+            <a href="https://aka.doubaocdn.com/s/QnTfq6VvJ0" target="_blank">身份管理系统</a>
+        </div>
+        <a href="#contact" class="btn-contact">商务合作</a>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="hero-left">
+            <h1 class="hero-title">让每一款软件<br>都<span class="highlight">恰到火候</span></h1>
+            <p class="hero-desc">烤炉科技专注实用工具与桌面软件的研发，坚持简洁、稳定、可靠的产品理念，用心打磨每一行代码。</p>
+            <div class="hero-buttons">
+                <a href="#product" class="btn-primary">查看产品</a>
+                <a href="#about" class="btn-secondary">了解我们</a>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="num">50+</div>
+                    <div class="label">发布版本</div>
+                </div>
+                <div class="stat-item">
+                    <div class="num">10k+</div>
+                    <div class="label">活跃用户</div>
+                </div>
+                <div class="stat-item">
+                    <div class="num">99.9%</div>
+                    <div class="label">服务稳定率</div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-right">
+            <div class="engine-card">
+                <div class="engine-header">
+                    <div class="engine-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 2C12 2 7 7 7 12C7 14.8 9.2 17 12 17C14.8 17 17 14.8 17 12C17 7 12 2 12 2ZM12 15C10.3 15 9 13.7 9 12C9 9.5 10.5 7.5 12 5.5C13.5 7.5 15 9.5 15 12C15 13.7 13.7 15 12 15Z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="engine-name">烤炉引擎 v2.4</div>
+                        <div class="engine-status">正在稳定运行</div>
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label-row">
+                        <span class="metric-label">CPU 负载</span>
+                        <span class="metric-value">32%</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" style="width: 32%"></div>
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label-row">
+                        <span class="metric-label">运行温度</span>
+                        <span class="metric-value">56°C</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" style="width: 56%"></div>
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-label-row">
+                        <span class="metric-label">并发请求</span>
+                        <span class="metric-value">1,286</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" style="width: 68%"></div>
+                    </div>
+                </div>
+                <div class="service-status">
+                    <div class="service-dot"></div>
+                    <span>服务健康，全部在线</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="product-section" id="product">
+        <div class="product-tag">我们的产品</div>
+        <h2 class="product-title">实用工具与在线平台</h2>
+        <p class="product-desc">为开发者与大众打造的实用工具：机器人开发工作台，以及融合科幻设定的个人身份管理系统。</p>
+        <div class="products-grid">
+            <div class="product-card">
+                <div>
+                    <div class="product-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm0 2v12h16V6H4zm2 2h12v2H6V8zm0 4h8v2H6v-2z"/>
+                        </svg>
+                    </div>
+                    <div class="product-name">RoboForge 机器人开发工作台</div>
+                    <p class="product-desc-card">
+                        集设备管理、实时内部结构检测、在线开发与运维监控于一体。登录即可使用，支持多设备并行管理，让机器人开发更高效、更可控。
+                    </p>
+                    <div class="product-features">
+                        <div class="feature-tag">设备接入</div>
+                        <div class="feature-tag">实时结构检测</div>
+                        <div class="feature-tag">在线开发</div>
+                        <div class="feature-tag">运维监控</div>
+                    </div>
+                </div>
+                <a href="https://aka.doubaocdn.com/s/APDXvJeojx" class="btn-enter" target="_blank">
+                    进入工作台
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="product-card">
+                <div>
+                    <div class="product-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <div class="product-name">个人身份管理系统</div>
+                    <p class="product-desc-card">
+                        基于《流浪地球2》联合政府设定打造的科幻身份管理系统演示：身份核验、数字生命档案、体征监测、MOSS 智能体、行星发动机控制与在线/离线模式联动。内置最高权限档案——公民 周明远 · Ⅴ 级最高权限，数字生命管理、系统管理等全部管理权限全权开通；并开放联合政府管理员后台（仅限管理员账号进入）：8 大系统各自拥有独立控制台——行星发动机总控、数字生命数据中心、MOSS 量子主机、地下城生命维持、全球闸机、轨道卫星、能源分配、全系统广播，全部按钮可实际操作；另有「所有用户身份管理」与「公民设置」独立页面，全局账号库跨账号共享——管理员可提权/降权、冻结/解冻、设管理/删除任意账号，可全局开关注册、改名、广播、数字生命上传等策略，调整后目标账号登录即时生效；全频道广播发送后同步显示在所有登录系统的顶部公告栏，跨账号共享可见。
+                    </p>
+                    <div class="product-features">
+                        <div class="feature-tag">身份核验</div>
+                        <div class="feature-tag">数字生命</div>
+                        <div class="feature-tag">MOSS 智能体</div>
+                        <div class="feature-tag">行星发动机</div>
+                        <div class="feature-tag">8 大独立控制台</div>
+                        <div class="feature-tag">用户身份管理</div>
+                        <div class="feature-tag">公民设置</div>
+                        <div class="feature-tag">跨账号共享</div>
+                    </div>
+                </div>
+                <a href="https://aka.doubaocdn.com/s/QnTfq6VvJ0" class="btn-enter" target="_blank">
+                    进入系统
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="product-card">
+                <div>
+                    <div class="product-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 5h18c.55 0 1 .45 1 1v11c0 .55-.45 1-1 1H3c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1zm2 3v2h9V8H5zm0 4v2h7v-2H5zm12-4h1.5v1.5H17V8zm0 3h1.5V14H17v-3z"/>
+                        </svg>
+                    </div>
+                    <div class="product-name">黑板报工坊 · AI 黑板报定制</div>
+                    <p class="product-desc-card">
+                        输入主题、节日、年级与使用场景，AI 自动生成完整黑板报方案：版面设计示意、推荐标语、配色、逐类材料清单与材质说明，以及分步制作指南。打开即用，无需登录。
+                    </p>
+                    <div class="product-features">
+                        <div class="feature-tag">AI 版面设计</div>
+                        <div class="feature-tag">材料与材质清单</div>
+                        <div class="feature-tag">推荐标语配色</div>
+                        <div class="feature-tag">分步制作指南</div>
+                        <div class="feature-tag">无需登录</div>
+                    </div>
+                </div>
+                <a href="https://xiaojiang269.github.io/blackboard-studio/" class="btn-enter" target="_blank">
+                    进入工具
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="product-section" id="about" style="background: #f9fafb;">
+        <div class="product-tag">关于我们</div>
+        <h2 class="product-title">专注实用工具与桌面软件研发</h2>
+        <p class="product-desc">烤炉科技成立于2024年，专注于为开发者和企业用户提供高效、稳定的工具类产品。我们相信好的软件应该像烤炉一样，专注核心功能，稳定可靠，恰到好处地解决问题。</p>
+        <div style="max-width: 800px; margin: 40px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; text-align: center;">
+            <div>
+                <div style="font-size: 36px; font-weight: 700; color: #ff6b35; margin-bottom: 8px;">50+</div>
+                <div style="color: #6b7280; font-size: 15px;">发布版本</div>
+            </div>
+            <div>
+                <div style="font-size: 36px; font-weight: 700; color: #ff6b35; margin-bottom: 8px;">10k+</div>
+                <div style="color: #6b7280; font-size: 15px;">活跃用户</div>
+            </div>
+            <div>
+                <div style="font-size: 36px; font-weight: 700; color: #ff6b35; margin-bottom: 8px;">99.9%</div>
+                <div style="color: #6b7280; font-size: 15px;">服务稳定率</div>
+            </div>
+            <div>
+                <div style="font-size: 36px; font-weight: 700; color: #ff6b35; margin-bottom: 8px;">24h</div>
+                <div style="color: #6b7280; font-size: 15px;">技术支持响应</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="product-section" id="contact">
+        <div class="product-tag">联系我们</div>
+        <h2 class="product-title">与我们取得联系</h2>
+        <p class="product-desc">无论是产品咨询、商务合作还是技术支持，我们都欢迎您随时与我们沟通。</p>
+        <div style="max-width: 600px; margin: 40px auto 0; display: grid; gap: 24px;">
+            <div style="display: flex; align-items: center; gap: 16px; padding: 24px; background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+                <div style="width: 48px; height: 48px; background: #fff3ed; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#ff6b35"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                </div>
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 4px;">商务合作</div>
+                    <div style="color: #6b7280; font-size: 14px;">business@kaolu.tech</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px; padding: 24px; background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+                <div style="width: 48px; height: 48px; background: #fff3ed; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#ff6b35"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-6h2v6zm0-8h-2V7h2v4z"/></svg>
+                </div>
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 4px;">技术支持</div>
+                    <div style="color: #6b7280; font-size: 14px;">support@kaolu.tech</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px; padding: 24px; background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+                <div style="width: 48px; height: 48px; background: #fff3ed; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#ff6b35"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 4px;">工作时间</div>
+                    <div style="color: #6b7280; font-size: 14px;">周一至周五 9:00 - 18:00</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
