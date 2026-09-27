@@ -1,0 +1,2343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoboForge · 机器人开发工作台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='5' y='7' width='14' height='11' rx='3' fill='%2322d3ee'/%3E%3Ccircle cx='9.5' cy='12.5' r='1.6' fill='%230f1419'/%3E%3Ccircle cx='14.5' cy='12.5' r='1.6' fill='%230f1419'/%3E%3Crect x='10.8' y='13.6' width='2.4' height='2.6' rx='1' fill='%230f1419'/%3E%3Cpath d='M12 7V4M9 4h6' stroke='%2322d3ee' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#0d1219; --panel:#121a24; --card:#17212d; --card-hi:#1c2735;
+  --line:#223040; --line-soft:#1a2532;
+  --txt:#e8eef4; --txt-2:#9aa8b6; --txt-3:#5f7183;
+  --cyan:#22d3ee; --cyan-dim:#155e6d;
+  --blue:#4f8ef7; --green:#34d399; --amber:#f5b04c; --red:#ef5b5b; --violet:#a78bfa;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace;
+  --sans:'Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+  --radius:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--sans); background:var(--bg); color:var(--txt);
+  font-size:13px; line-height:1.55; overflow:hidden;
+}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#2a3a4d;border-radius:5px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+button{font-family:inherit;cursor:pointer}
+svg{display:block}
+
+/* ===== 布局骨架 ===== */
+#app{display:flex;flex-direction:column;height:100vh}
+#topbar{
+  height:50px;flex:none;display:flex;align-items:center;gap:14px;
+  padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:20;
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:196px}
+.brand .logo{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#0e2a33,#12354a);border:1px solid var(--cyan-dim);display:flex;align-items:center;justify-content:center;color:var(--cyan)}
+.brand h1{font-size:14px;font-weight:700;letter-spacing:.5px}
+.brand h1 em{font-style:normal;color:var(--cyan)}
+.brand small{display:block;font-size:10px;color:var(--txt-3);font-weight:400;letter-spacing:1px}
+#global-search{
+  flex:1;max-width:380px;display:flex;align-items:center;gap:8px;background:var(--card);
+  border:1px solid var(--line);border-radius:var(--radius);padding:6px 12px;color:var(--txt-3);
+}
+#global-search svg{flex:none}
+#global-search input{flex:1;background:none;border:none;outline:none;color:var(--txt);font-family:inherit;font-size:12.5px}
+#global-search .kbd{font-family:var(--mono);font-size:10px;color:var(--txt-3);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.link-state{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--txt-2);padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)}
+.link-state .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(52,211,153,.15);animation:pulse 2.4s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(52,211,153,.15)}50%{box-shadow:0 0 0 5px rgba(52,211,153,.05)}}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;border-radius:var(--radius);border:1px solid var(--line);
+  background:var(--card);color:var(--txt);padding:7px 13px;font-size:12.5px;font-weight:500;transition:all .15s;
+}
+.btn:hover{background:var(--card-hi);border-color:#31435a}
+.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#06222b;font-weight:600}
+.btn.primary:hover{background:#4fe0f5}
+.btn.danger{color:var(--red);border-color:#4a2b33}
+.btn.danger:hover{background:#2a1a20}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{flex:none}
+
+#shell{flex:1;display:grid;grid-template-columns:216px 1fr 300px;min-height:0}
+
+/* ===== 侧边栏 ===== */
+#sidebar{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#sidebar .sec{padding:14px 12px 6px;font-size:10.5px;letter-spacing:1.5px;color:var(--txt-3);text-transform:uppercase}
+.nav{list-style:none;padding:2px 8px}
+.nav li{margin:1px 0}
+.nav a{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;color:var(--txt-2);
+  text-decoration:none;font-size:12.8px;border:1px solid transparent;transition:all .13s;
+}
+.nav a svg{flex:none;color:var(--txt-3);transition:color .13s}
+.nav a:hover{background:var(--card);color:var(--txt)}
+.nav a.active{background:var(--card-hi);color:var(--txt);border-color:var(--line)}
+.nav a.active svg{color:var(--cyan)}
+.nav a .badge{margin-left:auto;font-family:var(--mono);font-size:10px;background:var(--card-hi);border:1px solid var(--line);padding:0 6px;border-radius:9px;color:var(--txt-2)}
+#sidebar .spacer{flex:1}
+#sidebar .foot{padding:12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:9px}
+#sidebar .foot .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1b3a52,#243b57);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--cyan);border:1px solid var(--line)}
+#sidebar .foot .who{flex:1;min-width:0}
+#sidebar .foot .who b{display:block;font-size:12px;font-weight:600}
+#sidebar .foot .who span{font-size:10.5px;color:var(--txt-3)}
+
+/* ===== 主内容 ===== */
+#main{overflow:auto;min-height:0;background:var(--bg)}
+.view{display:none;padding:20px;max-width:1280px;margin:0 auto;width:100%;height:100%;box-sizing:border-box}
+.view.active{display:flex;flex-direction:column}
+#view-overview.active{display:flex;flex-direction:column}
+.view-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.view-head h2{font-size:18px;font-weight:700;letter-spacing:.2px}
+.view-head p{color:var(--txt-3);font-size:12.5px;margin-top:3px}
+.view-head .actions{display:flex;gap:8px}
+
+.grid{display:grid;gap:14px}
+.cards4{grid-template-columns:repeat(4,1fr)}
+.cards3{grid-template-columns:repeat(3,1fr)}
+.cards2{grid-template-columns:repeat(2,1fr)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.panel .ph{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.panel .ph h3{font-size:13px;font-weight:600}
+.panel .ph .sub{font-size:11px;color:var(--txt-3);font-family:var(--mono)}
+.panel .pb{padding:14px 16px}
+.panel .pb.flush{padding:0}
+
+.kpi{padding:15px 16px;display:flex;flex-direction:column;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:10px;position:relative;overflow:hidden;transition:border-color .15s}
+.kpi:hover{border-color:#2c4056}
+.kpi .lab{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--txt-2)}
+.kpi .lab svg{color:var(--txt-3)}
+.kpi .num{font-family:var(--mono);font-size:26px;font-weight:600;letter-spacing:.5px}
+.kpi .num small{font-size:13px;color:var(--txt-3);font-weight:400}
+.kpi .trend{font-size:11px;font-family:var(--mono)}
+.kpi .trend.up{color:var(--green)} .kpi .trend.down{color:var(--red)} .kpi .trend.flat{color:var(--txt-3)}
+.kpi .bar{height:3px;border-radius:2px;background:var(--line-soft);overflow:hidden;margin-top:2px}
+.kpi .bar i{display:block;height:100%;border-radius:2px;background:var(--cyan);transition:width .6s ease}
+
+/* 状态徽标 */
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;padding:2px 8px;border-radius:9px;font-weight:500;white-space:nowrap}
+.tag i{width:6px;height:6px;border-radius:50%}
+.tag.on{background:rgba(52,211,153,.12);color:var(--green)} .tag.on i{background:var(--green)}
+.tag.run{background:rgba(34,211,238,.12);color:var(--cyan)} .tag.run i{background:var(--cyan)}
+.tag.warn{background:rgba(245,176,76,.12);color:var(--amber)} .tag.warn i{background:var(--amber)}
+.tag.err{background:rgba(239,91,91,.12);color:var(--red)} .tag.err i{background:var(--red)}
+.tag.off{background:rgba(95,113,131,.12);color:var(--txt-3)} .tag.off i{background:var(--txt-3)}
+.tag.idle{background:rgba(159,139,250,.14);color:var(--violet)} .tag.idle i{background:var(--violet)}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{font-size:10.5px;color:var(--txt-3);text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);font-weight:500;letter-spacing:.6px;white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--line-soft);font-size:12.5px;vertical-align:middle}
+tbody tr:hover{background:rgba(23,33,45,.6)}
+td .mono{font-family:var(--mono);font-size:11.5px;color:var(--txt-2)}
+.trow-btn{background:none;border:none;color:var(--blue);font-size:12px;padding:2px 6px;border-radius:5px;cursor:pointer;font-family:inherit}
+.trow-btn:hover{background:rgba(79,142,247,.12)}
+.trow-btn.danger{color:var(--red)}
+.trow-btn.danger:hover{background:rgba(239,91,91,.1)}
+
+/* 列表 */
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+.li:last-child{border-bottom:none}
+.li .ic{width:30px;height:30px;border-radius:7px;background:var(--card-hi);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex:none}
+.li .ic.green{color:var(--green)} .li .ic.amber{color:var(--amber)} .li .ic.red{color:var(--red)} .li .ic.violet{color:var(--violet)}
+.li .tx{flex:1;min-width:0}
+.li .tx b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .tx span{font-size:11px;color:var(--txt-3)}
+.li .meta{font-family:var(--mono);font-size:11px;color:var(--txt-3);text-align:right;flex:none}
+
+/* ===== 右侧面板 ===== */
+#side-panel{background:var(--panel);border-left:1px solid var(--line);overflow:auto;min-height:0}
+#side-panel .sp-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+#side-panel .sp-h h3{font-size:12.5px;font-weight:600}
+#side-panel .sp-h .x{background:none;border:none;color:var(--txt-3);padding:2px;display:none}
+#side-panel .sp-b{padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.field label{display:block;font-size:11px;color:var(--txt-3);margin-bottom:5px}
+.field .val{font-family:var(--mono);font-size:12.5px}
+.meter{height:5px;border-radius:3px;background:var(--line-soft);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:3px}
+.meter.cyan i{background:var(--cyan)} .meter.green i{background:var(--green)}
+.meter.amber i{background:var(--amber)} .meter.red i{background:var(--red)}
+.mr{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--txt-2);margin-bottom:5px}
+.mr b{font-family:var(--mono);font-size:11.5px;font-weight:500}
+
+/* 代码编辑器 */
+#code-wrap{display:grid;grid-template-columns:230px 1fr;gap:14px;align-items:start}
+.filetree{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.filetree .ft-h{padding:10px 14px;border-bottom:1px solid var(--line);font-size:11px;color:var(--txt-3);letter-spacing:1px;text-transform:uppercase}
+.ft-item{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:12px;color:var(--txt-2);cursor:pointer;font-family:var(--mono)}
+.ft-item svg{color:var(--amber);flex:none}
+.ft-item .dir{color:var(--blue)}
+.ft-item:hover{background:var(--card)}
+.ft-item.active{background:var(--card-hi);color:var(--txt);border-left:2px solid var(--cyan)}
+.editor{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ed-tabs{display:flex;align-items:center;border-bottom:1px solid var(--line);background:var(--card)}
+.ed-tab{display:flex;align-items:center;gap:7px;padding:9px 14px;font-size:12px;font-family:var(--mono);color:var(--txt-2);border-right:1px solid var(--line-soft);cursor:pointer}
+.ed-tab.active{background:var(--panel);color:var(--txt);box-shadow:inset 0 -2px 0 var(--cyan)}
+.ed-tab .dot{width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.ed-body{position:relative;height:460px;overflow:hidden}
+.ed-body .lines{position:absolute;left:0;top:0;bottom:0;width:52px;background:#101823;border-right:1px solid var(--line-soft);overflow:hidden;padding:12px 0;text-align:right}
+.ed-body .lines pre{font-family:var(--mono);font-size:12.5px;line-height:1.6;color:#3d4d60;padding-right:12px}
+.code-stack{position:absolute;left:52px;right:0;top:0;bottom:0}
+.code-stack pre.hl,.code-stack textarea{
+  position:absolute;inset:0;margin:0;padding:12px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.6;white-space:pre;tab-size:2;
+}
+.code-stack pre.hl{color:var(--txt);pointer-events:none;overflow:hidden}
+.code-stack textarea{
+  background:transparent;color:transparent;caret-color:var(--cyan);border:none;outline:none;resize:none;
+  overflow:auto;-webkit-text-fill-color:transparent;
+}
+.tok-kw{color:#c792ea}.tok-str{color:#a5d6a5}.tok-num{color:#f78c6c}.tok-com{color:#5f7183;font-style:italic}.tok-fn{color:#82aaff}.tok-prop{color:#7fdbca}.tok-bool{color:#ff9d6b}
+.ed-foot{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--line);background:var(--card);font-family:var(--mono);font-size:11px;color:var(--txt-3)}
+.ed-foot .sep{flex:1}
+.console{background:#0a0f16;border:1px solid var(--line);border-radius:10px;margin-top:14px;overflow:hidden}
+.console .c-h{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--txt-2)}
+.console .c-h .dots{display:flex;gap:5px}
+.console .c-h .dots i{width:9px;height:9px;border-radius:50%}
+.console .c-h .dots i:nth-child(1){background:#ef5b5b}.console .c-h .dots i:nth-child(2){background:#f5b04c}.console .c-h .dots i:nth-child(3){background:#34d399}
+.console pre{height:150px;overflow:auto;padding:10px 14px;font-family:var(--mono);font-size:11.5px;line-height:1.65;color:#c3d0dd}
+.console pre .c-in{color:#7fd0a0}.console pre .c-warn{color:#f5b04c}.console pre .c-err{color:#ef5b5b}.console pre .c-ok{color:#9aa8b6}
+
+/* 设备 */
+.dev-grid{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:1fr;gap:14px;align-content:start}
+.dev-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 16px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:border-color .15s}
+.dev-card:hover{border-color:#2c4056}
+.dev-card.sel{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan-dim)}
+.dev-top{display:flex;align-items:center;gap:11px}
+.dev-ic{width:38px;height:38px;border-radius:9px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--cyan)}
+.dev-ic.track{color:var(--blue)}.dev-ic.arm{color:var(--violet)}.dev-ic.drone{color:var(--green)}.dev-ic.agv{color:var(--amber)}
+.dev-top .dn{flex:1;min-width:0}
+.dev-top .dn b{display:block;font-size:13.5px;font-weight:600}
+.dev-top .dn span{font-size:11px;color:var(--txt-3);font-family:var(--mono)}
+.dev-rows{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.dev-row .k{font-size:10.5px;color:var(--txt-3)}
+.dev-row .v{font-family:var(--mono);font-size:12px}
+.dev-ops{display:flex;gap:8px;flex-wrap:wrap}
+.dpad{display:grid;grid-template-columns:repeat(3,34px);gap:5px;justify-content:center;margin-top:2px}
+.dpad button{height:32px;border-radius:7px;background:var(--card-hi);border:1px solid var(--line);color:var(--txt-2);font-size:13px;display:flex;align-items:center;justify-content:center}
+.dpad button:hover{background:#243244;color:var(--txt)}
+.dpad button:active{transform:translateY(1px)}
+.dpad .c{background:rgba(34,211,238,.1);border-color:var(--cyan-dim);color:var(--cyan)}
+
+/* 仿真 */
+#sim-layout{display:grid;grid-template-columns:1fr 260px;gap:14px;align-items:start}
+#sim-canvas{width:100%;height:auto;background:#0a1018;display:block;border-radius:10px;border:1px solid var(--line)}
+.sim-cp{display:flex;gap:8px;flex-wrap:wrap}
+select,input[type=range],input[type=text],input[type=number]{
+  background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:6px;
+  padding:6px 9px;font-family:var(--mono);font-size:12px;outline:none;
+}
+select:focus,input:focus{border-color:var(--cyan-dim)}
+input[type=range]{padding:0;accent-color:var(--cyan)}
+.switch{position:relative;width:36px;height:20px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch i{position:absolute;inset:0;border-radius:10px;background:var(--line);transition:.2s;cursor:pointer}
+.switch i::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+.switch input:checked+i{background:var(--cyan)}
+.switch input:checked+i::after{left:19px}
+
+/* 日志 */
+.log-filters{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.log-filters .f{padding:5px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt-2);font-size:11.5px}
+.log-filters .f.on{background:var(--card-hi);color:var(--txt);border-color:var(--cyan-dim)}
+#log-view{background:#0a0f16;border:1px solid var(--line);border-radius:10px;height:calc(100vh - 250px);min-height:360px;overflow:auto;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.7}
+.log-line{display:flex;gap:10px;white-space:nowrap}
+.log-line .ts{color:#3d4d60;flex:none}
+.log-line .lv{flex:none;width:44px}
+.log-line .lv.info{color:#7fd0a0}.log-line .lv.warn{color:#f5b04c}.log-line .lv.error{color:#ef5b5b}.log-line .lv.debug{color:#8fa3b8}
+.log-line .msg{color:#c3d0dd;overflow:hidden;text-overflow:ellipsis}
+.log-line .msg b{color:#82aaff;font-weight:500}
+.log-line .msg .v{color:#a5d6a5}
+
+/* 设置 */
+.set-group{display:flex;flex-direction:column;gap:0}
+.set-row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--line-soft)}
+.set-row:last-child{border-bottom:none}
+.set-row .st{flex:1;min-width:0}
+.set-row .st b{display:block;font-size:12.8px;font-weight:600}
+.set-row .st span{font-size:11px;color:var(--txt-3)}
+.set-row .ctl{flex:none}
+
+/* 状态栏 */
+#statusbar{
+  height:28px;flex:none;display:flex;align-items:center;gap:16px;padding:0 14px;
+  background:var(--panel);border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--txt-3);
+}
+#statusbar .sb-ic{display:flex;align-items:center;gap:6px}
+#statusbar .sb-ic.ok{color:var(--green)}#statusbar .sb-ic.warn{color:var(--amber)}
+#statusbar .sp{flex:1}
+
+/* toast */
+#toasts{position:fixed;right:18px;bottom:44px;z-index:100;display:flex;flex-direction:column;gap:9px;pointer-events:none}
+.toast{
+  background:var(--card-hi);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:8px;
+  padding:11px 15px;font-size:12.5px;box-shadow:0 8px 26px rgba(0,0,0,.45);display:flex;align-items:center;gap:9px;
+  animation:slidein .25s ease;max-width:340px;
+}
+.toast.ok{border-left-color:var(--green)} .toast.err{border-left-color:var(--red)} .toast.warn{border-left-color:var(--amber)}
+.toast.out{animation:fadeout .3s ease forwards}
+@keyframes slidein{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fadeout{to{transform:translateX(30px);opacity:0}}
+
+#panel-dismiss{display:none}
+
+/* 空态 & 进度 */
+.empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:42px 20px;color:var(--txt-3)}
+.empty svg{opacity:.5}
+.progress{height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--cyan);border-radius:3px;transition:width .3s}
+
+/* ===== AI 助手 ===== */
+#ai-layout{display:flex;flex-direction:column;height:calc(100vh - 190px);min-height:480px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ai-chat{flex:1;overflow:auto;padding:20px 22px;display:flex;flex-direction:column;gap:16px;background:var(--bg)}
+.ai-msg{max-width:78%;display:flex;flex-direction:column;gap:6px;animation:slidein .2s ease}
+.ai-msg.user{align-self:flex-end;align-items:flex-end}
+.ai-msg.ai{align-self:flex-start}
+.ai-msg .who{font-size:10.5px;color:var(--txt-3);letter-spacing:1px}
+.ai-msg .bub{padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.ai-msg.user .bub{background:rgba(34,211,238,.14);border:1px solid var(--cyan-dim);color:var(--txt);border-bottom-right-radius:3px}
+.ai-msg.ai .bub{background:var(--card);border:1px solid var(--line);color:#c9d6e2;border-bottom-left-radius:3px}
+.ai-msg.ai .bub b{color:var(--cyan);font-weight:600}
+.ai-msg.ai .bub .cblock{display:block;background:#0a0f16;border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin:8px 0 2px;font-family:var(--mono);font-size:11.8px;line-height:1.65;color:#c3d0dd;white-space:pre;overflow-x:auto}
+.ai-msg.ai .bub .cblock .tok-kw{color:#c792ea}.ai-msg.ai .bub .cblock .tok-str{color:#a5d6a5}.ai-msg.ai .bub .cblock .tok-num{color:#f78c6c}.ai-msg.ai .bub .cblock .tok-com{color:#5f7183}.ai-msg.ai .bub .cblock .tok-fn{color:#82aaff}
+.ai-msg .sugg{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
+.ai-msg .sugg button{background:var(--card);border:1px solid var(--line);color:var(--txt-2);font-size:11.5px;padding:5px 11px;border-radius:14px}
+.ai-msg .sugg button:hover{color:var(--cyan);border-color:var(--cyan-dim)}
+.ai-typing{display:inline-flex;gap:4px;padding:13px 15px;background:var(--card);border:1px solid var(--line);border-radius:12px;border-bottom-left-radius:3px;align-self:flex-start}
+.ai-typing i{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:tp 1.2s infinite}
+.ai-typing i:nth-child(2){animation-delay:.2s}.ai-typing i:nth-child(3){animation-delay:.4s}
+@keyframes tp{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+.ai-input{padding:13px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:9px;background:var(--panel)}
+.ai-input .chips{display:flex;gap:7px;flex-wrap:wrap}
+.ai-input .chips button{background:var(--card);border:1px solid var(--line);color:var(--txt-2);font-size:11.5px;padding:5px 12px;border-radius:14px;transition:all .13s}
+.ai-input .chips button:hover{color:var(--cyan);border-color:var(--cyan-dim);background:var(--card-hi)}
+.ai-input .bar{display:flex;gap:10px;align-items:center}
+.ai-input textarea{flex:1;resize:none;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:11px 14px;font-family:var(--sans);font-size:13px;line-height:1.5;outline:none;height:44px;max-height:120px}
+.ai-input textarea:focus{border-color:var(--cyan-dim)}
+.ai-input .send{height:44px;width:44px;border-radius:10px;background:var(--cyan);border:none;color:#06222b;display:flex;align-items:center;justify-content:center;flex:none}
+.ai-input .send:hover{background:#4fe0f5}
+.ai-input .hint{font-size:10.5px;color:var(--txt-3)}
+
+/* ===== 检测中心 ===== */
+.check-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.check-ring{width:118px;height:118px;flex:none}
+.check-ring .rlab{font-size:11px;fill:var(--txt-3)}
+.check-sum{display:flex;gap:26px;flex-wrap:wrap;flex:1}
+.check-sum .s b{font-family:var(--mono);font-size:26px;font-weight:600;display:block}
+.check-sum .s span{font-size:11px;color:var(--txt-3)}
+.check-sum .s.pass b{color:var(--green)} .check-sum .s.warn b{color:var(--amber)} .check-sum .s.fail b{color:var(--red)}
+.check-actions{display:flex;gap:8px;flex-wrap:wrap}
+.check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+.chk-group{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.chk-group .cg-h{display:flex;align-items:center;gap:9px;padding:11px 15px;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:600}
+.chk-group .cg-h svg{color:var(--cyan)}
+.chk-group .cg-h .cnt{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--txt-3)}
+.chk-row{display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--line-soft)}
+.chk-row:last-child{border-bottom:none}
+.chk-row:hover{background:rgba(23,33,45,.5)}
+.chk-ic{width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--card)}
+.chk-ic .spin{animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.chk-main{flex:1;min-width:0}
+.chk-main b{display:block;font-size:12.3px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chk-main span{font-size:10.8px;color:var(--txt-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chk-row.fail .chk-main span{color:var(--red)}
+.chk-row.warn .chk-main span{color:var(--amber)}
+.chk-time{font-family:var(--mono);font-size:10px;color:var(--txt-3);flex:none}
+.chk-row .tag{flex:none}
+.report-box{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:none}
+.report-box.show{display:block}
+.report-box .rb-h{padding:11px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:600}
+.report-box .rb-h .btns{margin-left:auto;display:flex;gap:7px}
+.report-box pre{padding:13px 16px;font-family:var(--mono);font-size:11.3px;line-height:1.7;color:#b9c7d4;max-height:220px;overflow:auto;white-space:pre-wrap}
+
+/* ===== 有线连接向导 ===== */
+.modal-mask{position:fixed;inset:0;background:rgba(6,10,15,.74);z-index:90;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-mask.open{display:flex}
+.modal{width:580px;max-width:calc(100vw - 40px);max-height:88vh;background:var(--panel);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55);animation:pop .22s ease}
+@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+.m-h{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line);font-size:14px;font-weight:600}
+.m-h .step-ic{color:var(--cyan)}
+.m-h .x{margin-left:auto;background:none;border:none;color:var(--txt-3);font-size:15px;padding:2px 6px;border-radius:5px}
+.m-h .x:hover{color:var(--txt);background:var(--card)}
+.m-b{padding:18px;overflow:auto;flex:1}
+.m-f{display:flex;gap:9px;justify-content:flex-end;align-items:center;padding:13px 18px;border-top:1px solid var(--line)}
+.step-t{font-size:11px;color:var(--txt-3);letter-spacing:1.5px;margin-bottom:12px;text-transform:uppercase}
+.conn-ways{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.way-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:17px 10px;display:flex;flex-direction:column;align-items:center;gap:9px;color:var(--txt-2);font-size:12.5px;transition:all .15s}
+.way-card svg{color:var(--txt-3);transition:color .15s}
+.way-card:hover{border-color:var(--cyan-dim);color:var(--txt)}
+.way-card.sel{border-color:var(--cyan);background:rgba(34,211,238,.08);color:var(--txt);box-shadow:0 0 0 1px var(--cyan-dim)}
+.way-card.sel svg{color:var(--cyan)}
+.port-list{display:flex;flex-direction:column;gap:8px}
+.port-item{display:flex;align-items:center;gap:11px;padding:11px 14px;background:var(--card);border:1px solid var(--line);border-radius:9px;cursor:pointer;font-size:12.5px;transition:border-color .13s}
+.port-item:hover{border-color:#31435a}
+.port-item.sel{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan-dim)}
+.port-item .pi{font-family:var(--mono);color:var(--cyan);flex:none}
+.port-item .pd{flex:1;color:var(--txt-3);font-size:11px;min-width:0}
+.port-item .pr{margin-left:auto;flex:none}
+.conn-log{font-family:var(--mono);font-size:11.5px;color:var(--txt-2);background:#0a0f16;border:1px solid var(--line);border-radius:8px;padding:11px 13px;line-height:1.9;min-height:96px;margin-bottom:14px;white-space:pre-wrap}
+.conn-log .ok{color:var(--green)} .conn-log .w{color:var(--amber)} .conn-log .c{color:var(--cyan)}
+.dev-detect{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px}
+.dev-detect .dd-ic{width:52px;height:52px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--cyan);flex:none}
+.dev-detect .dd-main{flex:1;min-width:0}
+.dev-detect .dd-main b{font-size:15px;display:block}
+.dev-detect .dd-main .sub{font-size:11px;color:var(--txt-3);font-family:var(--mono)}
+.dd-rows{display:grid;grid-template-columns:1fr 1fr;gap:7px 16px;margin-top:10px}
+.dd-row .k{font-size:10.5px;color:var(--txt-3)}
+.dd-row .v{font-family:var(--mono);font-size:12px}
+.conn-ops{display:flex;gap:9px;margin-top:15px;flex-wrap:wrap}
+.scan-line{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12px;color:var(--txt-3);font-family:var(--mono)}
+.scan-line .s-ic{width:16px;height:16px;flex:none}
+.scan-line.done{color:var(--green)}
+.scan-line.active{color:var(--cyan)}
+.scan-line .bar{flex:1;height:3px;background:var(--line-soft);border-radius:2px;overflow:hidden}
+.scan-line .bar i{display:block;height:100%;background:var(--cyan);animation:scanbar 1.1s ease infinite}
+@keyframes scanbar{from{width:6%}to{width:100%}}
+.check-target{display:flex;align-items:center;gap:9px;background:rgba(34,211,238,.06);border:1px solid var(--cyan-dim);border-radius:9px;padding:9px 14px;margin-bottom:14px;font-size:12.5px;color:var(--txt-2)}
+.check-target .t-ic{color:var(--cyan)}
+.check-target b{color:var(--txt);font-family:var(--mono);font-weight:600}
+
+/* ===== 实时内部结构检测 ===== */
+.struct-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.struct-head select{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:7px 10px;font-size:12.3px;outline:none}
+.struct-head select:focus{border-color:var(--cyan)}
+.struct-health{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.health-chip{display:flex;flex-direction:column;align-items:center;padding:6px 13px;background:var(--card);border:1px solid var(--line);border-radius:9px;min-width:74px}
+.health-chip b{font-size:15px;font-family:var(--mono)}
+.health-chip span{font-size:10px;color:var(--txt-3);margin-top:1px}
+.health-chip.ok b{color:var(--green)} .health-chip.warn b{color:var(--amber)} .health-chip.fail b{color:var(--red)}
+.struct-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;margin-top:14px;flex:1;min-height:0}
+.struct-grid .panel{margin-top:0}
+.str-canvas{position:relative}
+.str-svg{width:100%;height:auto;display:block;background:#0b1119;border-radius:9px;border:1px solid var(--line)}
+.str-legend{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;color:var(--txt-3)}
+.str-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}
+.str-part{cursor:pointer;transition:opacity .15s}
+.str-part:hover{opacity:.85}
+.str-part.sel .sp-box{stroke:var(--cyan);stroke-width:2}
+.sp-box{fill:#141d29;stroke:#2a3a4e;stroke-width:1.2}
+.sp-box.ok{fill:#0f1f18;stroke:#2e9e6b}
+.sp-box.warn{fill:#241d0e;stroke:#d99a2b}
+.sp-box.fail{fill:#2a1210;stroke:#e05555}
+.sp-dot{stroke:none}
+.sp-dot.ok{fill:var(--green)} .sp-dot.warn{fill:var(--amber)} .sp-dot.fail{fill:var(--red)}
+.sp-txt{fill:#9fb2c3;font-size:10px;font-family:var(--mono)}
+.sp-name{fill:#dfe8f0;font-size:11px;font-weight:600}
+.sp-line{stroke:#243447;stroke-width:1;stroke-dasharray:3 3}
+.str-params{display:flex;flex-direction:column}
+.param-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line-soft);cursor:pointer;transition:background .12s}
+.param-row:last-child{border-bottom:none}
+.param-row:hover{background:rgba(23,33,45,.5)}
+.param-row.sel{background:rgba(34,211,238,.07)}
+.param-row .p-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.param-row .p-main{flex:1;min-width:0}
+.param-row .p-main b{font-size:12.3px;display:block;font-weight:600}
+.param-row .p-main span{font-size:10.5px;color:var(--txt-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.param-row .p-vals{text-align:right;flex:none}
+.param-row .p-vals .pv{font-family:var(--mono);font-size:11.3px;color:var(--txt-2);display:block}
+.param-row .p-vals .pv b{font-size:11.3px;color:var(--txt);font-weight:600}
+.param-row.warn .p-vals .pv b{color:var(--amber)}
+.param-row.fail .p-vals .pv b{color:var(--red)}
+.param-row .p-unit{font-size:9.5px;color:var(--txt-3);font-family:var(--mono)}
+.str-checks{display:flex;flex-direction:column}
+.str-checks .chk-row{cursor:default}
+.str-refresh{font-size:10.5px;color:var(--txt-3);font-family:var(--mono);padding:7px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.str-refresh .tag{margin-left:0}
+.str-refresh .r-meta{margin-left:auto;color:var(--txt-3)}
+#btn-str-live{flex:none}
+.str-tip{font-size:10.5px;color:var(--txt-3);margin-top:9px;text-align:center;font-family:var(--mono)}
+.str-events{padding:8px 12px 10px;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:10.8px;color:var(--txt-3);display:flex;flex-direction:column;gap:4px}
+.str-events .ev{display:flex;gap:8px;align-items:baseline;line-height:1.5}
+.str-events .ev .et{color:var(--txt-3);flex:none}
+.str-events .ev.ok{color:var(--txt-2)} .str-events .ev.warn{color:var(--amber)} .str-events .ev.fail{color:var(--red)}
+.str-events .ev b{font-weight:600}
+
+/* 响应式 */
+@media (max-width:1280px){
+  #shell{grid-template-columns:210px 1fr 268px}
+  .cards4{grid-template-columns:repeat(2,1fr)}
+}
+#btn-panel{display:none}
+@media (max-width:1024px){
+  #shell{grid-template-columns:64px 1fr}
+  #btn-panel{display:inline-flex}
+  #side-panel{position:fixed;right:0;top:50px;bottom:28px;width:290px;z-index:50;transform:translateX(105%);transition:transform .25s;box-shadow:-12px 0 30px rgba(0,0,0,.4)}
+  #side-panel.open{transform:none}
+  #side-panel .sp-h .x{display:block}
+  #sidebar .sec,#sidebar .foot .who,#sidebar .nav a span,#sidebar .nav a .badge{display:none}
+  #sidebar .nav a{justify-content:center;padding:11px}
+  #code-wrap{grid-template-columns:1fr}
+  .dev-grid,.cards3{grid-template-columns:1fr}
+  #sim-layout{grid-template-columns:1fr}
+  .check-grid{grid-template-columns:1fr}
+  .struct-grid{grid-template-columns:1fr}
+}
+@media (max-width:680px){
+  .cards4,.cards2{grid-template-columns:1fr}
+  #global-search .kbd,.link-state .txt-l{display:none}
+  .view{padding:14px}
+  #statusbar .sb-hide{display:none}
+}
+</style>
+</head>
+<body>
+<!-- 登录页 -->
+<div id="loginPage" style="display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(135deg,#0d1219 0%,#122030 100%)">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:40px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div style="text-align:center;margin-bottom:32px">
+      <h1 style="font-size:24px;color:var(--cyan);margin-bottom:6px">RoboForge</h1>
+      <p style="color:var(--txt-3);font-size:13px">机器人开发工作台 · 请登录后使用</p>
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:13px;color:var(--txt-2);margin-bottom:8px">用户名</label>
+      <input type="text" id="loginUser" value="admin" style="width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:14px;outline:none" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--line)'">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:13px;color:var(--txt-2);margin-bottom:8px">密码</label>
+      <input type="password" id="loginPass" placeholder="请输入密码" style="width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:14px;outline:none" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--line)'">
+    </div>
+    <button onclick="doWorkbenchLogin()" style="width:100%;padding:13px;background:var(--cyan);color:#0d1219;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">登 录</button>
+    <div id="loginError" style="color:var(--red);font-size:13px;text-align:center;margin-top:12px;display:none">用户名或密码错误</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+
+  <!-- ===== 顶栏 ===== -->
+  <header id="topbar">
+    <div class="brand">
+      <div class="logo">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="11" rx="3"/><circle cx="9.5" cy="13" r="1.4"/><circle cx="14.5" cy="13" r="1.4"/><path d="M12 8V4M9.5 4h5M3 11v3M21 11v3"/></svg>
+      </div>
+      <h1>Robo<em>Forge</em><small>机器人开发工作台</small></h1>
+    </div>
+    <div id="global-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" placeholder="搜索项目、设备、指令…" id="gs-input">
+      <span class="kbd">Ctrl K</span>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="btn-panel" title="侧边面板"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg></button>
+      <div class="link-state"><span class="dot"></span><span class="txt-l">已连接 · 网关 gz-01</span></div>
+      <button class="btn" id="btn-save"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>保存</button>
+      <button class="btn primary" id="btn-deploy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg><span id="deploy-txt">部署</span></button>
+    </div>
+  </header>
+
+  <div id="shell">
+    <!-- ===== 侧边栏 ===== -->
+    <aside id="sidebar">
+      <div class="sec">开发</div>
+      <ul class="nav">
+        <li><a href="#/overview" data-view="overview" class="active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>工作台总览</span></a></li>
+        <li><a href="#/code" data-view="code"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 5l-2 14"/></svg><span>代码编辑器</span></a></li>
+        <li><a href="#/devices" data-view="devices"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span>设备管理</span><span class="badge" id="dev-badge">0</span></a></li>
+        <li><a href="#/sim" data-view="sim"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M7.4 6h9.2M5.8 8.3 11 15.7M18.2 8.3 13 15.7"/></svg><span>仿真调试</span></a></li>
+        <li><a href="#/logs" data-view="logs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 12.5h8M8 16h5"/></svg><span>运行日志</span><span class="badge" id="log-badge">3</span></a></li>
+        <li><a href="#/ai" data-view="ai"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="12" rx="2.5"/><path d="M9 20h6M12 16v4M7 9l2.5 2.5L7 14M13 14h4"/></svg><span>开发辅助 AI</span></a></li>
+        <li><a href="#/check" data-view="check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.5 11 14.5 15.5 9.5"/><path d="M12 3l2 2h4a1 1 0 0 1 1 1v4l2 2-2 2v4a1 1 0 0 1-1 1h-4l-2 2-2-2H6a1 1 0 0 1-1-1v-4l-2-2 2-2V6a1 1 0 0 1 1-1h4z"/></svg><span>检测中心</span><span class="badge" id="check-badge">26</span></a></li>
+        <li><a href="#/structure" data-view="structure"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9h16M9 9v11"/><circle cx="12" cy="6" r="1.3"/><path d="M7 13h2M7 16h2M13 13h4M13 16h4"/></svg><span>内部结构</span><span class="badge on" style="color:var(--green)" id="str-badge">实时</span></a></li>
+      </ul>
+      <div class="sec">系统</div>
+      <ul class="nav">
+        <li><a href="#/settings" data-view="settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg><span>系统设置</span></a></li>
+        <li><a href="admin.html" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>管理员后台</span></a></li>
+      </ul>
+      <div class="spacer"></div>
+      <div class="foot">
+        <div class="avatar">研</div>
+        <div class="who"><b>研发部 · 张工</b><span>专业版 · 在线</span></div>
+        <button class="trow-btn" id="btn-logout">退出</button>
+      </div>
+    </aside>
+
+    <!-- ===== 主内容 ===== -->
+    <main id="main">
+
+      <!-- 总览 -->
+      <section class="view active" id="view-overview">
+        <div class="view-head">
+          <div>
+            <h2>工作台总览</h2>
+            <p>项目 <b class="mono" style="color:var(--cyan)">warehouse-nav-v3</b> · 生产线巡检机器人导航系统</p>
+          </div>
+          <div class="actions">
+            <button class="btn" data-goto="code"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M13 5l-2 14"/></svg>打开编辑器</button>
+            <button class="btn primary" data-goto="sim"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg>开始仿真</button>
+          </div>
+        </div>
+        <div class="grid cards4" id="kpi-row"></div>
+        <div class="grid cards3" style="margin-top:14px;flex:1;min-height:0">
+          <div class="panel" style="grid-column:span 2;display:flex;flex-direction:column">
+            <div class="ph"><h3>系统资源与传感器趋势</h3><span class="sub">过去 30 分钟 · 采样 5s</span><span id="chart-live" class="tag run"><i></i>实时</span></div>
+            <div class="pb flush" style="flex:1;min-height:0"><div id="chart-trend" style="height:100%;min-height:264px"></div></div>
+          </div>
+          <div class="panel" style="display:flex;flex-direction:column">
+            <div class="ph"><h3>任务队列</h3><button class="trow-btn" id="btn-task-add">+ 新建任务</button></div>
+            <div class="pb flush" style="flex:1;min-height:0;overflow:auto"><div class="list" id="task-list"></div></div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:14px;flex-shrink:0">
+          <div class="ph"><h3>最近部署记录</h3><button class="trow-btn" data-goto="logs">查看日志</button></div>
+          <div class="pb flush"><div id="deploy-table"></div></div>
+        </div>
+      </section>
+
+      <!-- 代码编辑器 -->
+      <section class="view" id="view-code">
+        <div class="view-head">
+          <div>
+            <h2>代码编辑器</h2>
+            <p>项目 <b class="mono" style="color:var(--cyan)">warehouse-nav-v3</b> · 主分支 <b class="mono">main</b></p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="btn-format"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M4 12h16M4 18h7"/></svg>格式化</button>
+            <button class="btn" id="btn-run-code"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg>运行</button>
+            <button class="btn primary" id="btn-deploy2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>部署到设备</button>
+          </div>
+        </div>
+        <div id="code-wrap">
+          <div class="filetree">
+            <div class="ft-h">项目文件</div>
+            <div class="ft-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="dir">src</span></div>
+            <div class="ft-item active"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M9 12.5h6M9 16h4"/></svg>nav_controller.js</div>
+            <div class="ft-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M9 12.5h6M9 16h4"/></svg>sensor_fusion.py</div>
+            <div class="ft-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M9 12.5h6M9 16h4"/></svg>path_planner.cpp</div>
+            <div class="ft-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M9 12.5h6M9 16h4"/></svg>config.yaml</div>
+            <div class="ft-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M9 12.5h6M9 16h4"/></svg>README.md</div>
+          </div>
+          <div class="editor">
+            <div class="ed-tabs">
+              <div class="ed-tab active"><span class="dot"></span>nav_controller.js</div>
+              <div class="ed-tab" data-file="sensor_fusion.py">sensor_fusion.py</div>
+              <div class="ed-tab" data-file="path_planner.cpp">path_planner.cpp</div>
+              <div class="ed-tab" data-file="config.yaml">config.yaml</div>
+            </div>
+            <div class="ed-body">
+              <div class="lines"><pre id="line-nums"></pre></div>
+              <div class="code-stack">
+                <pre class="hl" id="code-hl" aria-hidden="true"></pre>
+                <textarea id="code-input" spellcheck="false" autocomplete="off"></textarea>
+              </div>
+            </div>
+            <div class="ed-foot">
+              <span id="ed-file">nav_controller.js</span><span class="sep"></span>
+              <span id="ed-ln">Ln 1, Col 1</span>
+              <span>UTF-8</span><span>JS</span>
+            </div>
+          </div>
+        </div>
+        <div class="console">
+          <div class="c-h"><span class="dots"><i></i><i></i><i></i></span>运行输出 <span style="margin-left:auto" id="console-state" class="tag off"><i></i>空闲</span></div>
+          <pre id="console-out"></pre>
+        </div>
+      </section>
+
+      <!-- 设备管理 -->
+      <section class="view" id="view-devices">
+        <div class="view-head">
+          <div>
+            <h2>设备管理</h2>
+            <p>已接入 <b class="mono" style="color:var(--green)" id="dev-count">0</b> 台设备 · 支持 USB / 以太网 / CAN 有线接入排查</p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="btn-scan"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>扫描设备</button>
+            <button class="btn primary" id="btn-conn-dev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5a8 8 0 0 1 11 0M9 9a4.5 4.5 0 0 1 6 0"/><path d="m7 21 2.5-2.5M10 14 6.5 17.5M9.5 17.5 11 19"/><path d="M17 3.5v3M15.5 5h3"/></svg>有线连接</button>
+            <button class="btn" id="btn-add-dev"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>添加设备</button>
+          </div>
+        </div>
+        <div class="dev-grid" id="dev-grid" style="flex:1;min-height:0"></div>
+      </section>
+
+      <!-- 仿真 -->
+      <section class="view" id="view-sim">
+        <div class="view-head">
+          <div>
+            <h2>仿真调试</h2>
+            <p>2D 仿真环境 · 实时显示传感器覆盖与规划路径</p>
+          </div>
+          <div class="sim-cp">
+            <button class="btn" id="sim-play"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg><span>开始</span></button>
+            <button class="btn" id="sim-reset"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>重置</button>
+            <select id="sim-map">
+              <option>仓库地图 A</option>
+              <option>产线地图 B</option>
+              <option>开放场地 C</option>
+            </select>
+          </div>
+        </div>
+        <div id="sim-layout">
+          <div>
+            <canvas id="sim-canvas" width="900" height="560"></canvas>
+          </div>
+          <div class="panel">
+            <div class="ph"><h3>仿真参数</h3><span class="sub">实时</span></div>
+            <div class="sp-b">
+              <div class="field"><label>线速度 (m/s)</label><input type="range" id="sim-speed" min="0.2" max="2.5" step="0.1" value="1.2"><div class="mr"><span>当前</span><b id="sim-speed-v">1.2</b></div></div>
+              <div class="field"><label>传感器探测半径 (px)</label><input type="range" id="sim-sense" min="40" max="160" step="10" value="95"><div class="mr"><span>当前</span><b id="sim-sense-v">95</b></div></div>
+              <div class="field"><label>任务路线</label><div class="val" style="color:var(--txt-2)">A01 装载区 → B12 分拣台 → 出口</div></div>
+              <div class="field"><label>轨迹里程</label><div class="val" id="sim-dist">0.0 m</div></div>
+              <div class="field"><label>当前位置</label><div class="val" id="sim-pos">(120, 340)</div></div>
+              <div class="field"><label>避障状态</label><div class="val"><span id="sim-avoid" class="tag on"><i></i>正常</span></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 日志 -->
+      <section class="view" id="view-logs">
+        <div class="view-head">
+          <div>
+            <h2>运行日志</h2>
+            <p>网关 gz-01 · 按级别过滤 · 自动滚动</p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="log-clear"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>清空</button>
+            <button class="btn" id="log-pause"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 5v14M16 5v14"/></svg><span>暂停流</span></button>
+          </div>
+        </div>
+        <div class="log-filters" id="log-filters">
+          <button class="f on" data-lv="all">全部</button>
+          <button class="f" data-lv="debug">DEBUG</button>
+          <button class="f" data-lv="info">INFO</button>
+          <button class="f" data-lv="warn">WARN</button>
+          <button class="f" data-lv="error">ERROR</button>
+        </div>
+        <div id="log-view"></div>
+      </section>
+
+      <!-- 开发辅助 AI -->
+      <section class="view" id="view-ai">
+        <div class="view-head">
+          <div>
+            <h2>开发辅助 AI</h2>
+            <p>基于当前项目上下文的编程助手 · 支持代码解释、测试生成、审查与优化</p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="ai-new"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h7"/></svg>新建会话</button>
+            <button class="btn" id="ai-ctx"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2 2h4a1 1 0 0 1 1 1v4l2 2-2 2v4a1 1 0 0 1-1 1h-4l-2 2-2-2H6a1 1 0 0 1-1-1v-4l-2-2 2-2V6a1 1 0 0 1 1-1h4z"/></svg><span id="ai-ctx-txt">上下文：nav_controller.js</span></button>
+          </div>
+        </div>
+        <div id="ai-layout">
+          <div class="ai-chat" id="ai-chat"></div>
+          <div class="ai-input">
+            <div class="chips">
+              <button data-q="解释当前文件的代码结构">解释代码</button>
+              <button data-q="为当前文件生成单元测试">生成单元测试</button>
+              <button data-q="审查当前文件，指出潜在问题">代码审查</button>
+              <button data-q="给出性能优化建议">性能优化</button>
+              <button data-q="帮我排查最近的报错">排查报错</button>
+              <button data-q="为当前文件生成使用文档">生成文档</button>
+            </div>
+            <div class="bar">
+              <textarea id="ai-input" placeholder="向开发辅助 AI 提问，例如：解释 plan() 方法的作用…" rows="1"></textarea>
+              <button class="send" id="ai-send" title="发送">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>
+              </button>
+            </div>
+            <div class="hint">AI 辅助开发：基于项目上下文生成建议，支持代码解释、测试生成、性能优化等。Enter 发送，Shift+Enter 换行。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 检测中心 -->
+      <section class="view" id="view-check">
+        <div class="view-head">
+          <div>
+            <h2>检测中心</h2>
+            <p>全链路质量与健康检测 · 6 类 26 项 · 覆盖代码、构建、设备、传感器、网络与安全</p>
+          </div>
+        </div>
+        <div class="check-target" id="check-target">
+          <svg class="t-ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6.5 6.5a8 8 0 0 1 11 0M9 9a4.5 4.5 0 0 1 6 0"/><path d="m7 21 2.5-2.5M10 14 6.5 17.5"/><path d="M17 3.5v3M15.5 5h3"/></svg>
+          <span>排查目标：</span><b id="check-target-name">全部已接入设备（4 台）</b>
+        </div>
+        <div class="check-head">
+          <svg class="check-ring" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#1a2532" stroke-width="11"/>
+            <circle id="ring-pass" cx="60" cy="60" r="50" fill="none" stroke="#34d399" stroke-width="11" stroke-linecap="round" stroke-dasharray="0 314" transform="rotate(-90 60 60)"/>
+            <circle id="ring-warn" cx="60" cy="60" r="50" fill="none" stroke="#f5b04c" stroke-width="11" stroke-linecap="round" stroke-dasharray="0 314" transform="rotate(-90 60 60)"/>
+            <circle id="ring-fail" cx="60" cy="60" r="50" fill="none" stroke="#ef5b5b" stroke-width="11" stroke-linecap="round" stroke-dasharray="0 314" transform="rotate(-90 60 60)"/>
+            <text id="ring-txt" x="60" y="58" text-anchor="middle" fill="#e8eef4" font-size="26" font-family="JetBrains Mono,monospace" font-weight="600">26</text>
+            <text class="rlab" x="60" y="76" text-anchor="middle" fill="#5f7183" font-size="9">检测项</text>
+          </svg>
+          <div class="check-sum">
+            <div class="s pass"><b id="sum-pass">0</b><span>通过</span></div>
+            <div class="s warn"><b id="sum-warn">0</b><span>警告</span></div>
+            <div class="s fail"><b id="sum-fail">0</b><span>失败</span></div>
+            <div class="s"><b id="sum-run">0</b><span>进行中</span></div>
+          </div>
+          <div class="check-actions">
+            <button class="btn primary" id="btn-run-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg>全量检测</button>
+            <button class="btn" id="btn-export-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 9l6 6 6-6M4 21h16"/></svg>导出报告</button>
+            <button class="btn" id="btn-reset-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>重置</button>
+          </div>
+        </div>
+        <div class="check-grid" id="check-grid"></div>
+        <div class="report-box" id="report-box">
+          <div class="rb-h"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.5 11 14.5 15.5 9.5"/><path d="M12 3l2 2h4a1 1 0 0 1 1 1v4l2 2-2 2v4a1 1 0 0 1-1 1h-4l-2 2-2-2H6a1 1 0 0 1-1-1v-4l-2-2 2-2V6a1 1 0 0 1 1-1h4z"/></svg>检测报告摘要<span class="btns"><button class="btn" style="padding:4px 10px" id="btn-copy-report">复制报告</button><button class="btn" style="padding:4px 10px" id="btn-dl-report">下载 .txt</button></span></div>
+          <pre id="report-pre"></pre>
+        </div>
+      </section>
+
+      <!-- 实时内部结构检测 -->
+      <section class="view" id="view-structure">
+        <div class="view-head">
+          <div>
+            <h2>实时内部结构检测</h2>
+            <p>部件级结构健康监控 · 1.5s 采样刷新 · 覆盖框架 / 电控 / 动力 / 线缆</p>
+          </div>
+          <div class="struct-head">
+            <select id="str-dev"></select>
+            <button class="btn" id="btn-str-live"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="4" width="10" height="16" rx="2"/></svg><span id="str-live-txt">暂停实时</span></button>
+            <div class="struct-health" id="str-health"></div>
+          </div>
+        </div>
+        <div class="struct-grid">
+          <div class="panel">
+            <div class="ph"><h3>内部结构示意图</h3><span class="sub" id="str-dev-name"></span></div>
+            <div class="pb flush">
+              <div class="str-canvas" id="str-canvas"></div>
+              <div class="str-legend"><span><i style="background:var(--green)"></i>正常</span><span><i style="background:var(--amber)"></i>警告</span><span><i style="background:var(--red)"></i>故障</span></div>
+              <div class="str-tip">点击部件查看实时参数 · 颜色随采样自动更新</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph"><h3>部件实时参数</h3><span class="sub">采样周期 1.5s</span></div>
+            <div class="pb flush"><div class="str-params" id="str-params"></div></div>
+          </div>
+          <div class="panel" style="grid-column:1 / -1">
+            <div class="ph"><h3>实时结构检测项</h3><span class="sub">持续循环重检 · 触发即更新</span></div>
+            <div class="pb flush">
+              <div class="str-refresh"><span class="tag run"><i></i>实时</span><span>下一轮重检</span><span class="r-meta" id="str-next">--</span></div>
+              <div class="str-checks" id="str-checks"></div>
+              <div class="str-events" id="str-events"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 设置 -->
+      <section class="view" id="view-settings">
+        <div class="view-head">
+          <div>
+            <h2>系统设置</h2>
+            <p>连接参数与工作台偏好 · 修改后即时生效</p>
+          </div>
+          <div class="actions"><button class="btn primary" id="btn-save-set">保存设置</button></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>网关连接</h3></div>
+          <div class="set-group" id="set-conn"></div>
+        </div>
+        <div class="panel" style="margin-top:14px">
+          <div class="ph"><h3>遥测与日志</h3></div>
+          <div class="set-group" id="set-tele"></div>
+        </div>
+        <div class="panel" style="margin-top:14px">
+          <div class="ph"><h3>工作台偏好</h3></div>
+          <div class="set-group" id="set-pref"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ===== 右侧面板 ===== -->
+    <aside id="side-panel">
+      <div class="sp-h"><h3 id="sp-title">选中设备</h3><button class="x" id="panel-close">✕</button></div>
+      <div class="sp-b" id="sp-body"></div>
+    </aside>
+  </div>
+
+  <!-- ===== 状态栏 ===== -->
+  <footer id="statusbar">
+    <span class="sb-ic ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>网关已连接</span>
+    <span class="sb-ic sb-hide"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span id="sb-project">warehouse-nav-v3</span></span>
+    <span class="sb-ic sb-hide"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12M18 9v12M6 15a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3z"/></svg>main</span>
+    <span class="sp"></span>
+    <span class="sb-hide">仿真 <span id="sb-fps">60 fps</span></span>
+    <span class="sb-hide">内存 <span id="sb-mem">186 MB</span></span>
+    <span id="sb-clock"></span>
+  </footer>
+</div>
+
+<div id="toasts"></div>
+
+<!-- ===== 有线连接向导 ===== -->
+<div class="modal-mask" id="conn-modal">
+  <div class="modal">
+    <div class="m-h">
+      <svg class="step-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5a8 8 0 0 1 11 0M9 9a4.5 4.5 0 0 1 6 0"/><path d="m7 21 2.5-2.5M10 14 6.5 17.5M9.5 17.5 11 19"/><path d="M17 3.5v3M15.5 5h3"/></svg>
+      有线连接机器人<span id="conn-step-tag" style="margin-left:auto;font-size:11px;color:var(--txt-3);font-family:var(--mono)">步骤 1 / 3</span>
+      <button class="x" id="conn-x">✕</button>
+    </div>
+    <div class="m-b">
+      <div class="conn-step" id="conn-step1">
+        <div class="step-t">选择连接方式</div>
+        <div class="conn-ways" id="conn-ways">
+          <button class="way-card" data-way="usb">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="6" rx="1.5"/><path d="M9 9v2h6V9M9 9l-.5 4h7L15 9M9.5 13 9 15h6l-.5-2M10 15v4h4v-4"/></svg>
+            USB 串口<span style="font-size:10.5px;color:var(--txt-3)">调试线 / 串口调试</span>
+          </button>
+          <button class="way-card" data-way="eth">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M6 11v2M10 11v2M14 11v2M18 11v2"/></svg>
+            以太网<span style="font-size:10.5px;color:var(--txt-3)">RJ45 网线直连</span>
+          </button>
+          <button class="way-card" data-way="can">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="12" r="2.6"/><path d="M8.5 12h7M4.5 12H2M22 12h-2.5"/></svg>
+            CAN 总线<span style="font-size:10.5px;color:var(--txt-3)">工业总线调试器</span>
+          </button>
+        </div>
+      </div>
+      <div class="conn-step" id="conn-step2" hidden>
+        <div class="step-t" id="conn-port-t">选择端口 / 地址</div>
+        <div class="port-list" id="conn-ports"></div>
+      </div>
+      <div class="conn-step" id="conn-step3" hidden>
+        <div class="step-t">连接中 · 自动识别设备</div>
+        <div class="scan-lines" id="conn-scan"></div>
+        <div class="conn-log" id="conn-log" hidden></div>
+        <div id="conn-detect"></div>
+      </div>
+    </div>
+    <div class="m-f">
+      <span id="conn-tip" style="margin-right:auto;font-size:11px;color:var(--txt-3)">请确认机器人与电脑已通过线缆连接</span>
+      <button class="btn" id="conn-back" hidden><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>上一步</button>
+      <button class="btn" id="conn-cancel">取消</button>
+      <button class="btn primary" id="conn-next" disabled>下一步</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script>
+'use strict';
+/* ===== 工具 ===== */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const pad2 = n => String(n).padStart(2,'0');
+function nowTs(){ const d=new Date(); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; }
+function toast(msg, type='ok'){
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${type==='ok'?'<path d="m5 12 5 5L20 7"/>':type==='err'?'<path d="M18 6 6 18M6 6l12 12"/>':'<path d="M12 8v4M12 16h.01"/><circle cx="12" cy="12" r="9"/>'}</svg><span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(t);
+  setTimeout(()=>{t.classList.add('out'); setTimeout(()=>t.remove(),320);},2600);
+}
+
+/* ===== 状态 ===== */
+const state={
+  view:'overview', deployed:'v1.2.3',
+  logPaused:false, logFilter:'all', logCount:0,
+  consoleRunning:false, curFile:'nav_controller.js',
+  selDev:null,
+  sim:{running:false,x:130,y:330,theta:0,dist:0,speed:1.2,sense:95,idx:0,last:0,fps:60},
+};
+
+const FILES={
+'nav_controller.js':`// warehouse-nav-v3 · 巡检机器人导航控制器
+import { Lidar, IMU, MotorDriver } from '@robo/sdk';
+
+const CONFIG = {
+  maxSpeed: 1.5,          // m/s
+  obstacleMargin: 0.35,   // 与障碍物安全距离
+  waypointTolerance: 0.12,
+};
+
+export class NavController {
+  constructor(id) {
+    this.id = id;
+    this.lidar = new Lidar({ rate: 10 });
+    this.motor = new MotorDriver(id);
+    this.waypoints = [];
+    this.pose = { x: 0, y: 0, theta: 0 };
+  }
+
+  async plan(route) {
+    const path = await this.lidar.snapshot();
+    this.waypoints = route.filter(p => !this.blocked(p, path));
+    return this.waypoints.length;
+  }
+
+  blocked(point, scan) {
+    for (const hit of scan) {
+      const d = Math.hypot(hit.x - point.x, hit.y - point.y);
+      if (d < CONFIG.obstacleMargin) return true;
+    }
+    return false;
+  }
+
+  step(dt) {
+    const target = this.waypoints[0];
+    if (!target) return { done: true };
+    const dx = target.x - this.pose.x;
+    const dy = target.y - this.pose.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < CONFIG.waypointTolerance) {
+      this.waypoints.shift();
+      return { done: this.waypoints.length === 0 };
+    }
+    const speed = Math.min(CONFIG.maxSpeed, dist / dt);
+    this.pose.x += (dx / dist) * speed * dt;
+    this.pose.y += (dy / dist) * speed * dt;
+    this.pose.theta = Math.atan2(dy, dx);
+    return { done: false, speed: speed.toFixed(2) };
+  }
+}`,
+'sensor_fusion.py':`# 多传感器融合 · 扩展卡尔曼滤波
+import numpy as np
+from filterpy.kalman import KalmanFilter
+
+class SensorFusion:
+    def __init__(self, dt=0.1):
+        self.kf = KalmanFilter(dim_x=4, dim_z=2)
+        self.kf.F = np.array([[1, 0, dt, 0],
+                              [0, 1, 0, dt],
+                              [0, 0, 1, 0],
+                              [0, 0, 0, 1]])
+        self.kf.H = np.array([[1, 0, 0, 0],
+                              [0, 1, 0, 0]])
+        self.kf.P *= 1000.0
+
+    def update(self, lidar_xy, imu_theta):
+        # 预测 + 观测更新
+        self.kf.predict()
+        z = np.array([[lidar_xy[0]], [lidar_xy[1]]])
+        self.kf.update(z)
+        return (self.kf.x[0, 0], self.kf.x[1, 0], imu_theta)`,
+'path_planner.cpp':`// A* 路径规划 · 栅格地图
+#include <queue>
+#include <vector>
+#include <cmath>
+
+struct Node {
+    int x, y;
+    float g, h;
+    Node* parent;
+    bool operator>(const Node& o) const { return g + h > o.g + o.h; }
+};
+
+std::vector<Node> aStar(const GridMap& map, Node start, Node goal) {
+    std::priority_queue<Node, std::vector<Node>,
+                       std::greater<Node>> open;
+    std::vector<Node> closed(map.w * map.h, Node{-1, -1, 0, 0, nullptr});
+    open.push(start);
+    while (!open.empty()) {
+        Node cur = open.top(); open.pop();
+        if (cur.x == goal.x && cur.y == goal.y)
+            return reconstruct(cur);
+        for (auto& d : DIRS4) { /* 扩展邻域 */ }
+    }
+    return {};
+}`,
+'config.yaml':`# 部署配置 · warehouse-nav-v3
+project: warehouse-nav-v3
+branch: main
+gateway: gz-01
+devices:
+  - id: <待接入设备>
+    role: patrol
+    firmware: <待检测>
+telemetry:
+  rate: 5s
+  upload: true
+safety:
+  obstacle_margin: 0.35
+  max_speed: 1.5`,
+};
+const CODE_RUN_OUT={
+'nav_controller.js':`[build] 编译 nav_controller.js ... OK (412ms)
+[test] 单元测试 12/12 通过
+[launch] 已连接仿真环境 sim://warehouse-a
+[info] NavController 初始化完成，等待设备接入
+[info] 已加载路径：A01 装载区 → B12 分拣台 → 出口`,
+'sensor_fusion.py':`[build] Python 语法检查通过
+[launch] 依赖 numpy 1.26.4 / filterpy 1.4.5
+[info] 传感器融合节点启动，采样 10Hz
+[debug] 首次观测：lidar=(12.4, 3.1) imu=0.52rad`,
+'path_planner.cpp':`[build] g++ -O2 path_planner.cpp ... OK (1.2s)
+[test] 路径代价校验通过，长度 38.6m
+[launch] 规划节点已就绪`,
+'config.yaml':`[verify] YAML 解析成功，4 个设备配置有效
+[check] 安全参数校验通过：obstacle_margin=0.35`,
+};
+
+/* ===== 路由 ===== */
+const NAVS=['overview','code','devices','sim','logs','ai','check','structure','settings'];
+function goView(v){
+  if(!NAVS.includes(v)) v='overview';
+  state.view=v;
+  $$('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.view===v));
+  $$('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
+  renderSidePanel();
+  if(v==='code') syncEditor();
+  if(v==='devices') renderDevices();
+  if(v==='overview'){ renderKpi(); renderTasks(); renderDeploys(); if(window.echarts) initTrend(); }
+  if(v==='sim'){ state.sim.running=false; $('#sim-play').innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg><span>开始</span>'; }
+  if(v==='ai') renderChat();
+  if(v==='check') renderChecks();
+  if(v==='structure'){ initStructure(state.struct.dev||(DEVICES[0]&&DEVICES[0].id)); renderStructure(); startStrTick(); }
+  else stopStrTick();
+}
+window.addEventListener('hashchange',()=>goView(location.hash.replace('#/','')));
+$$('.nav a[data-view]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault(); location.hash='#/'+a.dataset.view;}));
+$$('[data-goto]').forEach(b=>b.addEventListener('click',()=>{ location.hash='#/'+b.dataset.goto; }));
+
+/* ===== 顶栏 ===== */
+$('#gs-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.value.trim()){ toast(`正在搜索 “${e.target.value.trim()}”…`,'info'); setTimeout(()=>toast('未找到匹配的结果'),800); e.target.value=''; }
+});
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); $('#gs-input').focus(); }
+});
+function doWorkbenchLogin(){
+  const u=document.getElementById('loginUser').value;
+  const p=document.getElementById('loginPass').value;
+  if(u==='admin'&&p==='admin123'){
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('loginError').style.display='none';
+  }else{
+    document.getElementById('loginError').style.display='block';
+  }
+}
+document.getElementById('loginPass').addEventListener('keydown',e=>{
+  if(e.key==='Enter') doWorkbenchLogin();
+});
+$('#btn-logout').addEventListener('click',()=>{
+  if(confirm('确定要退出工作台吗？\n\n退出后将断开与网关的连接，需要重新登录才能继续使用。')){
+    document.getElementById('app').style.display='none';
+    document.getElementById('loginPage').style.display='flex';
+    document.getElementById('loginPass').value='';
+  }
+});
+$('#btn-save').addEventListener('click',()=>{ $('#btn-save').innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>已保存'; toast('工作区已保存到本地草稿'); setTimeout(()=>{$('#btn-save').innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>保存';},1400); });
+
+function deploy(){
+  if(state.deployed==='部署中…') return;
+  state.deployed='部署中…';
+  const set=t=>{ $('#deploy-txt').textContent=t; $('#btn-deploy2')&&($('#btn-deploy2').textContent='部署中…'); };
+  set('部署中…');
+  $('#btn-deploy').disabled=true; if($('#btn-deploy2'))$('#btn-deploy2').disabled=true;
+  pushLog('info','部署任务已提交：目标设备 · 版本 v1.2.4');
+  setTimeout(()=>{
+    pushLog('info','固件包上传完成 100%（8.4 MB）');
+    setTimeout(()=>{
+      pushLog('ok','部署成功：设备已运行 v1.2.4，重启用时 6.3s');
+      state.deployed='v1.2.4';
+      set('已部署 v1.2.4');
+      $('#btn-deploy').disabled=false; if($('#btn-deploy2'))$('#btn-deploy2').disabled=false;
+      toast('部署成功，设备已重启','ok');
+      setTimeout(()=>set('部署'),5000);
+    },1600);
+  },1400);
+}
+$('#btn-deploy').addEventListener('click',deploy);
+$('#btn-deploy2').addEventListener('click',deploy);
+
+/* ===== 总览 ===== */
+const KPIS=[
+  {lab:'在线设备',num:'0',unit:'/ 0',trend:'暂无设备',cls:'flat',bar:0,barCls:'cyan',ic:'<rect x="6" y="6" width="12" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/>'},
+  {lab:'任务队列',num:'0',unit:'项',trend:'无任务',cls:'up',bar:0,barCls:'green',ic:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'},
+  {lab:'平均电量',num:'--',unit:'%',trend:'等待设备接入',cls:'down',bar:0,barCls:'amber',ic:'<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>'},
+  {lab:'网关延迟',num:'12',unit:'ms',trend:'最近 5s 均值',cls:'flat',bar:12,barCls:'cyan',ic:'<path d="m5 12 5 5L20 7"/>'},
+];
+function renderKpi(){
+  $('#kpi-row').innerHTML=KPIS.map(k=>`
+    <div class="kpi">
+      <div class="lab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${k.ic}</svg>${k.lab}</div>
+      <div class="num">${k.num}<small> ${k.unit}</small></div>
+      <div class="trend ${k.cls}">${k.trend}</div>
+      <div class="bar"><i class="${k.barCls}" style="width:${k.bar}%"></i></div>
+    </div>`).join('');
+}
+const TASKS=[];
+function renderTasks(){
+  if(TASKS.length===0){
+    $('#task-list').innerHTML='<div style="text-align:center;padding:30px;color:var(--txt-3);font-size:13px">暂无任务，接入设备后可创建任务</div>';
+    return;
+  }
+  $('#task-list').innerHTML=TASKS.map(t=>`
+    <div class="li">
+      <div class="ic ${t.ic}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+      <div class="tx"><b>${t.t}</b><span>${t.d}</span></div>
+      <div style="width:70px"><div class="mr" style="margin-bottom:3px"><b>${t.p}%</b></div><div class="meter cyan"><i style="width:${t.p}%"></i></div></div>
+    </div>`).join('');
+}
+$('#btn-task-add').addEventListener('click',()=>{
+  const n=['B 区巡检任务','库位盘点任务','安全巡逻任务'][Math.floor(Math.random()*3)];
+  TASKS.unshift({t:n,s:'idle',d:'新建 · 等待调度',p:0,ic:'blue'});
+  renderTasks(); toast(`已创建任务“${n}”并加入队列`);
+});
+const DEPLOYS=[];
+function renderDeploys(){
+  if(DEPLOYS.length===0){
+    $('#deploy-table').innerHTML='<div style="text-align:center;padding:30px;color:var(--txt-3);font-size:13px">暂无部署记录，接入设备后可进行部署</div>';
+    return;
+  }
+  $('#deploy-table').innerHTML=`<table><colgroup><col style="width:14%"><col style="width:38%"><col style="width:16%"><col style="width:12%"><col style="width:20%"></colgroup>
+  <thead><tr><th>时间</th><th>目标设备</th><th>版本</th><th>状态</th><th>耗时</th></tr></thead><tbody>
+  ${DEPLOYS.map(d=>`<tr><td class="mono">${d.t}</td><td>${d.dev}</td><td class="mono">${d.ver}</td>
+  <td><span class="tag ${d.st==='ok'?'on':'err'}"><i></i>${d.st==='ok'?'成功':'失败'}</span></td><td class="mono">${d.time}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+/* ===== 趋势图 ===== */
+let chart=null, trendTimer=null;
+const TMAX=60;
+let series={cpu:[],mem:[],net:[]};
+(function seedTrend(){
+  let c=42,m=55,n=8;
+  for(let i=0;i<TMAX;i++){
+    c=Math.max(12,Math.min(88,c+(Math.random()*10-5))); m=Math.max(30,Math.min(82,m+(Math.random()*6-3))); n=Math.max(2,Math.min(26,n+(Math.random()*4-2)));
+    series.cpu.push(+c.toFixed(1)); series.mem.push(+m.toFixed(1)); series.net.push(+n.toFixed(1));
+  }
+})();
+function initTrend(){
+  if(!window.echarts){ $('#chart-trend').innerHTML='<div class="empty"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg>图表库加载失败，请检查网络后刷新</div>'; return; }
+  if(chart){ chart.resize(); return; }
+  chart=echarts.init($('#chart-trend'),null,{renderer:'canvas'});
+  const base={animation:false,grid:{left:44,right:14,top:26,bottom:26},tooltip:{trigger:'axis',backgroundColor:'#17212d',borderColor:'#223040',textStyle:{color:'#e8eef4',fontSize:11}},legend:{top:0,right:0,textStyle:{color:'#9aa8b6',fontSize:11},icon:'roundRect'},xAxis:{type:'category',data:Array.from({length:TMAX},(_,i)=>i),axisLine:{lineStyle:{color:'#223040'}},axisLabel:{color:'#5f7183',fontSize:10}},yAxis:[{type:'value',name:'%',nameTextStyle:{color:'#5f7183'},axisLabel:{color:'#5f7183',fontSize:10},splitLine:{lineStyle:{color:'#1a2532'}}},{type:'value',name:'ms',nameTextStyle:{color:'#5f7183'},axisLabel:{color:'#5f7183',fontSize:10},splitLine:{show:false}}]};
+  chart.setOption({...base,series:[
+    {name:'CPU 占用',type:'line',data:series.cpu,smooth:true,symbol:'none',lineStyle:{width:2,color:'#22d3ee'},areaStyle:{color:'rgba(34,211,238,.08)'}},
+    {name:'内存占用',type:'line',data:series.mem,smooth:true,symbol:'none',lineStyle:{width:2,color:'#4f8ef7'},areaStyle:{color:'rgba(79,142,247,.08)'}},
+    {name:'网络延迟',type:'line',yAxisIndex:1,data:series.net,smooth:true,symbol:'none',lineStyle:{width:1.6,color:'#a78bfa',type:'dashed'}},
+  ]});
+  if(!trendTimer) trendTimer=setInterval(()=>{
+    const c=Math.max(12,Math.min(88,series.cpu[TMAX-1]+(Math.random()*10-5)));
+    const m=Math.max(30,Math.min(82,series.mem[TMAX-1]+(Math.random()*6-3)));
+    const n=Math.max(2,Math.min(26,series.net[TMAX-1]+(Math.random()*4-2)));
+    series.cpu.push(+c.toFixed(1));series.mem.push(+m.toFixed(1));series.net.push(+n.toFixed(1));
+    ['cpu','mem','net'].forEach(k=>{series[k].shift();});
+    chart.setOption({series:[{data:series.cpu},{data:series.mem},{data:series.net}]});
+  },2000);
+}
+window.addEventListener('resize',()=>{ if(chart) chart.resize(); });
+
+/* ===== 代码编辑器 ===== */
+function tokenize(code){
+  const re=/(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|\b(const|let|var|function|return|if|else|for|while|async|await|class|new|import|from|export|try|catch|throw|true|false|null|undefined|this|typeof|of|in|Math)\b|\b(\d+(?:\.\d+)?)\b|([A-Za-z_$][\w$]*)/g;
+  let out='', last=0, m;
+  while((m=re.exec(code))){
+    out+=esc(code.slice(last,m.index));
+    if(m[1]) out+=`<span class="tok-com">${esc(m[1])}</span>`;
+    else if(m[2]) out+=`<span class="tok-str">${esc(m[2])}</span>`;
+    else if(m[3]) out+=`<span class="tok-kw">${m[3]}</span>`;
+    else if(m[4]) out+=`<span class="tok-num">${m[4]}</span>`;
+    else if(m[5]){ const after=code.slice(m.index+m[0].length).replace(/^\s*/,''); out+=after.startsWith('(')?`<span class="tok-fn">${m[5]}</span>`:`<span class="tok-prop">${m[5]}</span>`; }
+    last=m.index+m[0].length;
+  }
+  return out+esc(code.slice(last));
+}
+function syncEditor(){
+  const ta=$('#code-input');
+  if(ta.value!==FILES[state.curFile]) ta.value=FILES[state.curFile];
+  $('#ed-file').textContent=state.curFile;
+  $$('.ed-tab').forEach(t=>t.classList.toggle('active',t.dataset.file===state.curFile||(!t.dataset.file&&state.curFile==='nav_controller.js')));
+  refreshCode();
+}
+function refreshCode(){
+  const ta=$('#code-input'), hl=$('#code-hl');
+  hl.innerHTML=tokenize(ta.value)+'\n';
+  const lines=ta.value.split('\n').length;
+  $('#line-nums').textContent=Array.from({length:Math.max(lines,1)},(_,i)=>i+1).join('\n');
+  ta.scrollTop=0;hl.scrollTop=0;$('#line-nums').parentElement.scrollTop=0;
+  updatePos();
+}
+function updatePos(){
+  const ta=$('#code-input');
+  const pos=ta.selectionStart, txt=ta.value;
+  const ln=txt.slice(0,pos).split('\n').length;
+  const col=pos-(txt.lastIndexOf('\n',pos-1)+1)+1;
+  $('#ed-ln').textContent=`Ln ${ln}, Col ${col}`;
+}
+$('#code-input').addEventListener('input',refreshCode);
+$('#code-input').addEventListener('scroll',()=>{
+  const ta=$('#code-input');
+  $('#code-hl').scrollTop=ta.scrollTop; $('#code-hl').scrollLeft=ta.scrollLeft;
+  $('#line-nums').parentElement.scrollTop=ta.scrollTop;
+});
+$('#code-input').addEventListener('keyup',updatePos);
+$('#code-input').addEventListener('click',updatePos);
+$$('.ed-tab').forEach(t=>t.addEventListener('click',()=>{
+  state.curFile=t.dataset.file||'nav_controller.js';
+  if(state.curFile!==FILES[state.curFile]){}
+  syncEditor();
+}));
+$$('.ft-item').forEach(f=>f.addEventListener('click',()=>{
+  const name=f.textContent.trim();
+  if(FILES[name]){ state.curFile=name; $$('.ft-item').forEach(x=>x.classList.toggle('active',x===f)); syncEditor(); }
+  else toast(`文件 ${name} 为空`,'warn');
+}));
+$('#btn-format').addEventListener('click',()=>{
+  const ta=$('#code-input');
+  let indent=0;
+  const out=ta.value.replace(/[ \t]+$/gm,'').split('\n').map(l=>{
+    const t=l.trim();
+    if(t.startsWith('}')) indent=Math.max(0,indent-1);
+    const line=(t?('  '.repeat(indent)+t):'');
+    indent+=((t.match(/\{/g)||[]).length-(t.match(/\}/g)||[]).length);
+    return line;
+  }).join('\n');
+  ta.value=out; refreshCode(); toast('代码已格式化（2 空格缩进）');
+});
+function consoleOut(text){
+  $('#console-out').textContent=text;
+  $('#console-out').scrollTop=$('#console-out').scrollHeight;
+}
+$('#btn-run-code').addEventListener('click',()=>{
+  const st=$('#console-state');
+  if(state.consoleRunning){
+    state.consoleRunning=false;
+    st.className='tag off'; st.innerHTML='<i></i>已停止';
+    consoleOut(`[stop] 进程已终止（SIGTERM）\n[info] 累计运行 ${(Math.random()*20+5).toFixed(1)}s`);
+    toast('运行已停止');
+    return;
+  }
+  state.consoleRunning=true;
+  st.className='tag run'; st.innerHTML='<i></i>运行中';
+  const out=CODE_RUN_OUT[state.curFile]||CODE_RUN_OUT['nav_controller.js'];
+  const lines=out.split('\n');
+  consoleOut('');
+  lines.forEach((l,i)=>setTimeout(()=>{
+    if(!state.consoleRunning) return;
+    consoleOut((consoleOut.__t||'')+l+'\n');
+  },i*320));
+  consoleOut.__t='';
+  setTimeout(()=>{ if(state.consoleRunning){ state.consoleRunning=false; st.className='tag off'; st.innerHTML='<i></i>已退出(0)'; consoleOut.__t=$('#console-out').textContent; toast('进程正常退出，退出码 0'); } },lines.length*320+500);
+});
+
+/* ===== 设备 ===== */
+const DEVICES=[];
+function renderDevices(){
+  const dc=$('#dev-count'); if(dc) dc.textContent=DEVICES.length;
+  const db=$('#dev-badge'); if(db) db.textContent=DEVICES.length;
+  if(DEVICES.length===0){
+    $('#dev-grid').innerHTML='<div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:60px 20px;color:var(--txt-3)"><p style="font-size:16px;margin-bottom:12px">暂无已连接设备</p><p style="font-size:13px">点击右上角「有线连接」按钮，通过 USB / 以太网 / CAN 总线接入机器人设备</p></div>';
+    return;
+  }
+  $('#dev-grid').innerHTML=DEVICES.map(d=>`
+    <div class="dev-card ${state.selDev===d.id?'sel':''}" data-id="${d.id}">
+      <div class="dev-top">
+        <div class="dev-ic ${d.cls}"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        ${d.cls==='track'?'<rect x="4" y="8" width="16" height="8" rx="3"/><circle cx="8.5" cy="12" r="1.3"/><circle cx="15.5" cy="12" r="1.3"/><path d="M6 16v3M18 16v3M2 11v2M22 11v2" stroke-width="1.5"/>':
+        d.cls==='arm'?'<path d="M4 20h16M8 20V9l6-6h4M8 14l6-5M14 3v6"/>':
+        d.cls==='drone'?'<path d="M8 4h8l2 4H6zM6 8l-2 5h16l-2-5M12 13v4M8 17h8M9 21h6M5 8v3M19 8v3"/>':
+        '<rect x="6" y="4" width="12" height="6" rx="2"/><rect x="7" y="10" width="10" height="10" rx="2"/><path d="M10 4v16M14 4v16"/>'}</svg></div>
+        <div class="dn"><b>${d.id} · ${d.name}</b><span>${d.role} / 固件 ${d.fw}</span></div>
+        <span class="tag ${d.st}"><i></i>${d.stT}</span>
+      </div>
+      <div class="dev-rows">
+        <div class="dev-row"><div class="k">电量</div><div class="v" style="color:${d.bat<25?'var(--red)':'var(--txt)'}">${d.bat}%</div></div>
+        <div class="dev-row"><div class="k">CPU</div><div class="v">${d.cpu}%</div></div>
+        <div class="dev-row"><div class="k">温度</div><div class="v">${d.temp}°C</div></div>
+        <div class="dev-row"><div class="k">信号</div><div class="v">${d.sig} dBm</div></div>
+      </div>
+      <div class="dev-ops">
+        <button class="btn" style="padding:5px 11px" data-act="power"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v9"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>重启</button>
+        <button class="btn" style="padding:5px 11px" data-act="upd"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 9l6-6 6 6M4 21h16"/></svg>升级固件</button>
+      </div>
+    </div>`).join('');
+  $$('.dev-card').forEach(c=>c.addEventListener('click',e=>{
+    const id=c.dataset.id;
+    if(e.target.closest('[data-act]')){
+      const act=e.target.closest('[data-act]').dataset.act;
+      const dev=DEVICES.find(d=>d.id===id);
+      toast(act==='power'?`已向 ${id} 发送重启指令`:`固件升级已排队（${dev.fw} → ${dev.fw.slice(0,2)}.${+dev.fw.slice(2,3)+1}.0）`,'warn');
+      pushLog('warn',`${id} ${act==='power'?'重启指令已发送':'固件升级已排队'}`);
+      return;
+    }
+    state.selDev=id; renderDevices(); renderSidePanel();
+  }));
+}
+$('#btn-scan').addEventListener('click',()=>{ toast('正在扫描局域网…未发现新设备','warn'); setTimeout(()=>toast('扫描完成：0 台新设备'),1200); });
+$('#btn-add-dev').addEventListener('click',()=>toast('请通过「有线连接」向导接入设备，或提供设备 MAC 地址与固件包','warn'));
+
+/* ===== 右侧面板 ===== */
+function meterHtml(v,max,cls){ return `<div class="meter ${cls}"><i style="width:${Math.min(100,v/max*100)}%"></i></div>`; }
+function renderSidePanel(){
+  const body=$('#sp-body'), title=$('#sp-title');
+  const v=state.view;
+  if(v==='devices'){
+    const d=DEVICES.find(x=>x.id===state.selDev)||DEVICES[0];
+    if(!d){
+      title.textContent='选中设备';
+      body.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--txt-3)"><p style="margin-bottom:16px">暂无已连接设备</p><p style="font-size:13px">点击右上角「有线连接」通过 USB / 以太网 / CAN 接入机器人</p></div>';
+      return;
+    }
+    title.textContent=`${d.id} 遥测`;
+    const batCls=d.bat<25?'red':(d.bat<50?'amber':'green');
+    const cpuCls=d.cpu>80?'red':(d.cpu>60?'amber':'cyan');
+    body.innerHTML=`
+      <div class="mr"><span>状态</span><span class="tag ${d.st}"><i></i>${d.stT}</span></div>
+      <div class="mr"><span>电量</span><b>${d.bat}%</b></div>${meterHtml(d.bat,100,batCls)}
+      <div class="mr"><span>CPU 占用</span><b>${d.cpu}%</b></div>${meterHtml(d.cpu,100,cpuCls)}
+      <div class="mr"><span>核心温度</span><b>${d.temp}°C</b></div>${meterHtml(d.temp,85,d.temp>75?'red':'cyan')}
+      <div class="mr"><span>信号强度</span><b>${d.sig} dBm</b></div>${meterHtml(100+d.sig,70,'cyan')}
+      <div class="field"><label>固件版本</label><div class="val">${d.fw} · ${d.role}</div></div>
+      <div class="field"><label>远程指令</label>
+        ${d.movable?`<div class="dpad">
+          <button data-dir="↖"></button><button data-dir="↑">↑</button><button data-dir="↗"></button>
+          <button data-dir="←">←</button><button class="c" data-dir="STOP">●</button><button data-dir="→">→</button>
+          <button data-dir="↙"></button><button data-dir="↓">↓</button><button data-dir="↘"></button>
+        </div>`:`<div class="sim-cp"><button class="btn" data-grip="1">夹爪闭合</button><button class="btn" data-grip="0">夹爪张开</button></div>`}
+      </div>
+      <div class="field"><label>遥测流</label><label class="switch"><input type="checkbox" checked><i></i></label></div>`;
+    $$('#sp-body [data-dir]').forEach(b=>b.addEventListener('click',()=>{
+      const dir=b.dataset.dir;
+      toast(`已向 ${d.id} 发送指令：${dir==='STOP'?'急停':'移动 '+dir}`,'warn');
+      pushLog('warn',`${d.id} 遥控指令：${dir==='STOP'?'STOP':'MOVE '+dir}`);
+    }));
+    $$('#sp-body [data-grip]').forEach(b=>b.addEventListener('click',()=>{
+      toast(`夹爪${b.dataset.grip==='1'?'闭合':'张开'}指令已发送`,'warn'); pushLog('info',`${d.id} GRIP=${b.dataset.grip}`);
+    }));
+  } else if(v==='overview'){
+    title.textContent='项目信息';
+    body.innerHTML=`
+      <div class="field"><label>项目</label><div class="val">warehouse-nav-v3</div></div>
+      <div class="field"><label>分支</label><div class="val">main · 2 commits ahead</div></div>
+      <div class="field"><label>当前版本</label><div class="val">${state.deployed}</div></div>
+      <div class="mr"><span>构建进度</span><b>100%</b></div><div class="meter green"><i style="width:100%"></i></div>
+      <div class="field"><label>最近提交</label><div class="val" style="color:var(--txt-2);font-size:11.5px">feat: 增加动态避障重规划<br><span style="color:var(--txt-3)">张工 · 09:18</span></div></div>
+      <div class="field"><label>覆盖地图</label><div class="val">warehouse-a.pgm<br><span style="color:var(--txt-3);font-size:11px">84 × 56 m · 5cm 栅格</span></div></div>`;
+  } else if(v==='code'){
+    title.textContent='工作区';
+    body.innerHTML=`
+      <div class="field"><label>文件</label><div class="val">${state.curFile}</div></div>
+      <div class="mr"><span>语法检查</span><span class="tag on"><i></i>通过</span></div>
+      <div class="mr"><span>Lint 告警</span><span class="tag warn"><i></i>2</span></div>
+      <div class="field"><label>终端目标</label><div class="val" style="color:var(--txt-2)">仿真环境 sim://warehouse-a</div></div>
+      <button class="btn primary" style="justify-content:center" id="sp-deploy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>部署当前文件</button>`;
+    $('#sp-deploy').addEventListener('click',deploy);
+  } else if(v==='sim'){
+    title.textContent='仿真统计';
+    body.innerHTML=`
+      <div class="mr"><span>仿真帧率</span><b id="sp-fps">${state.sim.fps} fps</b></div>
+      <div class="mr"><span>轨迹里程</span><b id="sp-dist">${state.sim.dist.toFixed(1)} m</b></div>
+      <div class="mr"><span>路径点</span><b>${state.sim.waypoints?state.sim.waypoints.length:4}</b></div>
+      <div class="mr"><span>碰撞检测</span><span class="tag on" id="sp-avoid"><i></i>正常</span></div>
+      <div class="field"><label>障碍物</label><div class="val">3 个静态障碍</div></div>
+      <div class="field"><label>仿真模式</label><div class="val">硬件在环 (HIL)</div></div>`;
+  } else if(v==='logs'){
+    title.textContent='日志统计';
+    body.innerHTML=`
+      <div class="mr"><span>累计行数</span><b id="sp-logc">${state.logCount}</b></div>
+      <div class="mr"><span>ERROR</span><b style="color:var(--red)">${state.logCount?Math.max(1,Math.floor(state.logCount/9)):0}</b></div>
+      <div class="mr"><span>WARN</span><b style="color:var(--amber)">${state.logCount?Math.max(1,Math.floor(state.logCount/6)):0}</b></div>
+      <div class="field"><label>数据源</label><div class="val">gateway://gz-01 · ros2 bridge</div></div>
+      <div class="field"><label>缓冲</label><div class="val">内存环形缓冲 4096 行</div></div>`;
+  } else if(v==='ai'){
+    title.textContent='AI 会话';
+    const rounds=state.chat.filter(m=>m.role==='user').length;
+    body.innerHTML=`
+      <div class="mr"><span>模型</span><b>RoboForge-Dev 2.6</b></div>
+      <div class="mr"><span>上下文文件</span><b>${state.curFile}</b></div>
+      <div class="mr"><span>对话轮数</span><b>${rounds}</b></div>
+      <div class="mr"><span>上下文估算</span><b>${Math.round(state.chat.map(m=>m.text).join('').length/2)} tok</b></div>
+      <div class="field"><label>能力</label><div class="val" style="color:var(--txt-2);font-size:11.5px;line-height:1.8">代码解释 · 测试生成<br>代码审查 · 性能优化<br>报错排查 · 文档生成</div></div>
+      <div class="field"><label>数据说明</label><div class="val" style="color:var(--txt-3);font-size:11px">AI 基于当前项目上下文提供辅助建议</div></div>`;
+  } else if(v==='check'){
+    title.textContent='检测摘要';
+    const cnt=chkCount();
+    body.innerHTML=`
+      <div class="mr"><span>检测进度</span><b id="sp-chk">${cnt.pass} 通过 / ${cnt.warn} 警告 / ${cnt.fail} 失败</b></div>
+      <div class="mr"><span>总检测项</span><b>${cnt.total}</b></div>
+      <div class="mr"><span>进行中</span><b id="sp-chk-run">${cnt.run}</b></div>
+      <div class="field"><label>覆盖范围</label><div class="val" style="color:var(--txt-2);font-size:11.5px;line-height:1.8">代码质量 · 构建部署<br>设备健康 · 传感器链路<br>网络安全 · 安全合规</div></div>
+      <div class="field"><label>报告</label><div class="val" style="color:var(--txt-3);font-size:11px">检测完成后可导出 .txt 报告</div></div>`;
+  } else {
+    title.textContent='系统信息';
+    body.innerHTML=`
+      <div class="mr"><span>工作台版本</span><b>2.6.0</b></div>
+      <div class="mr"><span>SDK</span><b>@robo/sdk 4.2.1</b></div>
+      <div class="mr"><span>网关</span><b>gz-01</b></div>
+      <div class="mr"><span>运行环境</span><b>linux x64</b></div>
+      <div class="field"><label>帮助</label><div class="val" style="color:var(--txt-2)">详见《机器人开发工作台用户手册》</div></div>`;
+  }
+}
+
+/* ===== 仿真 ===== */
+const SIM_WP=[{x:130,y:330},{x:430,y:130},{x:680,y:270},{x:520,y:460},{x:130,y:330}];
+const SIM_OBST=[{x:300,y:230,w:70,h:46},{x:520,y:300,w:56,h:90},{x:230,y:440,w:90,h:34}];
+const cv=$('#sim-canvas'), ctx=cv.getContext('2d');
+function distRect(px,py,r){ return Math.hypot(Math.max(r.x-px,0,px-(r.x+r.w)),Math.max(r.y-py,0,py-(r.y+r.h))); }
+function drawSim(){
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a1018'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#131c28'; ctx.lineWidth=1;
+  for(let x=0;x<=W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<=H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  // 边界
+  ctx.strokeStyle='#243546'; ctx.lineWidth=2;
+  ctx.strokeRect(12,12,W-24,H-24);
+  // 障碍物
+  ctx.fillStyle='#1e2a3a'; ctx.strokeStyle='#2c4056'; ctx.lineWidth=1.5;
+  SIM_OBST.forEach(o=>{ ctx.beginPath(); ctx.roundRect(o.x,o.y,o.w,o.h,5); ctx.fill(); ctx.stroke(); });
+  // 路径
+  ctx.setLineDash([6,7]); ctx.strokeStyle='rgba(34,211,238,.5)'; ctx.lineWidth=2; ctx.beginPath();
+  SIM_WP.forEach((p,i)=>{ i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y); }); ctx.stroke(); ctx.setLineDash([]);
+  // 目标点（当前目标）
+  const tg=SIM_WP[state.sim.idx];
+  ctx.fillStyle='rgba(52,211,153,.16)';
+  ctx.beginPath(); ctx.arc(tg.x,tg.y,14,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#34d399'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(tg.x,tg.y,7,0,Math.PI*2); ctx.stroke();
+  ctx.strokeStyle='rgba(52,211,153,.5)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(tg.x,tg.y,16,0,Math.PI*2); ctx.stroke();
+  // 传感器扇形
+  const s=state.sim.sense;
+  ctx.fillStyle='rgba(34,211,238,.07)'; ctx.strokeStyle='rgba(34,211,238,.28)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(state.sim.x,state.sim.y); ctx.arc(state.sim.x,state.sim.y,s,state.sim.theta-0.55,state.sim.theta+0.55); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(state.sim.x,state.sim.y); ctx.arc(state.sim.x,state.sim.y,s,state.sim.theta-2.6,state.sim.theta-1.7); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(state.sim.x,state.sim.y); ctx.arc(state.sim.x,state.sim.y,s,state.sim.theta+1.7,state.sim.theta+2.6); ctx.closePath(); ctx.fill(); ctx.stroke();
+  // 机器人
+  ctx.save(); ctx.translate(state.sim.x,state.sim.y); ctx.rotate(state.sim.theta);
+  ctx.fillStyle='#22d3ee'; ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-9,-8); ctx.lineTo(-4,0); ctx.lineTo(-9,8); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#0d1219'; ctx.beginPath(); ctx.arc(0,0,3.6,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function simStep(){
+  const S=state.sim;
+  const wp=SIM_WP[S.idx], nw=SIM_WP[(S.idx+1)%SIM_WP.length];
+  const dx=wp.x-S.x, dy=wp.y-S.y, d=Math.hypot(dx,dy);
+  const step=S.speed*2.4;
+  if(d>step){
+    S.x+=dx/d*step; S.y+=dy/d*step; S.theta=Math.atan2(dy,dx);
+    S.dist+=step/28;
+  } else { S.idx=(S.idx+1)%SIM_WP.length; }
+  // 避障
+  const mind=Math.min(...SIM_OBST.map(o=>distRect(S.x,S.y,o)));
+  const avoid=$('#sim-avoid'), spA=$('#sp-avoid');
+  if(mind<28){ avoid.className='tag err'; avoid.innerHTML='<i></i>危险距离'; if(spA){spA.className='tag err';spA.innerHTML='<i></i>碰撞预警';} }
+  else if(mind<50){ avoid.className='tag warn'; avoid.innerHTML='<i></i>接近障碍物'; if(spA){spA.className='tag warn';spA.innerHTML='<i></i>接近障碍';} }
+  else { avoid.className='tag on'; avoid.innerHTML='<i></i>正常'; if(spA){spA.className='tag on';spA.innerHTML='<i></i>正常';} }
+  $('#sim-pos').textContent=`(${S.x.toFixed(0)}, ${S.y.toFixed(0)})`;
+  $('#sim-dist').textContent=S.dist.toFixed(1)+' m';
+  const sd=$('#sp-dist'); if(sd) sd.textContent=S.dist.toFixed(1)+' m';
+  const sf=$('#sp-fps'); if(sf) sf.textContent=S.fps+' fps';
+}
+let rafId=null, frameCount=0, fpsT=0;
+function simLoop(t){
+  if(!state.sim.running){ rafId=null; return; }
+  if(!state.sim.last) state.sim.last=t;
+  const dt=t-state.sim.last; state.sim.last=t;
+  if(dt>40) simStep();
+  drawSim();
+  frameCount++;
+  if(t-fpsT>500){ state.sim.fps=Math.round(frameCount*1000/(t-fpsT)); frameCount=0; fpsT=t; $('#sb-fps').textContent=state.sim.fps+' fps'; }
+  rafId=requestAnimationFrame(simLoop);
+}
+function simSetRun(run){
+  state.sim.running=run;
+  const b=$('#sim-play');
+  b.innerHTML=run?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 5v14M16 5v14"/></svg><span>暂停</span>':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg><span>开始</span>';
+  if(run&&!rafId){ state.sim.last=0; rafId=requestAnimationFrame(simLoop); }
+  pushLog('info',run?'仿真已启动':'仿真已暂停');
+}
+$('#sim-play').addEventListener('click',()=>simSetRun(!state.sim.running));
+$('#sim-reset').addEventListener('click',()=>{
+  Object.assign(state.sim,{x:130,y:330,theta:0,dist:0,idx:0,last:0});
+  drawSim(); pushLog('info','仿真环境已重置，机器人回到起点');
+  toast('仿真已重置');
+});
+$('#sim-speed').addEventListener('input',e=>{ state.sim.speed=+e.target.value; $('#sim-speed-v').textContent=e.target.value; });
+$('#sim-sense').addEventListener('input',e=>{ state.sim.sense=+e.target.value; $('#sim-sense-v').textContent=e.target.value; drawSim(); });
+$('#sim-map').addEventListener('change',e=>{ toast(`已切换地图：${e.target.value}`); pushLog('info',`仿真地图切换为 ${e.target.value}`); });
+drawSim();
+
+/* ===== 日志 ===== */
+const LOG_POOL={
+  debug:['Lidar 扫描帧 #1024：42 点','IMU 零偏校准完成 Δ=0.0031','缓存命中 87%','电机 PID 输出 [-0.12, 0.34]'],
+  info:['任务调度完成','导航路径重规划完成，新增 <span class="v">3</span> 个路径点','遥测上传批次 5s/批次 正常','网关心跳 200ms 内应答','地图坐标已同步'],
+  warn:['设备电量低于 20%，建议返回充电桩','网络延迟波动：峰值 <span class="v">28ms</span>','固件存在已知告警：避障阈值偏保守'],
+  error:['传感器节点断连重试 1/3','路径规划超时：代价计算 > 500ms'],
+};
+const SEED_LOGS=[
+  ['info','网关 gz-01 连接建立，握手耗时 84ms'],
+  ['debug','设备清单同步完成，当前无已接入设备'],
+  ['info','等待设备接入…可通过「有线连接」向导添加机器人'],
+  ['debug','系统服务启动完成，等待遥测数据'],
+];
+function pushLog(lv,msg){
+  const el=document.createElement('div');
+  el.className='log-line';
+  el.innerHTML=`<span class="ts">[${nowTs()}]</span><span class="lv ${lv==='ok'?'info':lv}">${lv==='ok'?'INFO':lv.toUpperCase()}</span><span class="msg">${msg}</span>`;
+  el.dataset.lv=lv==='ok'?'info':lv;
+  $('#log-view').appendChild(el);
+  state.logCount++;
+  const c=$('#sp-logc'); if(c) c.textContent=state.logCount;
+  applyLogFilter();
+  const lv2=$('#log-view'); if(!state.logPaused) lv2.scrollTop=lv2.scrollHeight;
+  updateLogBadge();
+}
+function applyLogFilter(){
+  const f=state.logFilter;
+  $$('#log-view .log-line').forEach(l=>{ l.style.display=(f==='all'||l.dataset.lv===f)?'':'none'; });
+}
+function updateLogBadge(){
+  const n=$$('#log-view .log-line[data-lv="error"]').length;
+  $('#log-badge').textContent=n;
+  $('#log-badge').style.display=n?'':'none';
+}
+SEED_LOGS.forEach(l=>pushLog(l[0],l[1]));
+setInterval(()=>{
+  if(state.logPaused) return;
+  const lv=['debug','debug','info','info','info','warn','error'][Math.floor(Math.random()*7)];
+  const pool=LOG_POOL[lv];
+  pushLog(lv,pool[Math.floor(Math.random()*pool.length)]);
+},3400);
+$$('#log-filters .f').forEach(f=>f.addEventListener('click',()=>{
+  $$('#log-filters .f').forEach(x=>x.classList.remove('on'));
+  f.classList.add('on'); state.logFilter=f.dataset.lv; applyLogFilter();
+}));
+$('#log-clear').addEventListener('click',()=>{ $('#log-view').innerHTML=''; state.logCount=0; const c=$('#sp-logc'); if(c)c.textContent='0'; updateLogBadge(); toast('日志已清空'); });
+$('#log-pause').addEventListener('click',()=>{
+  state.logPaused=!state.logPaused;
+  $('#log-pause span').textContent=state.logPaused?'恢复流':'暂停流';
+  toast(state.logPaused?'日志流已暂停':'日志流已恢复');
+});
+
+/* ===== 设置 ===== */
+const SET_GROUPS={
+  conn:[
+    {k:'网关地址',t:'text',def:'gz-01.internal.robo',hint:'连接网关的主机名或 IP'},
+    {k:'通信协议',t:'select',def:'MQTT v3.1.1',opts:['MQTT v3.1.1','MQTT v5','WebSocket']},
+    {k:'心跳间隔',t:'number',def:'200',hint:'单位 ms，建议 100–500'},
+  ],
+  tele:[
+    {k:'遥测采样频率',t:'select',def:'5s',opts:['1s','5s','10s']},
+    {k:'遥测自动上传',t:'switch',def:true,hint:'开启后设备数据实时同步到网关'},
+    {k:'日志自动滚动',t:'switch',def:true},
+  ],
+  pref:[
+    {k:'紧凑模式',t:'switch',def:false,hint:'减小界面间距，单屏展示更多信息'},
+    {k:'运行结束提示音',t:'switch',def:true},
+    {k:'默认部署目标',t:'select',def:'仿真环境',opts:['仿真环境','待接入设备']},
+  ],
+};
+function renderSettings(){
+  Object.entries(SET_GROUPS).forEach(([g,rows])=>{
+    const box=$('#set-'+g);
+    box.innerHTML=rows.map(r=>`
+      <div class="set-row">
+        <div class="st"><b>${r.k}</b><span>${r.hint||''}</span></div>
+        <div class="ctl">${r.t==='switch'?`<label class="switch"><input type="checkbox" data-k="${r.k}" ${r.def?'checked':''}><i></i></label>`
+        :r.t==='select'?`<select data-k="${r.k}">${r.opts.map(o=>`<option ${o===r.def?'selected':''}>${o}</option>`).join('')}</select>`
+        :`<input type="${r.t}" data-k="${r.k}" value="${r.def}" style="width:${r.t==='number'?'80px':'180px'}">`}</div>
+      </div>`).join('');
+    $$(`#set-${g} [data-k]`).forEach(inp=>{
+      if(inp.type==='checkbox') inp.addEventListener('change',()=>toast(`“${inp.dataset.k}”${inp.checked?'已开启':'已关闭'}`));
+      else inp.addEventListener('change',()=>toast(`“${inp.dataset.k}” 已更新为 ${inp.value}`));
+    });
+  });
+}
+renderSettings();
+$('#btn-save-set').addEventListener('click',()=>{ toast('设置已保存到本地配置'); pushLog('info','工作台设置已更新'); });
+
+/* ===== 时钟与内存 ===== */
+setInterval(()=>{ $('#sb-clock').textContent=new Date().toLocaleString('zh-CN',{hour12:false}); },1000);
+setInterval(()=>{ $('#sb-mem').textContent=(Math.round(150+Math.random()*70))+' MB'; },3000);
+
+/* ===== 开发辅助 AI ===== */
+state.chat=[{role:'ai',text:'你好，我是 RoboForge 开发辅助 AI。可以帮你**解释代码**、**生成单元测试**、**代码审查**、**性能优化**、**排查报错**或**生成文档**。当前上下文文件：nav_controller.js。'}];
+function renderChat(){
+  const box=$('#ai-chat');
+  box.innerHTML=state.chat.map(m=>{
+    if(m.role==='user') return `<div class="ai-msg user"><div class="who">你</div><div class="bub">${esc(m.text)}</div></div>`;
+    const parts=m.text.split(/```/);
+    let html=`<div class="ai-msg ai"><div class="who">RoboForge AI</div><div class="bub">`;
+    parts.forEach((p,i)=>{
+      if(i%2===0) html+=esc(p).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+      else html+=`<span class="cblock">${tokenize(p.replace(/^[a-z]+\n/,''))}</span>`;
+    });
+    return html+'</div></div>';
+  }).join('');
+  box.scrollTop=box.scrollHeight;
+}
+function aiTyping(on){
+  const box=$('#ai-chat');
+  if(on){ box.insertAdjacentHTML('beforeend','<div class="ai-typing" id="ai-typing"><i></i><i></i><i></i></div>'); box.scrollTop=box.scrollHeight; }
+  else { const t=$('#ai-typing'); if(t) t.remove(); }
+}
+function aiReply(q){
+  const file=state.curFile, has=kw=>q.includes(kw);
+  if(has('解释')||has('说明')||has('讲解')||has('干什么')){
+    if(file==='sensor_fusion.py') return {text:`**${file}** 实现多传感器融合，核心思路：
+
+1. **状态模型**：\`SensorFusion\` 基于卡尔曼滤波，状态向量 4 维：x、y 坐标及对应速度；
+2. **运动模型**：\`F\` 为匀速模型的状态转移矩阵，\`dt\` 为采样间隔；
+3. **观测更新**：\`update()\` 先 \`predict()\` 预测，再以 LIDAR 观测 \`z\` 做 \`update()\` 修正；
+4. **输出**：融合后的 (x, y) 与 IMU 航向角，供导航控制器使用。
+
+建议：\`kf.R\` 噪声矩阵未显式标定，默认单位阵会使滤波偏保守，可按 LIDAR 实测方差配置。`};
+    if(file==='path_planner.cpp') return {text:`**${file}** 是 A* 路径规划实现：
+
+1. **节点结构**：\`Node\` 含坐标、已耗代价 \`g\`、启发代价 \`h\` 与父节点指针；
+2. **开表策略**：优先队列按 \`g+h\` 升序弹出，保证先扩展最有希望的节点；
+3. **主循环**：从起点展开四邻域，命中目标后沿父指针回溯重建路径；
+4. **闭表**：防止节点被重复扩展。
+
+当前未实现 8 邻域与代价加权，复杂仓库场景可换 JPS 加速。`};
+    if(file==='config.yaml') return {text:`**${file}** 是部署配置文件：
+
+1. **发布目标**：\`project / branch / gateway\` 定义版本来源与连接网关；
+2. **设备清单**：\`devices\` 声明接入设备的角色与固件基线；
+3. **遥测策略**：\`telemetry\` 控制采样频率与上传开关；
+4. **安全红线**：\`safety\` 的避障距离与限速是合规项，修改后必须通过检测中心才能部署。`};
+    return {text:`**${file}** 是巡检机器人导航控制器，整体分三块：
+
+1. **配置常量 \`CONFIG\`**：限速 1.5 m/s、避障安全距离 0.35 m、路径点容差 0.12 m；
+2. **\`NavController\` 类**：构造函数注入设备 ID 并初始化 LIDAR 与电机驱动；\`plan()\` 过滤被障碍遮挡的路径点，\`blocked()\` 做点-扫描命中判定，\`step()\` 按时间步长朝目标匀速推进并更新航向；
+3. **状态模型**：\`pose\` 保存 (x, y, theta)，\`waypoints\` 为待执行队列。
+
+需要我继续讲解某个方法，或帮你补注释、加单元测试吗？`};
+  }
+  if(has('测试')||has('单测')||has('test')){
+    return {text:`已为 **${file}** 生成单元测试骨架（Mocha + Chai 风格）：
+
+\`\`\`js
+import { NavController } from './src/nav_controller.js';
+
+describe('NavController', () => {
+  const ctrl = () => new NavController('dev-001');
+
+  it('初始化后位姿为零', () => {
+    const c = ctrl();
+    expect(c.pose).to.deep.equal({ x: 0, y: 0, theta: 0 });
+  });
+
+  it('blocked() 能识别遮挡路径点', () => {
+    const c = ctrl();
+    const scan = [{ x: 0.1, y: 0.1 }, { x: 1.2, y: 0.4 }];
+    expect(c.blocked({ x: 0.2, y: 0.2 }, scan)).to.equal(true);
+    expect(c.blocked({ x: 5, y: 5 }, scan)).to.equal(false);
+  });
+
+  it('step() 朝目标匀速推进', () => {
+    const c = ctrl();
+    c.waypoints = [{ x: 10, y: 0 }];
+    const r = c.step(1.0);
+    expect(r.done).to.equal(false);
+    expect(c.pose.x).to.be.greaterThan(0);
+  });
+});
+\`\`\`
+
+覆盖初始化、避障判定与运动推进三个关键路径。需要我补边界用例（空路径、容差内到达）吗？`};
+  }
+  if(has('审查')||has('review')||has('问题')||has('检查代码')){
+    return {text:`对 **${file}** 的审查意见：
+
+1. **性能**：\`blocked()\` 对每个路径点线性遍历全部扫描点，复杂度 O(n·m)。40+ 扫描点、10+ 路径点时已可感知，建议改用网格哈希或 k-d 树；
+2. **健壮性**：\`step()\` 对 \`dt ≤ 0\` 无防护，时钟跳变可能导致越界推进，建议钳制步长上限；
+3. **语义**：\`plan()\` 过滤后 \`waypoints\` 为空时调用方得不到明确提示，建议返回状态对象而非纯数字；
+4. **一致性**：\`CONFIG.waypointTolerance\` 与 \`config.yaml\` 安全参数未联动，存在双份配置漂移风险。
+
+按严重度建议先修 2、4。需要我把问题整理成可执行的修复补丁吗？`};
+  }
+  if(has('优化')||has('性能')){
+    return {text:`**${file}** 的优化建议：
+
+1. **避障查询**：扫描点构建网格哈希表，\`blocked()\` 从 O(n) 降到 O(1) 平均；
+2. **运动解算**：\`step()\` 内 \`Math.hypot/atan2\` 每帧调用，目标固定时可预计算单位方向向量；
+3. **遥测**：5s 采样周期下建议设备端做滑动窗口平均，避免抖动数据直传；
+4. **内存**：\`waypoints\` 每次 \`plan()\` 全量重建，长路径可复用缓冲池。
+
+预估：第 1 项收益最明显，实测可把规划耗时从约 480ms 压到 120ms 以内。需要生成优化后的代码片段吗？`};
+  }
+  if(has('报错')||has('错误')||has('排查')||has('bug')||has('失败')){
+    return {text:`排查建议（结合运行日志定位）：
+
+1. **日志级别**：ERROR 集中在 \`lidar_topic\` 断连与 \`path_planner\` 超时，先区分是网络抖动还是节点崩溃；
+2. **网关链路**：检查 gz-01 的 RTT，超过 50ms 会影响导航实时性；
+3. **设备侧**：检查设备电量状态，任务下发失败优先怀疑低电量保护触发；
+4. **复现**：在仿真中重放故障时段数据，对比 \`sensor_fusion\` 输出是否发散。
+
+需要我在日志视图帮你抓取最近 5 分钟的 ERROR 明细吗？`};
+  }
+  if(has('文档')||has('README')||has('说明文档')){
+    return {text:`已为 **${file}** 生成 README 片段：
+
+\`\`\`markdown
+## nav_controller.js
+
+巡检机器人导航控制器（warehouse-nav-v3）。
+
+- 功能：路径规划过滤、障碍判定、逐帧运动推进
+- 依赖：@robo/sdk（Lidar / MotorDriver）
+- 安全参数：限速 1.5 m/s，避障距离 0.35 m
+- 使用：
+    const nav = new NavController('dev-001');
+    await nav.plan(route);
+    nav.step(dt);
+\`\`\`
+
+需要我按整个项目生成完整 README 吗？`};
+  }
+  return {text:`我理解你的问题是：**${q}**
+
+我会聚焦当前文件 **${file}** 给出建议，可以试试这些方向：
+
+1. **解释代码** — 讲清结构与方法职责；
+2. **生成单元测试** — 输出 Mocha 测试骨架；
+3. **代码审查** — 指出潜在缺陷与改进点；
+4. **性能优化** — 给出可落地的优化项；
+5. **排查报错** — 结合日志定位故障。
+
+或者直接描述你的具体场景，我再针对性回答。`};
+}
+function sendAi(q){
+  if(!q.trim()) return;
+  state.chat.push({role:'user',text:q.trim()});
+  renderChat();
+  aiTyping(true);
+  setTimeout(()=>{
+    aiTyping(false);
+    const r=aiReply(q);
+    state.chat.push({role:'ai',text:r.text});
+    renderChat();
+    pushLog('info','AI 助手响应：'+q.slice(0,18)+(q.length>18?'…':''));
+  },650+Math.random()*500);
+}
+$('#ai-send').addEventListener('click',()=>{ const t=$('#ai-input').value; $('#ai-input').value=''; sendAi(t); });
+$('#ai-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); $('#ai-send').click(); }
+  setTimeout(()=>{ e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight,120)+'px'; },0);
+});
+$$('#view-ai .chips button').forEach(b=>b.addEventListener('click',()=>sendAi(b.dataset.q)));
+$('#ai-new').addEventListener('click',()=>{
+  state.chat=[{role:'ai',text:'新会话已开始。我是 RoboForge 开发辅助 AI，当前上下文文件：'+state.curFile+'。想从哪里开始？'}];
+  renderChat(); toast('已新建 AI 会话');
+});
+$('#ai-ctx').addEventListener('click',()=>{
+  const files=Object.keys(FILES);
+  state.curFile=files[(files.indexOf(state.curFile)+1)%files.length];
+  $('#ai-ctx-txt').textContent='上下文：'+state.curFile;
+  toast('AI 上下文已切换为 '+state.curFile);
+  pushLog('info','AI 上下文切换为 '+state.curFile);
+});
+renderChat();
+
+/* ===== 检测中心 ===== */
+const CHECK_GROUPS=[
+  {name:'代码质量',ic:'<path d="M4 5h16v14H4z"/><path d="M4 9h16M9 12.5h6M9 16h4"/>',items:[
+    {n:'语法检查',t:'nav_controller.js 等 3 个文件，无语法错误',p:'pass',tm:'0.12s'},
+    {n:'Lint 风格检查',t:'2 处告警：未使用变量 imu；建议对象解构',p:'warn',tm:'0.31s'},
+    {n:'圈复杂度分析',t:'平均 2.4，最高 4（step()），低于阈值 10',p:'pass',tm:'0.22s'},
+    {n:'单元测试覆盖率',t:'12/16 通过，行覆盖率 74%，低于目标 80%',p:'warn',tm:'0.48s'},
+    {n:'依赖安全扫描',t:'npm / pip 依赖 38 项，未发现已知 CVE',p:'pass',tm:'0.65s'},
+  ]},
+  {name:'构建部署',ic:'<path d="m5 12 5 5L20 7"/>',items:[
+    {n:'编译构建',t:'js / py / cpp 3 个模块编译通过',p:'pass',tm:'1.24s'},
+    {n:'配置校验',t:'config.yaml 语法与引用均有效',p:'pass',tm:'0.18s'},
+    {n:'产物体积',t:'8.4 MB，低于上限 16 MB',p:'pass',tm:'0.09s'},
+    {n:'回滚点保留',t:'上一版本 v1.2.3 已归档，可一键回滚',p:'pass',tm:'0.05s'},
+  ]},
+  {name:'设备健康',ic:'<rect x="6" y="6" width="12" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/>',items:[
+    {n:'暂无已接入设备',t:'通过「有线连接」向导接入机器人后自动生成检测项',p:'pass',tm:'0.00s'},
+  ]},
+  {name:'传感器链路',ic:'<circle cx="5" cy="6" r="2.4"/><circle cx="19" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M7.4 6h9.2M5.8 8.3 11 15.7M18.2 8.3 13 15.7"/>',items:[
+    {n:'LIDAR 激光雷达',t:'42 点/帧 · 抖动 0.4cm · 帧率 10Hz',p:'pass',tm:'0.52s'},
+    {n:'IMU 惯性测量',t:'零偏 0.0031 rad · 温漂正常',p:'pass',tm:'0.47s'},
+    {n:'电机驱动器',t:'右轮电机温度 71°C 偏高，建议检查散热',p:'warn',tm:'0.38s'},
+    {n:'视觉相机',t:'帧率 30fps · 畸变校正正常',p:'pass',tm:'0.29s'},
+    {n:'避障响应',t:'平均响应 42ms，满足实时性要求',p:'pass',tm:'0.55s'},
+  ]},
+  {name:'网络安全',ic:'<path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M19.1 4.9l-2.8 2.8M7.7 16.3l-2.8 2.8"/><circle cx="12" cy="12" r="4"/>',items:[
+    {n:'网关连通性',t:'RTT 12ms · 丢包 0%',p:'pass',tm:'0.11s'},
+    {n:'TLS 加密链路',t:'TLS 1.3 · 证书 2026-11-12 到期',p:'pass',tm:'0.34s'},
+    {n:'端口暴露扫描',t:'仅开放 8883 / 1883，无异常端口',p:'pass',tm:'0.41s'},
+    {n:'固件签名校验',t:'固件签名 3 天后过期，请尽快更新',p:'warn',tm:'0.28s'},
+  ]},
+  {name:'安全合规',ic:'<path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',items:[
+    {n:'急停按钮链路',t:'响应 18ms · 链路导通',p:'pass',tm:'0.23s'},
+    {n:'限速配置',t:'maxSpeed=1.5 m/s，符合产线规范',p:'pass',tm:'0.08s'},
+    {n:'避障阈值',t:'obstacle_margin=0.35m ≥ 规范 0.30m',p:'pass',tm:'0.07s'},
+    {n:'电量保护策略',t:'电量低于 20% 未触发自动返航，策略失效',p:'fail',tm:'0.19s'},
+  ]},
+];
+CHECK_GROUPS.forEach(g=>g.items.forEach(it=>{ it.status='idle'; }));
+function chkCount(){
+  const all=CHECK_GROUPS.flatMap(g=>g.items);
+  return {pass:all.filter(i=>i.status==='pass').length,warn:all.filter(i=>i.status==='warn').length,fail:all.filter(i=>i.status==='fail').length,run:all.filter(i=>i.status==='run').length,total:all.length};
+}
+function renderChecks(){
+  const cnt=chkCount();
+  $('#sum-pass').textContent=cnt.pass; $('#sum-warn').textContent=cnt.warn;
+  $('#sum-fail').textContent=cnt.fail; $('#sum-run').textContent=cnt.run;
+  $('#ring-txt').textContent=cnt.total;
+  const C=2*Math.PI*50;
+  const set=(id,r,off)=>{ const el=$(id); el.style.strokeDasharray=Math.max(0,r*C)+' '+C; el.style.strokeDashoffset=off*C; };
+  set('#ring-pass',cnt.pass/cnt.total,0);
+  set('#ring-warn',cnt.warn/cnt.total,-cnt.pass/cnt.total);
+  set('#ring-fail',cnt.fail/cnt.total,-(cnt.pass+cnt.warn)/cnt.total);
+  $('#check-grid').innerHTML=CHECK_GROUPS.map(g=>`
+    <div class="chk-group">
+      <div class="cg-h"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${g.ic}</svg>${g.name}<span class="cnt">${g.items.length} 项</span></div>
+      ${g.items.map(it=>{
+        const tag=it.status==='pass'?'<span class="tag on"><i></i>通过</span>':it.status==='warn'?'<span class="tag warn"><i></i>警告</span>':it.status==='fail'?'<span class="tag err"><i></i>失败</span>':it.status==='run'?'<span class="tag run"><i></i>检测中</span>':'<span class="tag off"><i></i>待检测</span>';
+        const ic=it.status==='run'?'<svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>':it.status==='pass'?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:var(--green)"><path d="m5 12 5 5L20 7"/></svg>':it.status==='warn'?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="color:var(--amber)"><path d="M12 8v4M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg>':it.status==='fail'?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="color:var(--red)"><path d="M18 6 6 18M6 6l12 12"/></svg>':'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/></svg>';
+        return `<div class="chk-row ${it.status}">
+          <div class="chk-ic">${ic}</div>
+          <div class="chk-main"><b>${it.n}</b><span>${esc(it.t)}</span></div>
+          <span class="chk-time">${it.status==='idle'?'—':it.tm}</span>${tag}
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+  const sp=$('#sp-chk'); if(sp) sp.textContent=cnt.pass+' 通过 / '+cnt.warn+' 警告 / '+cnt.fail+' 失败';
+}
+let checkRunning=false;
+function runChecks(){
+  if(checkRunning) return;
+  checkRunning=true;
+  $('#btn-run-check').disabled=true;
+  $('#btn-reset-check').disabled=true;
+  $('#report-box').classList.remove('show');
+  const all=CHECK_GROUPS.flatMap(g=>g.items);
+  all.forEach(i=>{i.status='idle';});
+  renderChecks();
+  let acc=150;
+  all.forEach((it)=>{
+    acc+=160+Math.random()*300;
+    setTimeout(()=>{ it.status='run'; renderChecks(); },acc);
+    setTimeout(()=>{
+      it.status=it.p; renderChecks();
+      if(it.p==='fail'){ pushLog('error','检测失败：'+it.n+' — '+it.t); }
+      else if(it.p==='warn'){ pushLog('warn','检测警告：'+it.n+' — '+it.t); }
+    },acc+180+Math.random()*240);
+  });
+  setTimeout(()=>{
+    checkRunning=false;
+    $('#btn-run-check').disabled=false;
+    $('#btn-reset-check').disabled=false;
+    const cnt=chkCount();
+    toast('全量检测完成：通过 '+cnt.pass+' · 警告 '+cnt.warn+' · 失败 '+cnt.fail,cnt.fail?'warn':'ok');
+    buildReport();
+    $('#report-box').classList.add('show');
+    $('#report-box').scrollIntoView({behavior:'smooth',block:'nearest'});
+  },acc+700);
+}
+function buildReport(){
+  const cnt=chkCount();
+  const d=new Date();
+  let txt='RoboForge 全链路检测报告\n生成时间：'+d.toLocaleString('zh-CN',{hour12:false})+'\n项目：warehouse-nav-v3 · 分支 main · 网关 gz-01\n\n结果汇总：共 '+cnt.total+' 项 | 通过 '+cnt.pass+' | 警告 '+cnt.warn+' | 失败 '+cnt.fail+'\n';
+  if(cnt.run>0) txt+='进行中：'+cnt.run+' 项\n';
+  txt+='\n';
+  CHECK_GROUPS.forEach(g=>{
+    txt+='【'+g.name+'】\n';
+    g.items.forEach(it=>{
+      const st=it.status==='pass'?'通过':it.status==='warn'?'警告':it.status==='fail'?'失败':'待检';
+      txt+='  ['+st+'] '+it.n+' — '+it.t+(it.status==='idle'?'':'（'+it.tm+'）')+'\n';
+    });
+    txt+='\n';
+  });
+  txt+='失败 / 警告处理建议：\n  1. 设备电量偏低：尽快返航充电，修复低电量自动返航策略；\n  2. 固件签名即将过期：安排固件升级窗口；\n  3. 电机驱动器温度偏高：检查散热风道与负载曲线；\n  4. 单测覆盖率 74%：为 path_planner 补边界用例。\n';
+  $('#report-pre').textContent=txt;
+  return txt;
+}
+$('#btn-run-check').addEventListener('click',runChecks);
+$('#btn-reset-check').addEventListener('click',()=>{
+  CHECK_GROUPS.forEach(g=>g.items.forEach(i=>i.status='idle'));
+  $('#report-box').classList.remove('show');
+  renderChecks(); toast('检测结果已重置');
+});
+$('#btn-dl-report').addEventListener('click',()=>{
+  const txt=buildReport();
+  const blob=new Blob(['\ufeff'+txt],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='roboforge-check-report.txt';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),800);
+  toast('检测报告已下载');
+});
+$('#btn-copy-report').addEventListener('click',()=>{
+  const txt=buildReport();
+  const ta=document.createElement('textarea');
+  ta.value=txt; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); toast('报告已复制到剪贴板'); }
+  catch(e){ toast('复制失败，请使用下载按钮','err'); }
+  ta.remove();
+});
+renderChecks();
+
+/* ===== 有线连接向导 ===== */
+const WAYS={
+  usb:{label:'USB 串口',t:'选择串口端口',ports:[
+    {id:'COM3',desc:'USB-SERIAL CH340 · 115200 bps',pr:'在线'},
+    {id:'COM5',desc:'USB-CDC 虚拟串口 · 921600 bps',pr:'在线'},
+    {id:'COM7',desc:'USB-SERIAL CP2102 · 460800 bps',pr:'在线'}]},
+  eth:{label:'以太网',t:'选择网络地址',ports:[
+    {id:'192.168.1.100',desc:'RJ45 · MQTT over TLS · 端口 8883',pr:'可达'},
+    {id:'192.168.1.101',desc:'RJ45 · MQTT over TLS · 端口 8883',pr:'可达'}]},
+  can:{label:'CAN 总线',t:'选择 CAN 通道',ports:[
+    {id:'CAN0',desc:'通道 0 · 500 kbps · 120Ω 终端电阻',pr:'空闲'},
+    {id:'CAN1',desc:'通道 1 · 250 kbps',pr:'占用'}]},
+};
+const NEW_DEV={
+  usb:{id:'RB-108',name:'有线接入巡检车',cls:'track',st:'on',stT:'在线',bat:88,cpu:27,temp:39,fw:'v2.3.1',role:'patrol',sig:-45,movable:true,conn:'USB 串口 COM3'},
+  eth:{id:'AGV-19',name:'有线接入搬运车',cls:'agv',st:'on',stT:'在线',bat:74,cpu:31,temp:44,fw:'v2.2.0',role:'transport',sig:-50,movable:true,conn:'以太网 192.168.1.100'},
+  can:{id:'ARM-09',name:'有线接入机械臂',cls:'arm',st:'on',stT:'在线',bat:81,cpu:40,temp:51,fw:'v3.2.0',role:'manipulate',sig:-47,movable:false,conn:'CAN 总线 CAN0'},
+};
+state.conn={step:1,way:'usb',port:null,busy:false,added:false,target:null};
+function connReset(){
+  state.conn.step=1; state.conn.way='usb'; state.conn.port=null; state.conn.busy=false; state.conn.added=false;
+  $('#conn-step1').hidden=false; $('#conn-step2').hidden=true; $('#conn-step3').hidden=true;
+  $('#conn-back').hidden=true; $('#conn-next').hidden=false;
+  $('#conn-next').disabled=true; $('#conn-next').textContent='下一步';
+  $('#conn-cancel').textContent='取消';
+  $('#conn-tip').textContent='请确认机器人与电脑已通过线缆连接';
+  $('#conn-scan').innerHTML=''; $('#conn-log').hidden=true; $('#conn-log').textContent='';
+  $('#conn-detect').innerHTML='';
+  $$('.way-card').forEach(w=>w.classList.toggle('sel',w.dataset.way==='usb'));
+  renderConnPorts(); renderConnStepTag();
+}
+function openConn(){ $('#conn-modal').classList.add('open'); connReset(); }
+function closeConn(){ $('#conn-modal').classList.remove('open'); }
+function renderConnStepTag(){ $('#conn-step-tag').textContent='步骤 '+state.conn.step+' / 3'; }
+function renderConnPorts(){
+  const w=WAYS[state.conn.way];
+  $('#conn-port-t').textContent=w.t;
+  $('#conn-ports').innerHTML=w.ports.map(p=>`
+    <div class="port-item" data-port="${p.id}">
+      <span class="pi">${p.id}</span><span class="pd">${p.desc}</span>
+      <span class="tag ${p.pr==='占用'?'warn':'on'}"><i></i>${p.pr}</span>
+    </div>`).join('');
+  $$('#conn-ports .port-item').forEach(el=>el.addEventListener('click',()=>{
+    $$('#conn-ports .port-item').forEach(x=>x.classList.remove('sel'));
+    el.classList.add('sel');
+    state.conn.port=el.dataset.port;
+    $('#conn-next').disabled=false;
+  }));
+}
+$$('.way-card').forEach(w=>w.addEventListener('click',()=>{
+  if(state.conn.busy) return;
+  $$('.way-card').forEach(x=>x.classList.remove('sel'));
+  w.classList.add('sel');
+  state.conn.way=w.dataset.way; state.conn.port=null;
+  $('#conn-next').disabled=false;
+  renderConnPorts();
+}));
+$('#conn-next').addEventListener('click',()=>{
+  const c=state.conn;
+  if(c.step===1){
+    if(!c.way) return;
+    c.step=2;
+    $('#conn-step1').hidden=true; $('#conn-step2').hidden=false;
+    $('#conn-back').hidden=false;
+    $('#conn-next').textContent='开始连接';
+    $('#conn-next').disabled=!c.port;
+    renderConnStepTag();
+    return;
+  }
+  if(c.step===2){
+    if(!c.port) return;
+    c.step=3;
+    $('#conn-step2').hidden=true; $('#conn-step3').hidden=false;
+    $('#conn-back').hidden=true;
+    runConnScan();
+    return;
+  }
+});
+$('#conn-back').addEventListener('click',()=>{
+  if(state.conn.busy) return;
+  if(state.conn.step===3){ state.conn.step=2; $('#conn-step2').hidden=false; $('#conn-step3').hidden=true; $('#conn-next').hidden=false; $('#conn-next').textContent='开始连接'; $('#conn-next').disabled=!state.conn.port; $('#conn-back').hidden=false; renderConnStepTag(); }
+  else if(state.conn.step===2){ state.conn.step=1; $('#conn-step2').hidden=true; $('#conn-step1').hidden=false; $('#conn-next').hidden=false; $('#conn-next').textContent='下一步'; $('#conn-next').disabled=true; $('#conn-back').hidden=true; renderConnStepTag(); }
+});
+$('#conn-cancel').addEventListener('click',closeConn);
+$('#conn-x').addEventListener('click',closeConn);
+$('#btn-conn-dev').addEventListener('click',openConn);
+$('#btn-add-dev').addEventListener('click',openConn);
+function runConnScan(){
+  const c=state.conn, dev=NEW_DEV[c.way], port=c.port;
+  c.busy=true;
+  $('#conn-next').hidden=true; $('#conn-next').disabled=true;
+  $('#conn-back').hidden=true;
+  $('#conn-scan').innerHTML=[
+    `<div class="scan-line" data-s="1"><span class="s-ic"></span>正在扫描 ${port} <span class="bar"><i></i></span></div>`,
+    `<div class="scan-line" data-s="2"><span class="s-ic"></span>设备握手 · RoBoLink v2.1 <span class="bar" style="display:none"><i></i></span></div>`,
+    `<div class="scan-line" data-s="3"><span class="s-ic"></span>读取设备信息 <span class="bar" style="display:none"><i></i></span></div>`,
+  ].join('');
+  const lineIc=(n,ok)=>`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${ok?'#34d399':'#22d3ee'}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${ok?'<path d="m5 12 5 5L20 7"/>':'<path d="M21 12a9 9 0 1 1-6.2-8.6"/>'}</svg>`;
+  const lines=$$('#conn-scan .scan-line');
+  lines[0].classList.add('active');
+  setTimeout(()=>{ lines[0].classList.remove('active'); lines[0].classList.add('done'); lines[0].querySelector('.s-ic').innerHTML=lineIc(1,true); lines[0].querySelector('.bar').style.display='none'; lines[1].classList.add('active'); lines[1].querySelector('.bar').style.display='block'; },900);
+  setTimeout(()=>{ lines[1].classList.remove('active'); lines[1].classList.add('done'); lines[1].querySelector('.s-ic').innerHTML=lineIc(1,true); lines[1].querySelector('.bar').style.display='none'; lines[2].classList.add('active'); lines[2].querySelector('.bar').style.display='block'; },1800);
+  setTimeout(()=>{ lines[2].classList.remove('active'); lines[2].classList.add('done'); lines[2].querySelector('.s-ic').innerHTML=lineIc(1,true); lines[2].querySelector('.bar').style.display='none'; },2700);
+  setTimeout(()=>{
+    const lg=$('#conn-log');
+    lg.hidden=false;
+    lg.innerHTML=`<span class="c">[${nowTs()}]</span> 打开端口 ${port} ... <span class="ok">OK</span>\n<span class="c">[${nowTs()}]</span> ${c.way==='usb'?'波特率 115200':'链路'} 协商完成\n<span class="c">[${nowTs()}]</span> 设备握手：<span class="ok">响应正常</span> · 固件签名校验通过\n<span class="c">[${nowTs()}]</span> 设备信息读取完成`;
+    const ic=dev.cls==='track'?'<rect x="4" y="8" width="16" height="8" rx="3"/><circle cx="8.5" cy="12" r="1.3"/><circle cx="15.5" cy="12" r="1.3"/>':dev.cls==='arm'?'<path d="M4 20h16M8 20V9l6-6h4M8 14l6-5M14 3v6"/>':'<rect x="6" y="4" width="12" height="6" rx="2"/><rect x="7" y="10" width="10" height="10" rx="2"/><path d="M10 4v16M14 4v16"/>';
+    $('#conn-detect').innerHTML=`
+      <div class="dev-detect">
+        <div class="dd-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ic}</svg></div>
+        <div class="dd-main">
+          <b>${dev.id} · ${dev.name}</b>
+          <span class="sub">识别成功 · ${WAYS[c.way].label} ${port}</span>
+          <div class="dd-rows">
+            <div class="dd-row"><div class="k">设备类型</div><div class="v">${dev.role}</div></div>
+            <div class="dd-row"><div class="k">固件版本</div><div class="v">${dev.fw}</div></div>
+            <div class="dd-row"><div class="k">序列号</div><div class="v">SN-${dev.id.toLowerCase()}-0921</div></div>
+            <div class="dd-row"><div class="k">状态</div><div class="v" style="color:var(--green)">就绪</div></div>
+          </div>
+          <div class="conn-ops">
+            <button class="btn primary" id="conn-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.5 11 14.5 15.5 9.5"/><path d="M12 3l2 2h4a1 1 0 0 1 1 1v4l2 2-2 2v4a1 1 0 0 1-1 1h-4l-2 2-2-2H6a1 1 0 0 1-1-1v-4l-2-2 2-2V6a1 1 0 0 1 1-1h4z"/></svg>执行全套排查</button>
+            <button class="btn" id="conn-add"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>${c.added?'已添加':'添加到设备库'}</button>
+          </div>
+        </div>
+      </div>`;
+    $('#conn-add').disabled=c.added;
+    $('#conn-add').addEventListener('click',()=>{
+      if(c.added) return;
+      const nd=Object.assign({},dev);
+      nd.conn=WAYS[c.way].label+' '+port;
+      DEVICES.push(nd);
+      c.added=true;
+      $('#conn-add').disabled=true;
+      $('#conn-add').textContent='已添加';
+      $('#dev-badge').textContent=DEVICES.length;
+      $('#conn-tip').textContent='已添加至设备库，可在设备管理中查看';
+      toast(nd.id+' 已添加到设备库');
+      pushLog('info',nd.id+'（'+nd.name+'）通过'+nd.conn+'接入并添加到设备库');
+      if(state.view==='devices') renderDevices();
+    });
+    $('#conn-check').addEventListener('click',()=>{
+      state.conn.target={id:dev.id,name:dev.name,conn:WAYS[c.way].label+' '+port};
+      closeConn();
+      location.hash='#/check';
+      toast('已切换到检测中心，排查目标：'+dev.id);
+      pushLog('info','开始对 '+dev.id+' 执行全套排查');
+    });
+    c.busy=false;
+    $('#conn-next').hidden=true;
+    $('#conn-cancel').textContent='完成';
+    $('#conn-back').hidden=true;
+    renderConnStepTag();
+  },3000);
+}
+
+/* ===== 检测中心 · 排查目标联动 ===== */
+function renderCheckTarget(){
+  const t=state.conn.target;
+  $('#check-target-name').textContent=t?`${t.id} · ${t.name}（${t.conn}）`:`全部已接入设备（${DEVICES.length} 台）`;
+}
+(function patchRenderChecks(){
+  const _rc=renderChecks;
+  renderChecks=function(){ _rc(); renderCheckTarget(); };
+})();
+(function patchReport(){
+  const _br=buildReport;
+  buildReport=function(){
+    const t=state.conn.target;
+    const txt=_br();
+    if(t){
+      $('#report-pre').textContent=txt.replace('网关 gz-01\n',`网关 gz-01 · 排查目标：${t.id}（${t.conn}）\n`);
+      return $('#report-pre').textContent;
+    }
+    return txt;
+  };
+})();
+
+/* ===== 实时内部结构检测 ===== */
+const STR_BASE_PARTS=[
+  {id:'frame',name:'结构框架',x:168,y:22,w:224,h:26,params:[['应力','MPa',14,1.3,18,22],['形变','mm',0.4,0.07,0.6,0.8]]},
+  {id:'mcu',name:'主控板',x:238,y:88,w:84,h:54,params:[['温度','℃',46,3,62,72],['电压','V',3.31,0.02,3.14,3.04,-1],['时钟偏差','ppm',8,2,20,35]]},
+  {id:'bat',name:'电池组',x:64,y:212,w:120,h:64,params:[['电压','V',25.6,0.3,24.2,23.2,-1],['电芯压差','mV',18,6,60,90],['温度','℃',31,2,45,55]]},
+  {id:'cable',name:'线缆束',x:238,y:262,w:84,h:46,params:[['绝缘电阻','MΩ',820,30,300,100,-1],['连接','--',0,0,0,0]]},
+  {id:'fan',name:'散热模块',x:430,y:56,w:96,h:46,params:[['转速','rpm',2400,120,4200,5200],['风道温度','℃',29,2,45,55]]},
+  {id:'sensor',name:'传感器阵列',x:430,y:212,w:96,h:64,params:[['对位偏差','mm',0.6,0.15,1.2,2.0],['信号强度','dBm',-42,3,-60,-72,-1]]},
+];
+const STR_EXT_PARTS={
+  track:[
+    {id:'motorL',name:'履带电机 L',x:64,y:78,w:90,h:52,params:[['温度','℃',52,4,75,88],['电流','A',6.4,1,12,16]]},
+    {id:'motorR',name:'履带电机 R',x:406,y:78,w:90,h:52,params:[['温度','℃',50,4,75,88],['电流','A',6.1,1,12,16]]}],
+  agv:[
+    {id:'motorL',name:'驱动电机 L',x:64,y:78,w:90,h:52,params:[['温度','℃',48,3,72,86],['电流','A',7.2,1.2,14,18]]},
+    {id:'motorR',name:'驱动电机 R',x:406,y:78,w:90,h:52,params:[['温度','℃',47,3,72,86],['电流','A',7.0,1.2,14,18]]},
+    {id:'lift',name:'顶升机构',x:238,y:184,w:84,h:50,params:[['压力','bar',18,2,26,32],['位置','mm',0.3,0.1,2,4]]}],
+  arm:[
+    {id:'j1',name:'关节 J1',x:96,y:118,w:74,h:42,params:[['温度','℃',45,3,70,84],['间隙','mm',0.12,0.03,0.3,0.5]]},
+    {id:'j2',name:'关节 J2',x:238,y:58,w:74,h:42,params:[['温度','℃',47,3,70,84],['间隙','mm',0.10,0.03,0.3,0.5]]},
+    {id:'j3',name:'关节 J3',x:388,y:118,w:74,h:42,params:[['温度','℃',44,3,70,84],['间隙','mm',0.13,0.03,0.3,0.5]]},
+    {id:'gear',name:'谐波减速器',x:238,y:146,w:84,h:56,params:[['温度','℃',42,3,68,82],['润滑','--',0,0,0,0]]}],
+  drone:[
+    {id:'m1',name:'旋翼电机 1',x:70,y:82,w:64,h:42,params:[['温度','℃',41,3,68,82],['转速','rpm',4200,150,9000,11000]]},
+    {id:'m2',name:'旋翼电机 2',x:426,y:82,w:64,h:42,params:[['温度','℃',42,3,68,82],['转速','rpm',4100,150,9000,11000]]},
+    {id:'m3',name:'旋翼电机 3',x:70,y:222,w:64,h:42,params:[['温度','℃',40,3,68,82],['转速','rpm',4300,150,9000,11000]]},
+    {id:'m4',name:'旋翼电机 4',x:426,y:222,w:64,h:42,params:[['温度','℃',43,3,68,82],['转速','rpm',4150,150,9000,11000]]},
+    {id:'fc',name:'飞控单元',x:238,y:130,w:84,h:50,params:[['温度','℃',38,2,62,72],['IMU偏差','°/s',0.4,0.1,1.5,3]]}],
+};
+const STR_CHECK_DEF=[
+  ['结构完整性','应力应变监测 · 关键焊缝扫描'],
+  ['紧固件扭矩','48 处螺栓 · 复核扭矩'],
+  ['线缆连接与绝缘','线缆束 · 连接 / 绝缘阻值'],
+  ['电池组压差','电芯组 · 压差与温度分布'],
+  ['驱动电机温度','电机绕组 · 热保护阈值'],
+  ['关节机构间隙','关节 / 执行机构 · 间隙余量'],
+  ['传感器对位','传感器阵列 · 基准对位'],
+  ['散热风道','风扇转速 · 风道通畅'],
+];
+state.struct={dev:null,parts:[],checks:[],ev:[],t:0,timer:null,sel:'mcu',running:true,next:0};
+function strSeed(){ return Math.random()*6.28; }
+function initStructure(devId){
+  if(!devId) return;
+  const dev=DEVICES.find(d=>d.id===devId)||DEVICES[0];
+  state.struct.dev=dev.id;
+  state.struct.sel=state.struct.sel||'mcu';
+  state.struct.t=0;
+  state.struct.running=true;
+  const tmpl=STR_BASE_PARTS.concat(STR_EXT_PARTS[dev.cls]||[]);
+  state.struct.parts=tmpl.map(p=>({
+    id:p.id,name:p.name,x:p.x,y:p.y,w:p.w,h:p.h,
+    seed:strSeed(),
+    params:p.params.map(q=>({label:q[0],unit:q[1],base:q[2],amp:q[3],warn:q[4],fail:q[5],dir:q[6]||1,v:q[2],st:'ok'}))
+  }));
+  state.struct.checks=STR_CHECK_DEF.map((c,i)=>({n:c[0],d:c[1],st:i===3?'warn':'ok',dur:0,last:''}));
+  state.struct.ev=[];
+  state.struct.next=Date.now()+1500;
+  const dnm=dev.name;
+  state.struct.ev.push({t:nowTs(),lv:'ok',msg:dnm+' 内部结构自检启动，8 项检测就绪'});
+}
+function partStatus(p){
+  let worst='ok';
+  p.params.forEach(q=>{
+    if(q.st==='fail') worst='fail';
+    else if(q.st==='warn'&&worst==='ok') worst='warn';
+  });
+  return worst;
+}
+function tickStructure(){
+  const S=state.struct;
+  if(!S.running) return;
+  S.t++;
+  const t=S.t;
+  S.parts.forEach(p=>{
+    p.params.forEach(q=>{
+      if(q.fail===0&&q.warn===0){ q.v=q.base; q.st='ok'; return; }
+      let v=q.base+Math.sin(t*0.55+p.seed)*q.amp*0.6+(Math.random()-0.5)*q.amp*0.9;
+      q.v=Math.round(v*100)/100;
+      q.st=(q.dir===1?(q.v>=q.fail):(q.v<=q.fail))?'fail':((q.dir===1?(q.v>=q.warn):(q.v<=q.warn))?'warn':'ok');
+    });
+  });
+  if(S.t===1){
+    S.checks.forEach(c=>{
+      const r=Math.random();
+      c.st=r<0.05?'fail':(r<0.25?'warn':'ok');
+      c.dur=8+Math.floor(Math.random()*52);
+      c.last=nowTs();
+    });
+  } else S.checks.forEach(c=>{
+    if(Math.random()<0.42){
+      const r=Math.random();
+      c.st=r<0.06?'fail':(r<0.28?'warn':'ok');
+      c.dur=8+Math.floor(Math.random()*52);
+      c.last=nowTs();
+    }
+  });
+  if(Math.random()<0.34&&S.parts.length){
+    const p=S.parts[Math.floor(Math.random()*S.parts.length)];
+    const q=p.params[Math.floor(Math.random()*p.params.length)];
+    const st=partStatus(p);
+    S.ev.push({t:nowTs(),lv:st,msg:p.name+' '+q.label+' '+q.v+(q.unit==='--'?'':' '+q.unit)+(st==='ok'?' 正常':(st==='warn'?' 接近阈值':' 超限'))});
+    if(S.ev.length>40) S.ev=S.ev.slice(-40);
+  }
+  S.next=Date.now()+1500;
+  renderStructure();
+}
+function startStrTick(){
+  if(state.struct.timer) return;
+  state.struct.running=true;
+  state.struct.timer=setInterval(tickStructure,1500);
+}
+function stopStrTick(){
+  if(state.struct.timer){ clearInterval(state.struct.timer); state.struct.timer=null; }
+}
+function strPartSvg(p){
+  const st=partStatus(p);
+  const sel=state.struct.sel===p.id;
+  const txt=st==='ok'?'正常':(st==='warn'?'警告':'故障');
+  return '<g class="str-part'+(sel?' sel':'')+'" data-id="'+p.id+'">'
+    +'<rect class="sp-box '+st+'" x="'+p.x+'" y="'+p.y+'" width="'+p.w+'" height="'+p.h+'" rx="8"/>'
+    +'<circle class="sp-dot '+st+'" cx="'+(p.x+p.w-9)+'" cy="'+(p.y+9)+'" r="4"/>'
+    +'<text class="sp-name" x="'+(p.x+11)+'" y="'+(p.y+18)+'">'+p.name+'</text>'
+    +'<text class="sp-txt" x="'+(p.x+11)+'" y="'+(p.y+32)+'">'+txt+'</text>'
+    +'</g>';
+}
+function strLineSvg(p){
+  if(p.id==='mcu'||p.id==='frame') return '';
+  const cx=p.x+p.w/2, cy=p.y+p.h/2;
+  return '<line class="sp-line" x1="'+cx+'" y1="'+cy+'" x2="280" y2="115"/>';
+}
+function renderStructure(){
+  const S=state.struct;
+  const dev=DEVICES.find(d=>d.id===S.dev)||DEVICES[0];
+  $('#str-dev-name').textContent=dev?dev.id+' · '+dev.name:'';
+  $('#str-next').textContent='下一轮重检 '+(S.running?(Math.max(0,Math.round((S.next-Date.now())/1000))+'s 后'):'已暂停');
+  $('#str-live-txt').textContent=S.running?'暂停实时':'恢复实时';
+  const dsel=$('#str-dev');
+  const cur=dsel.value||S.dev;
+  dsel.innerHTML=DEVICES.map(d=>'<option value="'+d.id+'"'+(d.id===cur?' selected':'')+'>'+d.id+' · '+d.name+'</option>').join('');
+  dsel.value=cur;
+  $('#str-canvas').innerHTML='<svg class="str-svg" viewBox="0 0 560 340" xmlns="http://www.w3.org/2000/svg">'
+    +S.parts.map(strLineSvg).join('')
+    +S.parts.map(strPartSvg).join('')
+    +'</svg>';
+  const okN=S.parts.filter(p=>partStatus(p)==='ok').length;
+  const warnN=S.parts.filter(p=>partStatus(p)==='warn').length;
+  const failN=S.parts.filter(p=>partStatus(p)==='fail').length;
+  const health=Math.round(okN/S.parts.length*100);
+  $('#str-health').innerHTML='<div class="health-chip ok"><b>'+health+'%</b><span>结构健康度</span></div>'
+    +'<div class="health-chip ok"><b>'+okN+'</b><span>正常</span></div>'
+    +'<div class="health-chip warn"><b>'+warnN+'</b><span>警告</span></div>'
+    +'<div class="health-chip fail"><b>'+failN+'</b><span>故障</span></div>';
+  const selP=S.parts.find(p=>p.id===S.sel)||S.parts[0];
+  const order=[selP].concat(S.parts.filter(p=>p!==selP));
+  $('#str-params').innerHTML=order.map(p=>{
+    const st=partStatus(p);
+    const vals=p.params.map(q=>q.fail===0&&q.warn===0
+      ?'<span class="pv">'+q.label+' <b>正常</b></span>'
+      :'<span class="pv">'+q.label+' <b>'+q.v+'</b> <span class="p-unit">'+q.unit+'</span></span>').join('');
+    return '<div class="param-row '+(S.sel===p.id?'sel ':'')+st+'" data-id="'+p.id+'">'
+      +'<span class="p-dot" style="background:'+(st==='ok'?'var(--green)':(st==='warn'?'var(--amber)':'var(--red)'))+'"></span>'
+      +'<div class="p-main"><b>'+p.name+'</b><span>'+stTxt(st)+'</span></div>'
+      +'<div class="p-vals">'+vals+'</div></div>';
+  }).join('');
+  $$('#str-params .param-row').forEach(r=>r.addEventListener('click',()=>{ state.struct.sel=r.dataset.id; renderStructure(); }));
+  $$('#str-canvas .str-part').forEach(g=>g.addEventListener('click',()=>{ state.struct.sel=g.dataset.id; renderStructure(); }));
+  $('#str-checks').innerHTML=S.checks.map(c=>{
+    const ic=c.st==='ok'?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>'
+      :(c.st==='warn'?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round"><path d="M12 4 2.8 19h18.4z"/><path d="M12 10v4M12 16.8v.4"/></svg>'
+      :'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V13M12 16.2v.4"/></svg>');
+    return '<div class="chk-row '+c.st+'"><span class="chk-ic">'+ic+'</span>'
+      +'<span class="chk-main"><b>'+c.n+'</b><span>'+c.d+'</span></span>'
+      +'<span class="chk-time">'+(c.last?c.last+' · '+c.dur+'ms':'等待首轮')+'</span></div>';
+  }).join('');
+  const evs=S.ev.slice(-7).reverse();
+  $('#str-events').innerHTML=evs.map(e=>'<div class="ev '+e.lv+'"><span class="et">'+e.t+'</span><span>'+e.msg+'</span></div>').join('')||'<div class="ev"><span>等待事件…</span></div>';
+}
+function stTxt(st){ return st==='ok'?'状态正常':(st==='warn'?'接近阈值 / 建议检查':'超出阈值 / 需处理'); }
+$('#str-dev').addEventListener('change',e=>{ initStructure(e.target.value); renderStructure(); });
+$('#btn-str-live').addEventListener('click',()=>{
+  const S=state.struct;
+  S.running=!S.running;
+  if(S.running){ if(!S.timer) startStrTick(); }
+  $('#str-live-txt').textContent=S.running?'暂停实时':'恢复实时';
+  $('#str-next').textContent=S.running?'下一轮重检 1s 后':'已暂停';
+});
+
+/* ===== 侧栏面板（窄屏唤出） ===== */
+$('#btn-panel').addEventListener('click',()=>$('#side-panel').classList.toggle('open'));
+$('#panel-close').addEventListener('click',()=>$('#side-panel').classList.remove('open'));
+
+/* ===== 初始化 ===== */
+goView(location.hash.replace('#/','')||'overview');
+$('#sb-clock').textContent=new Date().toLocaleString('zh-CN',{hour12:false});
+</script>
+</body>
+</html>
