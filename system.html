@@ -122,6 +122,10 @@ button{font-family:inherit;cursor:pointer}
 .bc-urgent:hover{background:rgba(255,90,90,.1) !important}
 .table-wrap{overflow-x:auto;margin-top:10px}
 .users-hint{font-size:11.5px;color:var(--text-faint);margin-top:10px;font-family:var(--mono);letter-spacing:.03em;line-height:1.7}
+.cloud-warn{display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid rgba(245,180,60,.45);background:rgba(245,180,60,.08);border-radius:6px;font-size:12px;color:var(--text-soft);line-height:1.6}
+.cloud-warn .cw-ic{flex:none;width:20px;height:20px;border-radius:50%;background:rgba(245,180,60,.9);color:#0b1220;font-family:var(--mono);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
+.cloud-warn .cw-body{flex:1;min-width:0}
+.cloud-warn .cw-sub{font-size:11px;color:var(--text-faint);margin-top:3px}
 .settings-list{display:flex;flex-direction:column;margin-top:10px}
 .set-row{display:flex;align-items:center;gap:16px;padding:13px 4px;border-bottom:1px dashed rgba(103,146,196,.14)}
 .set-info{flex:1;min-width:0}
@@ -1952,6 +1956,10 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         <div class="panel hud">
           <div class="panel-title"><h3>全部用户档案</h3><span class="en">ALL USER ACCOUNTS</span></div>
           <div class="users-hint">身份管理操作即时写入全局账号库：调整权限 / 冻结 / 解冻 / 删除后，目标账号下次登录立即生效（跨账号共享）。</div>
+          <div class="cloud-warn" id="usersCloudWarn" style="display:none">
+            <div class="cw-ic">!</div>
+            <div class="cw-body"><b>云端未连接 · 当前仅显示本机缓存账号（<span id="usersCloudCnt">0</span> 个）</b><div class="cw-sub">服务器账号库仍完整保存，请检查网络后下拉刷新页面，重连云端后即可显示全部账号。</div></div>
+          </div>
           <div class="table-wrap">
             <table class="tbl users-tbl">
               <colgroup><col style="width:11%"><col style="width:22%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:14%"><col style="width:11%"><col style="width:14%"></colgroup>
@@ -2199,6 +2207,7 @@ async function initCloud(){
   }else{
     toast('warn','云端未连接','已使用本地模式（仅当前设备数据）');
   }
+  if(typeof setMode==='function')setMode(MODE);
 }
 function getAccounts(){
   if(cloudReady&&cloudCache.accounts)return cloudCache.accounts;
@@ -2528,7 +2537,7 @@ function setMode(m){
     b.classList.toggle('off',b.dataset.mode==='offline'&&b.dataset.mode===m);
   });
   const dot=document.getElementById('sysStatusDot');
-  if(m==='online'){dot.className='status-dot st-txt';dot.textContent='在线模式 · 已同步';}
+  if(m==='online'){dot.className='status-dot '+(cloudReady?'st-txt':'warn st-txt');dot.textContent=cloudReady?'在线模式 · 已同步':'在线模式 · 云端未连接';}
   else{dot.className='status-dot warn st-txt';dot.textContent='离线模式 · 本地缓存';}
   const mossDot=document.getElementById('mossStatus');
   if(mossDot){mossDot.className='status-dot '+(m==='online'?'warn':'err');mossDot.textContent=m==='online'?'量子主机在线':'量子主机离线';}
@@ -3447,6 +3456,13 @@ function renderUsers(){
   const accts=getAccounts();
   const names=Object.keys(accts);
   const total=names.length;
+  const warn=document.getElementById('usersCloudWarn');
+  if(warn){
+    const off=!CLOUD_ON||!cloudReady;
+    warn.style.display=off?'flex':'none';
+    const cc=document.getElementById('usersCloudCnt');
+    if(cc)cc.textContent=total+'';
+  }
   const lv5=names.filter(n=>clearanceOf(accts[n])==='Ⅴ').length;
   const frozen=names.filter(n=>accts[n].frozen).length;
   document.getElementById('usersTotalV').textContent=total+'';
