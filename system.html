@@ -196,6 +196,10 @@ button{font-family:inherit;cursor:pointer}
 .mig-item{padding:9px 10px;border:1px solid var(--line-strong);background:rgba(55,230,255,.04);cursor:pointer;font-family:var(--mono);font-size:12px;color:var(--text);text-align:center;transition:.15s}
 .mig-item:hover{border-color:var(--cyan);background:rgba(55,230,255,.12)}
 .mig-item.cur{border-color:var(--amber);color:var(--amber)}
+.nation-search{width:100%;box-sizing:border-box;padding:10px 12px;margin-bottom:10px;background:rgba(8,15,28,.6);border:1px solid var(--line-strong);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none}
+.nation-search:focus{border-color:var(--cyan)}
+.nation-list{grid-template-columns:repeat(3,1fr)}
+.nation-item.hide{display:none}
 .vital-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
 .vf-row{display:flex;flex-direction:column;gap:4px}
 .vf-row label{font-size:10px;color:var(--text-dim);font-family:var(--mono);letter-spacing:.05em}
@@ -1724,8 +1728,8 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
           </div>
           <div class="table-wrap">
             <table class="tbl">
-              <colgroup><col style="width:15%"><col style="width:22%"><col style="width:16%"><col style="width:14%"><col style="width:14%"><col style="width:19%"></colgroup>
-              <thead><tr><th>公民姓名</th><th>公民 ID</th><th>现居地下城</th><th>户籍状态</th><th>档案权限</th><th>户籍操作</th></tr></thead>
+              <colgroup><col style="width:12%"><col style="width:18%"><col style="width:12%"><col style="width:13%"><col style="width:12%"><col style="width:11%"><col style="width:22%"></colgroup>
+              <thead><tr><th>公民姓名</th><th>公民 ID</th><th>国籍</th><th>现居地下城</th><th>户籍状态</th><th>档案权限</th><th>户籍操作</th></tr></thead>
               <tbody id="regRows"></tbody>
             </table>
           </div>
@@ -1962,8 +1966,8 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
           </div>
           <div class="table-wrap">
             <table class="tbl users-tbl">
-              <colgroup><col style="width:11%"><col style="width:22%"><col style="width:10%"><col style="width:9%"><col style="width:9%"><col style="width:14%"><col style="width:11%"><col style="width:14%"></colgroup>
-              <thead><tr><th>姓名</th><th>公民 ID</th><th>权限</th><th>状态</th><th>管理员</th><th>地下城所在地</th><th>注册时间</th><th>操作</th></tr></thead>
+              <colgroup><col style="width:10%"><col style="width:18%"><col style="width:9%"><col style="width:8%"><col style="width:8%"><col style="width:11%"><col style="width:12%"><col style="width:10%"><col style="width:14%"></colgroup>
+              <thead><tr><th>姓名</th><th>公民 ID</th><th>权限</th><th>状态</th><th>管理员</th><th>国籍</th><th>地下城所在地</th><th>注册时间</th><th>操作</th></tr></thead>
               <tbody id="usersRows"></tbody>
             </table>
           </div>
@@ -2040,6 +2044,18 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
     <div class="mig-list" id="migList"></div>
     <div class="row">
       <button class="btn-ghost" id="migCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="nationModal">
+  <div class="modal hud">
+    <div class="panel-title" style="margin-bottom:14px"><h3>变更公民国籍</h3><span class="en">NATIONALITY CHANGE · GLOBAL</span></div>
+    <div class="mig-target" id="nationTarget">—</div>
+    <input class="nation-search" id="nationSearch" placeholder="搜索全球国家 / 地区…" autocomplete="off">
+    <div class="mig-list nation-list" id="nationList"></div>
+    <div class="row">
+      <button class="btn-ghost" id="nationCancel">取消</button>
     </div>
   </div>
 </div>
@@ -2220,13 +2236,14 @@ function saveAccounts(a){
 }
 function seedAccounts(){
   if(!localStorage.getItem(LS_ACCOUNTS)){
-    saveAccounts({'周明远':{name:'周明远',pwd:'ZMY',id:'UEG-CN-2077-0512-0288',regTime:Date.now(),clearance:'Ⅴ',admin:true,undercity:'北京地下城',vitals:Object.assign({},VITAL_PRESETS['正常'])}});
+    saveAccounts({'周明远':{name:'周明远',pwd:'ZMY',id:'UEG-CN-2077-0512-0288',regTime:Date.now(),clearance:'Ⅴ',admin:true,nation:'中国',undercity:'北京地下城',vitals:Object.assign({},VITAL_PRESETS['正常'])}});
   }else{
     const a=getAccounts();
     const z=a['周明远'];
     if(z){
       if(!z.clearance)z.clearance='Ⅴ';
       if(!z.admin)z.admin=true;
+      if(!z.nation)z.nation='中国';
       if(!z.undercity)z.undercity='北京地下城';
       saveAccounts(a);
     }
@@ -2502,7 +2519,7 @@ function finishReg(){
   if(accts[n]){err.textContent='该账号已注册，请直接登录';return}
   if(email&&Object.keys(accts).some(k=>(accts[k].email||'').toLowerCase()===email.toLowerCase())){err.textContent='该邮箱已被其他账号注册';return}
   const pwd=initialsOf(n);
-  accts[n]={name:n,pwd:pwd,email:email,id:genId(n),regTime:Date.now(),clearance:'Ⅰ'};
+  accts[n]={name:n,pwd:pwd,email:email,id:genId(n),regTime:Date.now(),clearance:'Ⅰ',nation:'中国'};
   saveAccounts(accts);
   err.textContent='';
   loginSuccess(accts[n]);
@@ -2956,10 +2973,12 @@ function renderRegistry(filter){
     return '<tr>'+
       '<td class="mono"><b>'+n+'</b>'+(isZm?' <span class="badge warn" style="margin-left:4px">最高</span>':'')+'</td>'+
       '<td class="mono" style="font-size:11px">'+u.id+'</td>'+
+      '<td class="mono" style="font-size:11px">'+nationOf(u)+'</td>'+
       '<td class="mono" style="font-size:11px">'+(u.undercity||'未分配')+'</td>'+
       '<td>'+(u.frozen?'<span class="badge err">户籍冻结</span>':'<span class="badge ok">在册</span>')+'</td>'+
       '<td class="mono">'+lv+' 级'+(u.admin?' <span class="badge warn">管理</span>':'')+'</td>'+
       '<td><div class="u-ops">'+
+        '<button class="u-op" data-reg="nation" data-n="'+n+'">改国籍</button>'+
         '<button class="u-op" data-reg="migrate" data-n="'+n+'">迁籍</button>'+
         '<button class="u-op'+(u.frozen?'':' warn')+'" data-reg="freeze" data-n="'+n+'" '+(isZm?'disabled':'')+'>'+(u.frozen?'解冻':'冻结')+'</button>'+
         '<button class="u-op danger" data-reg="del" data-n="'+n+'" '+(isZm||isMe?'disabled':'')+'>销户</button>'+
@@ -2972,6 +2991,7 @@ function renderRegistry(filter){
       const accts=getAccounts();
       const u=accts[n];
       if(!u)return;
+      if(op==='nation'){openNation(n);return}
       if(op==='migrate'){openMigrate(n);return}
       if(op==='freeze'){
         if(n==='周明远'){toast('err','无法冻结','最高管理员账号不可冻结');return}
@@ -3000,7 +3020,7 @@ document.getElementById('regBirthBtn').addEventListener('click',()=>{
   const accts=getAccounts();
   if(accts[n]){toast('err','姓名已占用','该公民已存在，请核对');return}
   if(!/^[\u4e00-\u9fa5A-Za-z·\s]{2,20}$/.test(n)){toast('err','姓名无效','需为 2-20 位中文或字母');return}
-  accts[n]={name:n,pwd:initialsOf(n),email:'',id:genId(n),regTime:Date.now(),clearance:'Ⅰ',undercity:CURRENT&&CURRENT.undercity||'未分配'};
+  accts[n]={name:n,pwd:initialsOf(n),email:'',id:genId(n),regTime:Date.now(),clearance:'Ⅰ',nation:'中国',undercity:CURRENT&&CURRENT.undercity||'未分配'};
   saveAccounts(accts);
   toast('ok','出生登记完成',n+' 已发放公民 ID · 初始密码 '+initialsOf(n));
   appendLog(['ok','ADMIN','出生登记：新增公民 '+n],0);
@@ -3483,6 +3503,7 @@ function renderUsers(){
       '<td class="mono">'+lv+' 级'+(lv==='Ⅴ'?' <span class="badge warn">最高</span>':'')+'</td>'+
       '<td>'+(u.frozen?'<span class="badge err">已冻结</span>':'<span class="badge ok">正常</span>')+'</td>'+
       '<td>'+(u.admin?'<span class="badge warn">管理员</span>':'-')+'</td>'+
+      '<td class="mono" style="font-size:11px">'+nationOf(u)+'</td>'+
       '<td class="mono" style="font-size:11px">'+city+'</td>'+
       '<td class="mono">'+(u.regTime?new Date(u.regTime).toLocaleDateString('zh-CN'):'-')+'</td>'+
       '<td><div class="u-ops">'+
@@ -3491,6 +3512,7 @@ function renderUsers(){
         '<button class="u-op'+(u.frozen?'':' warn')+'" data-op="freeze" data-n="'+n+'" '+(isZm?'disabled':'')+'>'+(u.frozen?'解冻':'冻结')+'</button>'+
         '<button class="u-op'+(u.admin?' danger':'')+'" data-op="admin" data-n="'+n+'" '+(isZm||isMe?'disabled':'')+'>'+(u.admin?'撤管理':'设管理')+'</button>'+
         '<button class="u-op" data-op="migrate" data-n="'+n+'">迁城</button>'+
+        '<button class="u-op" data-op="nation" data-n="'+n+'">国籍</button>'+
         '<button class="u-op" data-op="vitals" data-n="'+n+'">体征</button>'+
         '<button class="u-op danger" data-op="del" data-n="'+n+'" '+(isZm||isMe?'disabled':'')+'>删除</button>'+
       '</div></td></tr>';
@@ -3524,6 +3546,7 @@ function renderUsers(){
         appendLog(['warn','ADMIN','删除账号 '+n],0);
       }
       if(op==='migrate'){openMigrate(n);return}
+      if(op==='nation'){openNation(n);return}
       if(op==='vitals'){openVitals(n);return}
       saveAccounts(accts);
       renderUsers();
@@ -3533,6 +3556,17 @@ function renderUsers(){
 const migrateModal=document.getElementById('migrateModal');
 let migrateTarget=null;
 const CITY_OPTIONS=UNDERCITIES.map(c=>c.city).filter(c=>c!=='杭州地下城').concat(['未分配']);
+/* 全球国家与地区（国籍选项） */
+const NATION_OPTIONS=[
+ '中国','日本','韩国','朝鲜','蒙古','越南','老挝','柬埔寨','泰国','缅甸','马来西亚','新加坡','印度尼西亚','菲律宾','文莱','东帝汶','尼泊尔','不丹','孟加拉国','印度','巴基斯坦','斯里兰卡','马尔代夫','阿富汗','伊朗','伊拉克','土耳其','叙利亚','黎巴嫩','约旦','以色列','巴勒斯坦','沙特阿拉伯','也门','阿曼','阿联酋','卡塔尔','巴林','科威特','塞浦路斯','格鲁吉亚','亚美尼亚','阿塞拜疆','哈萨克斯坦','乌兹别克斯坦','土库曼斯坦','吉尔吉斯斯坦','塔吉克斯坦',
+ '英国','爱尔兰','法国','荷兰','比利时','卢森堡','德国','瑞士','奥地利','列支敦士登','西班牙','葡萄牙','安道尔','摩纳哥','意大利','圣马力诺','梵蒂冈','马耳他','希腊','丹麦','挪威','瑞典','芬兰','冰岛','波兰','捷克','斯洛伐克','匈牙利','罗马尼亚','保加利亚','塞尔维亚','黑山','波斯尼亚和黑塞哥维那','北马其顿','阿尔巴尼亚','克罗地亚','斯洛文尼亚','爱沙尼亚','拉脱维亚','立陶宛','白俄罗斯','乌克兰','摩尔多瓦','俄罗斯',
+ '埃及','利比亚','突尼斯','阿尔及利亚','摩洛哥','苏丹','南苏丹','埃塞俄比亚','厄立特里亚','吉布提','索马里','肯尼亚','乌干达','卢旺达','布隆迪','坦桑尼亚','刚果（金）','刚果（布）','加蓬','赤道几内亚','喀麦隆','中非共和国','乍得','尼日利亚','尼日尔','马里','布基纳法索','加纳','多哥','贝宁','科特迪瓦','利比里亚','塞拉利昂','几内亚','几内亚比绍','冈比亚','塞内加尔','毛里塔尼亚','佛得角','圣多美和普林西比','南非','纳米比亚','博茨瓦纳','津巴布韦','莫桑比克','赞比亚','马拉维','马达加斯加','科摩罗','塞舌尔','毛里求斯','安哥拉','斯威士兰','莱索托',
+ '美国','加拿大','墨西哥','危地马拉','伯利兹','洪都拉斯','萨尔瓦多','尼加拉瓜','哥斯达黎加','巴拿马','古巴','牙买加','海地','多米尼加','多米尼克','圣基茨和尼维斯','安提瓜和巴布达','圣卢西亚','圣文森特和格林纳丁斯','格林纳达','巴巴多斯','特立尼达和多巴哥','巴哈马',
+ '哥伦比亚','委内瑞拉','圭亚那','苏里南','厄瓜多尔','秘鲁','玻利维亚','巴西','巴拉圭','乌拉圭','阿根廷','智利',
+ '澳大利亚','新西兰','巴布亚新几内亚','所罗门群岛','瓦努阿图','斐济','萨摩亚','汤加','帕劳','密克罗尼西亚联邦','马绍尔群岛','瑙鲁','基里巴斯','图瓦卢',
+ '中国香港','中国澳门'
+];
+function nationOf(u){return u&&u.nation?u.nation:'中国';}
 function openMigrate(n){
   migrateTarget=n;
   const u=getAccounts()[n];
@@ -3558,6 +3592,45 @@ function openMigrate(n){
 }
 document.getElementById('migCancel').addEventListener('click',()=>migrateModal.classList.remove('on'));
 migrateModal.addEventListener('click',e=>{if(e.target===migrateModal)migrateModal.classList.remove('on')});
+
+/* ============ 国籍管理（全球国家可选） ============ */
+const nationModal=document.getElementById('nationModal');
+let nationTarget=null;
+function renderNationList(f){
+  f=(f||'').trim();
+  const list=document.getElementById('nationList');
+  list.innerHTML=NATION_OPTIONS.map(c=>{
+    const u= nationTarget?getAccounts()[nationTarget]:null;
+    const cur=u&&nationOf(u)===c;
+    return '<div class="mig-item nation-item'+(cur?' cur':'')+(f&&c.indexOf(f)<0?' hide':'')+'" data-nation="'+c+'">'+c+'</div>';
+  }).join('');
+  list.querySelectorAll('.nation-item').forEach(el=>el.addEventListener('click',()=>{
+    if(!nationTarget)return;
+    const nat=el.dataset.nation;
+    const accts=getAccounts();
+    const u=accts[nationTarget];
+    if(u){
+      u.nation=nat;
+      saveAccounts(accts);
+      toast('ok','国籍已变更',nationTarget+' → '+nat);
+      appendLog(['ok','ADMIN','变更公民国籍：'+nationTarget+' → '+nat],0);
+    }
+    nationModal.classList.remove('on');
+    renderRegistry(document.getElementById('regSearch').value);
+    renderUsers();
+  }));
+}
+function openNation(n){
+  nationTarget=n;
+  const u=getAccounts()[n];
+  document.getElementById('nationTarget').textContent='公民：'+n+'　当前国籍：'+(u?nationOf(u):'中国');
+  document.getElementById('nationSearch').value='';
+  renderNationList('');
+  nationModal.classList.add('on');
+}
+document.getElementById('nationCancel').addEventListener('click',()=>nationModal.classList.remove('on'));
+nationModal.addEventListener('click',e=>{if(e.target===nationModal)nationModal.classList.remove('on')});
+document.getElementById('nationSearch').addEventListener('input',e=>renderNationList(e.target.value));
 
 /* 生物特征档位切换 */
 const vitalsModal=document.getElementById('vitalsModal');
