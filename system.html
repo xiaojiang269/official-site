@@ -1248,6 +1248,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
             <span class="status-dot" id="vehStatusDot">编队在线</span>
           </div>
         </div>
+        <div class="scope-bar" id="vehScopeBar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 14px;border:1px solid rgba(255,185,74,.35);border-radius:6px;background:rgba(255,185,74,.06);margin-bottom:14px;font-family:var(--mono);font-size:11px;color:var(--amber)"></div>
         <div class="engine-hero">
           <div class="panel hud vital"><div class="v-label">全服车辆 · VEHICLES</div><div class="v-value" id="vehCountV">0<span class="u">辆</span></div><div class="v-trend">货运编队</div></div>
           <div class="panel hud vital"><div class="v-label">运行中 · ACTIVE</div><div class="v-value" id="vehActiveV">0<span class="u">辆</span></div><div class="v-trend up">可执行货运任务</div></div>
@@ -1282,6 +1283,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
             <span class="status-dot" id="vcStatusDot">车卡正常</span>
           </div>
         </div>
+        <div class="scope-bar" id="vcScopeBar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 14px;border:1px solid rgba(255,185,74,.35);border-radius:6px;background:rgba(255,185,74,.06);margin-bottom:14px;font-family:var(--mono);font-size:11px;color:var(--amber)"></div>
         <div class="ctl-row" style="margin-top:0;margin-bottom:12px">
           <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">管理公民
             <select id="vcOwner" style="max-width:200px"></select>
@@ -3810,32 +3812,37 @@ function vehAllTargets(){
   }
   return CURRENT&&accts[CURRENT.name]?[{name:CURRENT.name,u:accts[CURRENT.name]}]:[];
 }
+let mgmtTarget=null;
+function mgmtName(){return mgmtTarget||(CURRENT?CURRENT.name:'');}
 function fillVehOwnerSelects(){
   const opts=Object.keys(getAccounts()).map(n=>'<option value="'+n+'">'+n+'</option>').join('');
-  const vo=document.getElementById('vehOwner');
-  if(vo){
-    const keep=vo.value;
-    vo.innerHTML=opts;
-    if(!vo.dataset.inited){vo.value=CURRENT?CURRENT.name:'';vo.dataset.inited='1';}
-    else if(opts.indexOf('value="'+keep+'"')>=0)vo.value=keep;
-  }
-  const vc=document.getElementById('vcOwner');
-  if(vc){
-    const keep=vc.value;
-    vc.innerHTML=opts;
-    if(!vc.dataset.inited){vc.value=CURRENT?CURRENT.name:'';vc.dataset.inited='1';}
-    else if(opts.indexOf('value="'+keep+'"')>=0)vc.value=keep;
-  }
+  const def=mgmtName();
   ['vehOwner','vcOwner'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el&&!el.dataset.linked){el.addEventListener('change',()=>{renderVehicles();renderVehcard();});el.dataset.linked='1';}
+    if(!el)return;
+    el.innerHTML=opts;
+    if(opts.indexOf('value="'+def+'"')>=0)el.value=def;
   });
+  ['vehOwner','vcOwner'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el.dataset.linked){
+      el.addEventListener('change',()=>{
+        mgmtTarget=el.value;
+        const other=document.getElementById(id==='vehOwner'?'vcOwner':'vehOwner');
+        if(other)other.value=mgmtTarget;
+        renderVehicles();renderVehcard();
+      });
+      el.dataset.linked='1';
+    }
+  });
+  const sbV=document.getElementById('vehScopeBar');
+  if(sbV)sbV.innerHTML='<span>当前登录 · <b style="color:var(--amber)">'+(CURRENT?CURRENT.name:'—')+'</b>（管理员）</span><span>管理目标 · <b style="color:var(--cyan)">'+def+'</b>　→ 仅对其名下车辆/车卡生效</span>';
+  const sbC=document.getElementById('vcScopeBar');
+  if(sbC)sbC.innerHTML='<span>当前登录 · <b style="color:var(--amber)">'+(CURRENT?CURRENT.name:'—')+'</b>（管理员）</span><span>管理目标 · <b style="color:var(--cyan)">'+def+'</b>　→ 分级/挂失/恢复均对 '+def+' 生效</span>';
 }
 function vcTarget(){
   const accts=getAccounts();
-  const sel=document.getElementById('vcOwner');
-  const n=sel&&sel.value?sel.value:(CURRENT?CURRENT.name:'');
-  return accts[n]||null;
+  return accts[mgmtName()]||null;
 }
 function renderVehicles(){
   const tb=document.getElementById('vehRows');
@@ -3880,8 +3887,7 @@ document.getElementById('vehAddBtn').addEventListener('click',()=>{
   if(!plate){toast('warn','请填写车牌号','例如 UEG-0714');return}
   if(!model){toast('warn','请填写车型','例如 斗式运载车 I 型');return}
   const accts=getAccounts();
-  const sel=document.getElementById('vehOwner');
-  const owner=sel&&sel.value?sel.value:(CURRENT?CURRENT.name:'');
+  const owner=mgmtName();
   const u=accts[owner];
   if(!u){toast('err','公民不存在','请先选择正确的所属公民');return}
   if(!u.vehicles)u.vehicles=[];
@@ -3947,10 +3953,7 @@ function renderVehcard(){
     });
   });
 }
-function vcOwnerName(){
-  const sel=document.getElementById('vcOwner');
-  return sel&&sel.value?sel.value:(CURRENT?CURRENT.name:'');
-}
+function vcOwnerName(){return mgmtName();}
 document.getElementById('vcLostBtn').addEventListener('click',()=>{
   const accts=getAccounts();const u=vcTarget();
   if(!u){toast('err','请先选择公民','下拉选择要挂失车卡的公民');return}
