@@ -1297,7 +1297,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         <div class="panel hud">
           <div class="panel-title"><h3>驾驶员分级 · 行星级驾驶执照</h3><span class="en">PLANETARY DRIVER LICENSE · D → S</span></div>
           <div class="drivelic-options" id="vcLicOptions"></div>
-          <div class="users-hint">分级体系：D 实习驾驶员 → C 正式驾驶员 → B 高级驾驶员 → A 特级驾驶员 → S 行星级驾驶员（最高，可驾驶全地形运载车）。</div>
+          <div class="users-hint">分级体系：D 实习驾驶员 → C 初级驾驶员 → B 中级驾驶员 → A 高级驾驶员 → S 特级驾驶员（最高，可驾驶全地形运载车）。</div>
         </div>
         <div class="panel hud">
           <div class="panel-title"><h3>全服车辆停用管理</h3><span class="en">FLEET STANDBY CONTROL</span></div>
@@ -3689,6 +3689,8 @@ const OCCUPATIONS=[
  '待分配','宇航员','领航员','行星发动机工程师','空间站工程师','货运司机','战机飞行员','联合政府军人','医疗人员','科学家','数字生命研究员','数据工程师','量子主机维护员','地下城管理员','矿工','农业技术员','教师','治安官','建筑师','播音员','厨师','维修技工','气象学家'
 ];
 const DRIVER_LIC=['D 级','C 级','B 级','A 级','S 级'];
+const DRIVER_LIC_CN={'D 级':'实习驾驶员','C 级':'初级驾驶员','B 级':'中级驾驶员','A 级':'高级驾驶员','S 级':'特级驾驶员'};
+function licLabel(l){l=l||'C 级';return DRIVER_LIC_CN[l]?l+' · '+DRIVER_LIC_CN[l]:l;}
 function occupationOf(u){return u&&u.occupation?u.occupation:'待分配';}
 function isDriver(u){return occupationOf(u)==='货运司机';}
 function openMigrate(n){
@@ -3846,7 +3848,7 @@ function renderVehicles(){
   document.getElementById('vehActiveV').textContent=allVs.filter(x=>x.v.status==='启用').length+'';
   document.getElementById('vehStopV').textContent=allVs.filter(x=>x.v.status!=='启用').length+'';
   const own=vcTarget();
-  document.getElementById('vehLicV').textContent=own&&own.drivelic?own.drivelic:'C 级';
+  document.getElementById('vehLicV').textContent=licLabel(own&&own.drivelic?own.drivelic:'C 级');
   tb.innerHTML=allVs.map((x,idx)=>'<tr>'+
     '<td class="mono" style="font-size:11px"><b>'+x.owner+'</b></td>'+
     '<td class="mono"><b>'+x.v.plate+'</b></td>'+
@@ -3901,13 +3903,13 @@ function renderVehcard(){
   const vc=u.vehcard||{id:'—',status:'正常'};
   document.getElementById('vcCardIdV').textContent=vc.id;
   document.getElementById('vcStateV').textContent=vc.status;
-  document.getElementById('vcClassV').textContent=u.drivelic||'C 级';
+  document.getElementById('vcClassV').textContent=licLabel(u.drivelic);
   document.getElementById('vcFleetV').textContent=(u.vehicles||[]).length+'';
   const vcDot=document.getElementById('vcStatusDot');
   if(vcDot){vcDot.className='status-dot '+(vc.status==='正常'?'':'warn');vcDot.textContent=vc.status==='正常'?'车卡正常':'车卡'+vc.status;}
   document.getElementById('vcLicOptions').innerHTML=DRIVER_LIC.map(l=>{
     const cur=(u.drivelic||'C 级')===l;
-    return '<div class="lic-opt'+(cur?' cur':'')+'" data-lic="'+l+'">'+l+'</div>';
+    return '<div class="lic-opt'+(cur?' cur':'')+'" data-lic="'+l+'">'+licLabel(l)+'</div>';
   }).join('');
   document.querySelectorAll('#vcLicOptions .lic-opt').forEach(el=>el.addEventListener('click',()=>{
     const l=el.dataset.lic;
@@ -3916,8 +3918,8 @@ function renderVehcard(){
     if(!t)return;
     t.drivelic=l;
     saveAccounts(accts);
-    toast('ok','驾驶员分级已更新',vcOwnerName()+' → '+l+' · 行星级驾驶执照');
-    appendLog(['ok',CURRENT.name,'驾驶员分级更新：'+vcOwnerName()+' → '+l],0);
+    toast('ok','驾驶员分级已更新',vcOwnerName()+' → '+licLabel(l));
+    appendLog(['ok',CURRENT.name,'驾驶员分级更新：'+vcOwnerName()+' → '+licLabel(l)],0);
     renderVehcard();renderVehicles();
   }));
   const tb=document.getElementById('vcRows');
