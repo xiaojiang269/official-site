@@ -1243,27 +1243,30 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
       <!-- ===== 视图：车辆管理（货运司机专属） ===== -->
       <section class="view" id="view-vehicles">
         <div class="view-head">
-          <h2>车辆管理<small>VEHICLE FLEET · 运载车编队 · 货运司机专属</small></h2>
+          <h2>车辆管理<small>VEHICLE FLEET · 运载车编队 · 联合政府车辆总局</small></h2>
           <div class="head-actions">
             <span class="status-dot" id="vehStatusDot">编队在线</span>
           </div>
         </div>
         <div class="engine-hero">
-          <div class="panel hud vital"><div class="v-label">名下车辆 · VEHICLES</div><div class="v-value" id="vehCountV">0<span class="u">辆</span></div><div class="v-trend">货运编队</div></div>
+          <div class="panel hud vital"><div class="v-label">全服车辆 · VEHICLES</div><div class="v-value" id="vehCountV">0<span class="u">辆</span></div><div class="v-trend">货运编队</div></div>
           <div class="panel hud vital"><div class="v-label">运行中 · ACTIVE</div><div class="v-value" id="vehActiveV">0<span class="u">辆</span></div><div class="v-trend up">可执行货运任务</div></div>
           <div class="panel hud vital"><div class="v-label">停用 · STANDBY</div><div class="v-value" id="vehStopV">0<span class="u">辆</span></div><div class="v-trend">待检修/停运</div></div>
           <div class="panel hud vital"><div class="v-label">驾驶执照 · LICENSE</div><div class="v-value" id="vehLicV" style="font-size:clamp(15px,1.9vw,20px)">C 级</div><div class="v-trend">行星级执照体系</div></div>
         </div>
         <div class="panel hud">
-          <div class="panel-title"><h3>名下运载车 · 车辆台账</h3><span class="en">FLEET LEDGER · UEG 运载车</span></div>
+          <div class="panel-title"><h3>全服运载车 · 车辆台账</h3><span class="en">FLEET LEDGER · UEG 运载车</span></div>
           <div class="table-wrap">
             <table class="tbl">
-              <colgroup><col style="width:16%"><col style="width:26%"><col style="width:20%"><col style="width:20%"><col style="width:18%"></colgroup>
-              <thead><tr><th>车牌号</th><th>车型</th><th>车卡绑定</th><th>状态</th><th>操作</th></tr></thead>
+              <colgroup><col style="width:14%"><col style="width:14%"><col style="width:22%"><col style="width:18%"><col style="width:16%"><col style="width:16%"></colgroup>
+              <thead><tr><th>所属公民</th><th>车牌号</th><th>车型</th><th>车卡绑定</th><th>状态</th><th>操作</th></tr></thead>
               <tbody id="vehRows"></tbody>
             </table>
           </div>
           <div class="ctl-row">
+            <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">所属公民
+              <select id="vehOwner" style="max-width:140px"></select>
+            </label>
             <input id="inVehPlate" placeholder="车牌号，如 UEG-0714" style="width:170px" autocomplete="off">
             <input id="inVehModel" placeholder="车型，如 斗式运载车 I 型" style="width:200px" autocomplete="off">
             <button class="btn-primary" id="vehAddBtn">登记新车</button>
@@ -1271,13 +1274,19 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         </div>
       </section>
 
-      <!-- ===== 视图：车卡管理（货运司机专属） ===== -->
+      <!-- ===== 视图：车卡管理（管理员专属） ===== -->
       <section class="view" id="view-vehcard">
         <div class="view-head">
           <h2>车卡管理<small>VEHICLE ACCESS CARD · 车卡 · 驾驶员分级</small></h2>
           <div class="head-actions">
             <span class="status-dot" id="vcStatusDot">车卡正常</span>
           </div>
+        </div>
+        <div class="ctl-row" style="margin-top:0;margin-bottom:12px">
+          <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-dim)">管理公民
+            <select id="vcOwner" style="max-width:200px"></select>
+          </label>
+          <span style="font-size:10px;color:var(--text-faint);font-family:var(--mono)">当前显示该公民的车卡 · 分级与挂失操作均对其生效</span>
         </div>
         <div class="engine-hero">
           <div class="panel hud vital"><div class="v-label">车卡编号 · CARD ID</div><div class="v-value" id="vcCardIdV" style="font-size:clamp(13px,1.7vw,17px)">—</div><div class="v-trend">UEG 运载车车卡</div></div>
@@ -1291,18 +1300,18 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
           <div class="users-hint">分级体系：D 实习驾驶员 → C 正式驾驶员 → B 高级驾驶员 → A 特级驾驶员 → S 行星级驾驶员（最高，可驾驶全地形运载车）。</div>
         </div>
         <div class="panel hud">
-          <div class="panel-title"><h3>车辆停用管理</h3><span class="en">FLEET STANDBY CONTROL</span></div>
+          <div class="panel-title"><h3>全服车辆停用管理</h3><span class="en">FLEET STANDBY CONTROL</span></div>
           <div class="table-wrap">
             <table class="tbl">
-              <colgroup><col style="width:18%"><col style="width:28%"><col style="width:22%"><col style="width:32%"></colgroup>
-              <thead><tr><th>车牌号</th><th>车型</th><th>状态</th><th>停用/启用</th></tr></thead>
+              <colgroup><col style="width:16%"><col style="width:16%"><col style="width:26%"><col style="width:18%"><col style="width:24%"></colgroup>
+              <thead><tr><th>所属公民</th><th>车牌号</th><th>车型</th><th>状态</th><th>停用/启用</th></tr></thead>
               <tbody id="vcRows"></tbody>
             </table>
           </div>
         </div>
         <div class="ctl-row">
-          <button class="btn-ghost" id="vcLostBtn">车卡挂失</button>
-          <button class="btn-ghost" id="vcRecoverBtn">车卡恢复</button>
+          <button class="btn-ghost" id="vcLostBtn">车卡挂失（当前公民）</button>
+          <button class="btn-ghost" id="vcRecoverBtn">车卡恢复（当前公民）</button>
         </div>
       </section>
 
@@ -3792,32 +3801,59 @@ function refreshDriverNav(){
   const sep=document.querySelector('.driver-sep');
   if(sep)sep.style.display=on?'':'none';
 }
+function vehAllTargets(){
+  const accts=getAccounts();
+  if(typeof isAdmin==='function'&&isAdmin()){
+    return Object.keys(accts).filter(n=>accts[n].vehicles&&accts[n].vehicles.length).map(n=>({name:n,u:accts[n]}));
+  }
+  return CURRENT&&accts[CURRENT.name]?[{name:CURRENT.name,u:accts[CURRENT.name]}]:[];
+}
+function fillVehOwnerSelects(){
+  const opts=Object.keys(getAccounts()).map(n=>'<option value="'+n+'">'+n+'</option>').join('');
+  const vo=document.getElementById('vehOwner');
+  if(vo){vo.innerHTML=opts;if(CURRENT)vo.value=CURRENT.name;}
+  const vc=document.getElementById('vcOwner');
+  if(vc){vc.innerHTML=opts;if(CURRENT)vc.value=CURRENT.name;}
+}
+function vcTarget(){
+  const accts=getAccounts();
+  const sel=document.getElementById('vcOwner');
+  const n=sel&&sel.value?sel.value:(CURRENT?CURRENT.name:'');
+  return accts[n]||null;
+}
 function renderVehicles(){
   const tb=document.getElementById('vehRows');
   if(!tb)return;
-  const accts=getAccounts();
-  const u=CURRENT?accts[CURRENT.name]:null;
-  const vs=(u&&u.vehicles)||[];
-  document.getElementById('vehCountV').textContent=vs.length+'';
-  document.getElementById('vehActiveV').textContent=vs.filter(v=>v.status==='启用').length+'';
-  document.getElementById('vehStopV').textContent=vs.filter(v=>v.status!=='启用').length+'';
-  document.getElementById('vehLicV').textContent=u&&u.drivelic?u.drivelic:'C 级';
-  tb.innerHTML=vs.map((v,i)=>'<tr>'+
-    '<td class="mono"><b>'+v.plate+'</b></td>'+
-    '<td class="mono" style="font-size:11px">'+v.model+'</td>'+
-    '<td class="mono" style="font-size:11px">'+(u.vehcard?u.vehcard.id:'—')+'</td>'+
-    '<td>'+(v.status==='启用'?'<span class="badge ok">运行中</span>':'<span class="badge gray">停用</span>')+'</td>'+
-    '<td><div class="u-ops"><button class="u-op'+(v.status==='启用'?' warn':'')+'" data-vt="toggle" data-i="'+i+'">'+(v.status==='启用'?'停用':'启用')+'</button><button class="u-op danger" data-vt="del" data-i="'+i+'">移除</button></div></td>'+
-  '</tr>').join('')||'<tr><td colspan="5" class="empty-td">暂无登记车辆 · 请在上方登记新车</td></tr>';
+  fillVehOwnerSelects();
+  const all=vehAllTargets();
+  const allVs=[];
+  all.forEach(t=>(t.u.vehicles||[]).forEach(v=>allVs.push({owner:t.name,v:v})));
+  document.getElementById('vehCountV').textContent=allVs.length+'';
+  document.getElementById('vehActiveV').textContent=allVs.filter(x=>x.v.status==='启用').length+'';
+  document.getElementById('vehStopV').textContent=allVs.filter(x=>x.v.status!=='启用').length+'';
+  const own=vcTarget();
+  document.getElementById('vehLicV').textContent=own&&own.drivelic?own.drivelic:'C 级';
+  tb.innerHTML=allVs.map((x,idx)=>'<tr>'+
+    '<td class="mono" style="font-size:11px"><b>'+x.owner+'</b></td>'+
+    '<td class="mono"><b>'+x.v.plate+'</b></td>'+
+    '<td class="mono" style="font-size:11px">'+x.v.model+'</td>'+
+    '<td class="mono" style="font-size:11px">'+(getAccounts()[x.owner]&&getAccounts()[x.owner].vehcard?getAccounts()[x.owner].vehcard.id:'—')+'</td>'+
+    '<td>'+(x.v.status==='启用'?'<span class="badge ok">运行中</span>':'<span class="badge gray">停用</span>')+'</td>'+
+    '<td><div class="u-ops"><button class="u-op'+(x.v.status==='启用'?' warn':'')+'" data-vt="toggle" data-owner="'+x.owner+'" data-i="'+idx+'">'+(x.v.status==='启用'?'停用':'启用')+'</button><button class="u-op danger" data-vt="del" data-owner="'+x.owner+'" data-i="'+idx+'">移除</button></div></td>'+
+  '</tr>').join('')||'<tr><td colspan="6" class="empty-td">暂无登记车辆 · 请在上方登记新车（选择所属公民）</td></tr>';
   tb.querySelectorAll('.u-op').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const accts=getAccounts();
-      const u=CURRENT?accts[CURRENT.name]:null;
-      if(!u)return;
+      const owner=btn.dataset.owner;
+      const u=accts[owner];
+      if(!u||!u.vehicles)return;
       const i=+btn.dataset.i;
       if(btn.dataset.vt==='toggle')u.vehicles[i].status=u.vehicles[i].status==='启用'?'停用':'启用';
       if(btn.dataset.vt==='del')u.vehicles.splice(i,1);
       saveAccounts(accts);
+      const pl=u.vehicles[i]?u.vehicles[i].plate:'车辆已移除';
+      toast('ok','车辆状态已更新',owner+' 名下 '+pl);
+      appendLog(['ok',CURRENT.name,'车辆管理：'+owner+' → '+(btn.dataset.vt==='del'?'移除车辆':'启停车辆')],0);
       renderVehicles();renderVehcard();
     });
   });
@@ -3828,22 +3864,26 @@ document.getElementById('vehAddBtn').addEventListener('click',()=>{
   if(!plate){toast('warn','请填写车牌号','例如 UEG-0714');return}
   if(!model){toast('warn','请填写车型','例如 斗式运载车 I 型');return}
   const accts=getAccounts();
-  const u=CURRENT?accts[CURRENT.name]:null;
-  if(!u)return;
+  const sel=document.getElementById('vehOwner');
+  const owner=sel&&sel.value?sel.value:(CURRENT?CURRENT.name:'');
+  const u=accts[owner];
+  if(!u){toast('err','公民不存在','请先选择正确的所属公民');return}
   if(!u.vehicles)u.vehicles=[];
+  if(!u.vehcard)u.vehcard={id:'UEG-CARD-'+owner+'-'+((u.id||'').slice(-4)||Math.floor(1000+Math.random()*9000)),status:'正常'};
   if(u.vehicles.some(v=>v.plate===plate)){toast('err','车牌已存在','该车辆已在台账中');return}
   u.vehicles.push({plate:plate,model:model,status:'启用'});
   saveAccounts(accts);
-  toast('ok','新车已登记',plate+' · '+model+'（已绑定车卡）');
-  appendLog(['ok',CURRENT.name,'登记新车：'+plate+' '+model],0);
+  toast('ok','新车已登记',owner+' 名下 · '+plate+' '+model+'（已绑定车卡）');
+  appendLog(['ok',CURRENT.name,'登记新车：'+owner+' '+plate+' '+model],0);
   document.getElementById('inVehPlate').value='';
   document.getElementById('inVehModel').value='';
   renderVehicles();renderVehcard();
 });
 function renderVehcard(){
   const accts=getAccounts();
-  const u=CURRENT?accts[CURRENT.name]:null;
-  if(!u)return;
+  fillVehOwnerSelects();
+  const u=vcTarget();
+  if(!u){const tb=document.getElementById('vcRows');if(tb)tb.innerHTML='<tr><td colspan="5" class="empty-td">暂无公民数据</td></tr>';return;}
   const vc=u.vehcard||{id:'—',status:'正常'};
   document.getElementById('vcCardIdV').textContent=vc.id;
   document.getElementById('vcStateV').textContent=vc.status;
@@ -3858,52 +3898,61 @@ function renderVehcard(){
   document.querySelectorAll('#vcLicOptions .lic-opt').forEach(el=>el.addEventListener('click',()=>{
     const l=el.dataset.lic;
     const accts=getAccounts();
-    const u=CURRENT?accts[CURRENT.name]:null;
-    if(!u)return;
-    u.drivelic=l;
+    const t=vcTarget();
+    if(!t)return;
+    t.drivelic=l;
     saveAccounts(accts);
-    toast('ok','驾驶员分级已更新',CURRENT.name+' → '+l+' · 行星级驾驶执照');
-    appendLog(['ok',CURRENT.name,'驾驶员分级更新：'+l],0);
+    toast('ok','驾驶员分级已更新',vcOwnerName()+' → '+l+' · 行星级驾驶执照');
+    appendLog(['ok',CURRENT.name,'驾驶员分级更新：'+vcOwnerName()+' → '+l],0);
     renderVehcard();renderVehicles();
   }));
   const tb=document.getElementById('vcRows');
-  const vs=(u.vehicles)||[];
-  tb.innerHTML=vs.map((v,i)=>'<tr>'+
-    '<td class="mono"><b>'+v.plate+'</b></td>'+
-    '<td class="mono" style="font-size:11px">'+v.model+'</td>'+
-    '<td>'+(v.status==='启用'?'<span class="badge ok">运行中</span>':'<span class="badge gray">停用</span>')+'</td>'+
-    '<td><button class="u-op'+(v.status==='启用'?' warn':'')+'" data-vc="toggle" data-i="'+i+'">'+(v.status==='启用'?'停用车辆':'启用车辆')+'</button></td>'+
-  '</tr>').join('')||'<tr><td colspan="4" class="empty-td">暂无绑定车辆</td></tr>';
+  const all=vehAllTargets();
+  const rows=[];
+  all.forEach(t=>(t.u.vehicles||[]).forEach(v=>rows.push({owner:t.name,v:v})));
+  tb.innerHTML=rows.map((x)=>'<tr>'+
+    '<td class="mono" style="font-size:11px"><b>'+x.owner+'</b></td>'+
+    '<td class="mono"><b>'+x.v.plate+'</b></td>'+
+    '<td class="mono" style="font-size:11px">'+x.v.model+'</td>'+
+    '<td>'+(x.v.status==='启用'?'<span class="badge ok">运行中</span>':'<span class="badge gray">停用</span>')+'</td>'+
+    '<td><button class="u-op'+(x.v.status==='启用'?' warn':'')+'" data-vc="toggle" data-owner="'+x.owner+'" data-i="'+x.v.plate+'">'+(x.v.status==='启用'?'停用车辆':'启用车辆')+'</button></td>'+
+  '</tr>').join('')||'<tr><td colspan="5" class="empty-td">暂无绑定车辆</td></tr>';
   tb.querySelectorAll('.u-op').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const accts=getAccounts();
-      const u=CURRENT?accts[CURRENT.name]:null;
-      if(!u)return;
-      const i=+btn.dataset.i;
-      u.vehicles[i].status=u.vehicles[i].status==='启用'?'停用':'启用';
+      const owner=btn.dataset.owner;
+      const u=accts[owner];
+      if(!u||!u.vehicles)return;
+      const v=u.vehicles.find(x=>x.plate===btn.dataset.i);
+      if(v)v.status=v.status==='启用'?'停用':'启用';
       saveAccounts(accts);
+      toast('ok','车辆状态已更新',owner+' 名下 '+btn.dataset.i);
       renderVehcard();renderVehicles();
     });
   });
 }
+function vcOwnerName(){
+  const sel=document.getElementById('vcOwner');
+  return sel&&sel.value?sel.value:(CURRENT?CURRENT.name:'');
+}
 document.getElementById('vcLostBtn').addEventListener('click',()=>{
-  const accts=getAccounts();const u=CURRENT?accts[CURRENT.name]:null;
-  if(!u)return;
+  const accts=getAccounts();const u=vcTarget();
+  if(!u){toast('err','请先选择公民','下拉选择要挂失车卡的公民');return}
   u.vehcard=u.vehcard||{id:'—',status:'正常'};
   u.vehcard.status='已挂失';
   saveAccounts(accts);
-  toast('warn','车卡已挂失','车卡已失效，所有绑定车辆停用，请联系管理员补办');
-  appendLog(['warn',CURRENT.name,'车卡挂失'],0);
+  toast('warn','车卡已挂失',vcOwnerName()+' 车卡失效，绑定车辆全部停用，请联系管理员补办');
+  appendLog(['warn',CURRENT.name,'车卡挂失：'+vcOwnerName()],0);
   renderVehcard();
 });
 document.getElementById('vcRecoverBtn').addEventListener('click',()=>{
-  const accts=getAccounts();const u=CURRENT?accts[CURRENT.name]:null;
-  if(!u)return;
+  const accts=getAccounts();const u=vcTarget();
+  if(!u){toast('err','请先选择公民','下拉选择要恢复车卡的公民');return}
   u.vehcard=u.vehcard||{id:'—',status:'正常'};
   u.vehcard.status='正常';
   saveAccounts(accts);
-  toast('ok','车卡已恢复','车卡恢复有效，绑定车辆可正常启用');
-  appendLog(['ok',CURRENT.name,'车卡恢复'],0);
+  toast('ok','车卡已恢复',vcOwnerName()+' 车卡恢复有效，绑定车辆可正常启用');
+  appendLog(['ok',CURRENT.name,'车卡恢复：'+vcOwnerName()],0);
   renderVehcard();
 });
 
