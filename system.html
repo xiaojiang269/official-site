@@ -2219,7 +2219,7 @@ const views=document.querySelectorAll('.view');
 let chartsInit=false;
 function showView(name){
   if((name==='admin'||name.indexOf('adm-')===0)&&!isAdmin()){toast('err','访问被拒绝','管理员后台仅限 周明远 账号访问');return}
-  if((name==='vehicles'||name==='vehcard')&&!(CURRENT&&isDriver(CURRENT))){toast('err','访问被拒绝','车辆/车卡管理仅限货运司机账号访问');return}
+  if((name==='vehicles'||name==='vehcard')&&!(CURRENT&&typeof isAdmin==='function'&&isAdmin())){toast('err','访问被拒绝','车辆/车卡管理仅限管理员模式访问');return}
   navItems.forEach(n=>n.classList.toggle('active',n.dataset.view===name));
   views.forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
   if(name==='vitals'&&!chartsInit){initCharts();chartsInit=true;}
@@ -3757,7 +3757,7 @@ function openOccupation(n){
   document.getElementById('occList').innerHTML=OCCUPATIONS.map(c=>{
     const cur=u&&occupationOf(u)===c;
     const drv=c==='货运司机';
-    return '<div class="mig-item'+(cur?' cur':'')+'" data-occ="'+c+'">'+c+(drv?'<span style="display:block;font-size:9px;color:var(--amber);margin-top:2px">解锁车辆/车卡管理</span>':'')+'</div>';
+    return '<div class="mig-item'+(cur?' cur':'')+'" data-occ="'+c+'">'+c+(drv?'<span style="display:block;font-size:9px;color:var(--amber);margin-top:2px">管理员可管理其车辆/车卡</span>':'')+'</div>';
   }).join('');
   document.querySelectorAll('#occList .mig-item').forEach(el=>el.addEventListener('click',()=>{
     if(!occTarget)return;
@@ -3787,10 +3787,10 @@ occModal.addEventListener('click',e=>{if(e.target===occModal)occModal.classList.
 
 /* ============ 司机专属：车辆管理 / 车卡管理 ============ */
 function refreshDriverNav(){
-  const isDrv=CURRENT&&isDriver(CURRENT);
-  document.querySelectorAll('.driver-nav').forEach(b=>{b.style.display=isDrv?'':'none';});
+  const on=typeof isAdmin==='function'&&isAdmin();
+  document.querySelectorAll('.driver-nav').forEach(b=>{b.style.display=on?'':'none';});
   const sep=document.querySelector('.driver-sep');
-  if(sep)sep.style.display=isDrv?'':'none';
+  if(sep)sep.style.display=on?'':'none';
 }
 function renderVehicles(){
   const tb=document.getElementById('vehRows');
