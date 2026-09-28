@@ -138,6 +138,13 @@ button{font-family:inherit;cursor:pointer}
 .switch input:checked+.slider-sw{background:rgba(55,230,255,.32);border-color:rgba(55,230,255,.7);box-shadow:0 0 10px rgba(55,230,255,.25)}
 .switch input:checked+.slider-sw::before{transform:translateX(22px);background:#37E6FF;box-shadow:0 0 8px #37E6FF}
 .users-tbl .u-ops{display:flex;gap:5px;flex-wrap:wrap}
+.drivelic-options{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.lic-opt{padding:10px 18px;border:1px solid var(--line-strong);background:rgba(55,230,255,.04);cursor:pointer;font-family:var(--mono);font-size:13px;color:var(--text);text-align:center;transition:.15s;border-radius:4px}
+.lic-opt:hover{border-color:var(--cyan);background:rgba(55,230,255,.12)}
+.lic-opt.cur{border-color:var(--amber);color:var(--amber);background:rgba(255,185,74,.08);box-shadow:0 0 12px rgba(255,185,74,.15)}
+.empty-td{text-align:center;color:var(--text-faint);padding:22px 0 !important;font-family:var(--mono);font-size:11px}
+.ctl-row input{background:rgba(8,15,28,.6);border:1px solid var(--line-strong);border-radius:4px;color:var(--text);padding:9px 12px;font-family:var(--mono);font-size:12px;outline:none}
+.ctl-row input:focus{border-color:var(--cyan)}
 .u-op{font-family:var(--mono);font-size:10.5px;padding:3px 7px;background:transparent;border:1px solid var(--line);color:var(--text-dim);cursor:pointer;transition:all .15s;white-space:nowrap}
 .u-op:hover{color:var(--cyan);border-color:rgba(55,230,255,.5)}
 .u-op.danger:hover{color:#FF7A7A;border-color:rgba(255,90,90,.5)}
@@ -757,6 +764,15 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="10" r="6"/><path d="M8.5 15 7 21h10l-1.5-6"/><circle cx="12" cy="10" r="2"/></svg>
         行星发动机控制 <span class="n-idx">08</span>
       </button>
+      <div class="nav-sep driver-sep" style="display:none">TRANSPORT · 04</div>
+      <button class="nav-item driver-nav" data-view="vehicles" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="9" width="18" height="7" rx="1.5"/><path d="M5 16v3h3v-3M16 16v3h3v-3"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/><path d="M6 9l1.5-3h9L18 9"/></svg>
+        车辆管理 <span class="n-idx">09</span>
+      </button>
+      <button class="nav-item driver-nav" data-view="vehcard" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="12" rx="1.5"/><path d="M3 10h18"/><path d="M7 14h5"/><circle cx="16" cy="14" r="1.5"/></svg>
+        车卡管理 <span class="n-idx">10</span>
+      </button>
       <div class="nav-sep admin-sep">ADMIN · 00</div>
       <button class="nav-item admin-nav" data-view="admin">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 4 7v5c0 5 3.4 8.4 8 9 4.6-.6 8-4 8-9V7z"/><path d="M8.5 12l2.5 2.5 4.5-4.5"/></svg>
@@ -816,6 +832,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
               <div class="it"><div class="k">BIRTH PLACE · 出生地</div><div class="v">北京地下城 · B 区</div></div>
               <div class="it"><div class="k">RESIDENCE · 现居地下城</div><div class="v" data-undercity>北京地下城</div></div>
               <div class="it"><div class="k">AFFILIATION · 所属机构</div><div class="v">联合政府 · 移山计划总部</div></div>
+              <div class="it"><div class="k">OCCUPATION · 职业分配</div><div class="v" id="idOccupation" data-occupation>待分配</div></div>
               <div class="it"><div class="k">CLEARANCE · 权限等级</div><div class="v" id="idClearance">Ⅴ 级 · 最高权限</div></div>
               <div class="it"><div class="k">LIFE STATE · 生命状态</div><div class="v" id="lifeStateV" style="color:var(--green)">存活 · ACTIVE</div></div>
             </div>
@@ -1220,6 +1237,72 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
               <tr data-eid="7007"><td class="mono">NO.7007</td><td>开罗 · 尼罗一号</td><td><span class="badge ok">运行中</span></td><td class="mono">71.0%</td><td class="mono">3,402 K</td><td class="mono">2,828</td></tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- ===== 视图：车辆管理（货运司机专属） ===== -->
+      <section class="view" id="view-vehicles">
+        <div class="view-head">
+          <h2>车辆管理<small>VEHICLE FLEET · 运载车编队 · 货运司机专属</small></h2>
+          <div class="head-actions">
+            <span class="status-dot" id="vehStatusDot">编队在线</span>
+          </div>
+        </div>
+        <div class="engine-hero">
+          <div class="panel hud vital"><div class="v-label">名下车辆 · VEHICLES</div><div class="v-value" id="vehCountV">0<span class="u">辆</span></div><div class="v-trend">货运编队</div></div>
+          <div class="panel hud vital"><div class="v-label">运行中 · ACTIVE</div><div class="v-value" id="vehActiveV">0<span class="u">辆</span></div><div class="v-trend up">可执行货运任务</div></div>
+          <div class="panel hud vital"><div class="v-label">停用 · STANDBY</div><div class="v-value" id="vehStopV">0<span class="u">辆</span></div><div class="v-trend">待检修/停运</div></div>
+          <div class="panel hud vital"><div class="v-label">驾驶执照 · LICENSE</div><div class="v-value" id="vehLicV" style="font-size:clamp(15px,1.9vw,20px)">C 级</div><div class="v-trend">行星级执照体系</div></div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>名下运载车 · 车辆台账</h3><span class="en">FLEET LEDGER · UEG 运载车</span></div>
+          <div class="table-wrap">
+            <table class="tbl">
+              <colgroup><col style="width:16%"><col style="width:26%"><col style="width:20%"><col style="width:20%"><col style="width:18%"></colgroup>
+              <thead><tr><th>车牌号</th><th>车型</th><th>车卡绑定</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody id="vehRows"></tbody>
+            </table>
+          </div>
+          <div class="ctl-row">
+            <input id="inVehPlate" placeholder="车牌号，如 UEG-0714" style="width:170px" autocomplete="off">
+            <input id="inVehModel" placeholder="车型，如 斗式运载车 I 型" style="width:200px" autocomplete="off">
+            <button class="btn-primary" id="vehAddBtn">登记新车</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 视图：车卡管理（货运司机专属） ===== -->
+      <section class="view" id="view-vehcard">
+        <div class="view-head">
+          <h2>车卡管理<small>VEHICLE ACCESS CARD · 车卡 · 驾驶员分级</small></h2>
+          <div class="head-actions">
+            <span class="status-dot" id="vcStatusDot">车卡正常</span>
+          </div>
+        </div>
+        <div class="engine-hero">
+          <div class="panel hud vital"><div class="v-label">车卡编号 · CARD ID</div><div class="v-value" id="vcCardIdV" style="font-size:clamp(13px,1.7vw,17px)">—</div><div class="v-trend">UEG 运载车车卡</div></div>
+          <div class="panel hud vital"><div class="v-label">驾驶员分级 · CLASS</div><div class="v-value" id="vcClassV" style="font-size:clamp(15px,1.9vw,20px)">C 级</div><div class="v-trend">行星级执照</div></div>
+          <div class="panel hud vital"><div class="v-label">车卡状态 · STATUS</div><div class="v-value" id="vcStateV" style="font-size:clamp(14px,1.8vw,18px)">正常</div><div class="v-trend">实时同步</div></div>
+          <div class="panel hud vital"><div class="v-label">名下车辆 · FLEET</div><div class="v-value" id="vcFleetV">0<span class="u">辆</span></div><div class="v-trend">绑定车辆</div></div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>驾驶员分级 · 行星级驾驶执照</h3><span class="en">PLANETARY DRIVER LICENSE · D → S</span></div>
+          <div class="drivelic-options" id="vcLicOptions"></div>
+          <div class="users-hint">分级体系：D 实习驾驶员 → C 正式驾驶员 → B 高级驾驶员 → A 特级驾驶员 → S 行星级驾驶员（最高，可驾驶全地形运载车）。</div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>车辆停用管理</h3><span class="en">FLEET STANDBY CONTROL</span></div>
+          <div class="table-wrap">
+            <table class="tbl">
+              <colgroup><col style="width:18%"><col style="width:28%"><col style="width:22%"><col style="width:32%"></colgroup>
+              <thead><tr><th>车牌号</th><th>车型</th><th>状态</th><th>停用/启用</th></tr></thead>
+              <tbody id="vcRows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ctl-row">
+          <button class="btn-ghost" id="vcLostBtn">车卡挂失</button>
+          <button class="btn-ghost" id="vcRecoverBtn">车卡恢复</button>
         </div>
       </section>
 
@@ -2060,6 +2143,17 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
   </div>
 </div>
 
+<div class="modal-mask" id="occModal">
+  <div class="modal hud">
+    <div class="panel-title" style="margin-bottom:14px"><h3>职业分配</h3><span class="en">OCCUPATION ASSIGNMENT · 联合政府职业体系</span></div>
+    <div class="mig-target" id="occTarget">—</div>
+    <div class="mig-list" id="occList"></div>
+    <div class="row">
+      <button class="btn-ghost" id="occCancel">取消</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-mask" id="vitalsModal">
   <div class="modal hud">
     <div class="panel-title" style="margin-bottom:14px"><h3>编辑生物特征</h3><span class="en">VITAL SIGN EDITOR · 管理员模式</span></div>
@@ -2125,9 +2219,12 @@ const views=document.querySelectorAll('.view');
 let chartsInit=false;
 function showView(name){
   if((name==='admin'||name.indexOf('adm-')===0)&&!isAdmin()){toast('err','访问被拒绝','管理员后台仅限 周明远 账号访问');return}
+  if((name==='vehicles'||name==='vehcard')&&!(CURRENT&&isDriver(CURRENT))){toast('err','访问被拒绝','车辆/车卡管理仅限货运司机账号访问');return}
   navItems.forEach(n=>n.classList.toggle('active',n.dataset.view===name));
   views.forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
   if(name==='vitals'&&!chartsInit){initCharts();chartsInit=true;}
+  if(name==='vehicles')renderVehicles();
+  if(name==='vehcard')renderVehcard();
   if((name==='vitals'||name==='profile')&&CLOUD_ON){cloudGetAll().then(()=>{
     const accts=getAccounts();
     if(CURRENT&&accts[CURRENT.name]){
@@ -2136,6 +2233,8 @@ function showView(name){
       applyVitals(fresh.vitals||VITAL_PRESETS['正常']);
       applyBio(fresh.bio);
       document.querySelectorAll('[data-undercity]').forEach(el=>el.textContent=fresh.undercity||'未分配');
+      document.querySelectorAll('[data-occupation]').forEach(el=>{el.textContent=occupationOf(fresh);if(typeof isDriver==='function')el.style.color=isDriver(fresh)?'var(--amber)':'';});
+      if(typeof refreshDriverNav==='function')refreshDriverNav();
     }
   });}
   if(name==='engine'&&!engineChartInit){initEngineChart();}
@@ -2339,6 +2438,7 @@ function applyUser(u){
   document.querySelectorAll('[data-id]').forEach(el=>el.textContent='ID · '+u.id);
   document.querySelectorAll('[data-dlid]').forEach(el=>el.textContent=u.id);
   document.querySelectorAll('[data-undercity]').forEach(el=>el.textContent=u.undercity||'未分配');
+  document.querySelectorAll('[data-occupation]').forEach(el=>{el.textContent=occupationOf(u);if(typeof isDriver==='function')el.style.color=isDriver(u)?'var(--amber)':'';});
   applyVitals(u.vitals||VITAL_PRESETS['正常']);
   applyBio(u.bio);
   localStorage.setItem(LS_SESSION,u.name);
@@ -2442,6 +2542,7 @@ function loginSuccess(u){
   scanMsg.textContent='身份核验通过 · 欢迎，公民 '+u.name;
   scanMsg.style.color='#4DE0A6';
   bootId.textContent=u.id+' · CLEARANCE '+clearanceOf(u);
+  if(typeof refreshDriverNav==='function')refreshDriverNav();
 }
 function enterSystem(){
   boot.style.display='none';
@@ -2452,6 +2553,7 @@ function enterSystem(){
   renderBcHistory();
   renderUsers();
   renderSettings();
+  if(typeof refreshDriverNav==='function')refreshDriverNav();
   showView('profile');
   toast('ok','身份核验通过','公民 '+(CURRENT?CURRENT.name:'')+' · '+LV_META[clearanceOf(CURRENT)].label+' · 已进入系统');
 }
@@ -2472,6 +2574,8 @@ function doLogin(){
       applyVitals(fresh.vitals||VITAL_PRESETS['正常']);
       applyBio(fresh.bio);
       document.querySelectorAll('[data-undercity]').forEach(el=>el.textContent=fresh.undercity||'未分配');
+      document.querySelectorAll('[data-occupation]').forEach(el=>{el.textContent=occupationOf(fresh);if(typeof isDriver==='function')el.style.color=isDriver(fresh)?'var(--amber)':'';});
+      if(typeof refreshDriverNav==='function')refreshDriverNav();
       renderUsers();
     }
   });}
@@ -2979,6 +3083,7 @@ function renderRegistry(filter){
       '<td class="mono">'+lv+' 级'+(u.admin?' <span class="badge warn">管理</span>':'')+'</td>'+
       '<td><div class="u-ops">'+
         '<button class="u-op" data-reg="nation" data-n="'+n+'">改国籍</button>'+
+        '<button class="u-op" data-reg="occupation" data-n="'+n+'">职业</button>'+
         '<button class="u-op" data-reg="migrate" data-n="'+n+'">迁籍</button>'+
         '<button class="u-op'+(u.frozen?'':' warn')+'" data-reg="freeze" data-n="'+n+'" '+(isZm?'disabled':'')+'>'+(u.frozen?'解冻':'冻结')+'</button>'+
         '<button class="u-op danger" data-reg="del" data-n="'+n+'" '+(isZm||isMe?'disabled':'')+'>销户</button>'+
@@ -2992,6 +3097,7 @@ function renderRegistry(filter){
       const u=accts[n];
       if(!u)return;
       if(op==='nation'){openNation(n);return}
+      if(op==='occupation'){openOccupation(n);return}
       if(op==='migrate'){openMigrate(n);return}
       if(op==='freeze'){
         if(n==='周明远'){toast('err','无法冻结','最高管理员账号不可冻结');return}
@@ -3513,6 +3619,7 @@ function renderUsers(){
         '<button class="u-op'+(u.admin?' danger':'')+'" data-op="admin" data-n="'+n+'" '+(isZm||isMe?'disabled':'')+'>'+(u.admin?'撤管理':'设管理')+'</button>'+
         '<button class="u-op" data-op="migrate" data-n="'+n+'">迁城</button>'+
         '<button class="u-op" data-op="nation" data-n="'+n+'">国籍</button>'+
+        '<button class="u-op" data-op="occupation" data-n="'+n+'">职业</button>'+
         '<button class="u-op" data-op="vitals" data-n="'+n+'">体征</button>'+
         '<button class="u-op danger" data-op="del" data-n="'+n+'" '+(isZm||isMe?'disabled':'')+'>删除</button>'+
       '</div></td></tr>';
@@ -3547,6 +3654,7 @@ function renderUsers(){
       }
       if(op==='migrate'){openMigrate(n);return}
       if(op==='nation'){openNation(n);return}
+      if(op==='occupation'){openOccupation(n);return}
       if(op==='vitals'){openVitals(n);return}
       saveAccounts(accts);
       renderUsers();
@@ -3567,6 +3675,13 @@ const NATION_OPTIONS=[
  '中国香港','中国澳门'
 ];
 function nationOf(u){return u&&u.nation?u.nation:'中国';}
+/* 职业体系（严格按《流浪地球2》联合政府职业设定） */
+const OCCUPATIONS=[
+ '待分配','宇航员','领航员','行星发动机工程师','空间站工程师','货运司机','战机飞行员','联合政府军人','医疗人员','科学家','数字生命研究员','数据工程师','量子主机维护员','地下城管理员','矿工','农业技术员','教师','治安官','建筑师','播音员','厨师','维修技工','气象学家'
+];
+const DRIVER_LIC=['D 级','C 级','B 级','A 级','S 级'];
+function occupationOf(u){return u&&u.occupation?u.occupation:'待分配';}
+function isDriver(u){return occupationOf(u)==='货运司机';}
 function openMigrate(n){
   migrateTarget=n;
   const u=getAccounts()[n];
@@ -3631,6 +3746,166 @@ function openNation(n){
 document.getElementById('nationCancel').addEventListener('click',()=>nationModal.classList.remove('on'));
 nationModal.addEventListener('click',e=>{if(e.target===nationModal)nationModal.classList.remove('on')});
 document.getElementById('nationSearch').addEventListener('input',e=>renderNationList(e.target.value));
+
+/* ============ 职业分配（电影职业体系） ============ */
+const occModal=document.getElementById('occModal');
+let occTarget=null;
+function openOccupation(n){
+  occTarget=n;
+  const u=getAccounts()[n];
+  document.getElementById('occTarget').textContent='公民：'+n+'　当前职业：'+(u?occupationOf(u):'待分配');
+  document.getElementById('occList').innerHTML=OCCUPATIONS.map(c=>{
+    const cur=u&&occupationOf(u)===c;
+    const drv=c==='货运司机';
+    return '<div class="mig-item'+(cur?' cur':'')+'" data-occ="'+c+'">'+c+(drv?'<span style="display:block;font-size:9px;color:var(--amber);margin-top:2px">解锁车辆/车卡管理</span>':'')+'</div>';
+  }).join('');
+  document.querySelectorAll('#occList .mig-item').forEach(el=>el.addEventListener('click',()=>{
+    if(!occTarget)return;
+    const occ=el.dataset.occ;
+    const accts=getAccounts();
+    const u=accts[occTarget];
+    if(u){
+      u.occupation=occ;
+      if(occ==='货运司机'){
+        if(!u.drivelic)u.drivelic='C 级';
+        if(!u.vehicles)u.vehicles=[];
+        if(!u.vehcard)u.vehcard={id:'UEG-CARD-'+String(occTarget).padStart(4,'0')+'-'+genId(occTarget).slice(-4),status:'正常'};
+      }
+      saveAccounts(accts);
+      toast('ok','职业已分配',occTarget+' → '+occ+(occ==='货运司机'?'（已解锁车辆/车卡管理）':''));
+      appendLog(['ok','ADMIN','职业分配：'+occTarget+' → '+occ],0);
+    }
+    occModal.classList.remove('on');
+    renderRegistry(document.getElementById('regSearch').value);
+    renderUsers();
+    if(CURRENT&&CURRENT.name===occTarget)refreshDriverNav();
+  }));
+  occModal.classList.add('on');
+}
+document.getElementById('occCancel').addEventListener('click',()=>occModal.classList.remove('on'));
+occModal.addEventListener('click',e=>{if(e.target===occModal)occModal.classList.remove('on')});
+
+/* ============ 司机专属：车辆管理 / 车卡管理 ============ */
+function refreshDriverNav(){
+  const isDrv=CURRENT&&isDriver(CURRENT);
+  document.querySelectorAll('.driver-nav').forEach(b=>{b.style.display=isDrv?'':'none';});
+  const sep=document.querySelector('.driver-sep');
+  if(sep)sep.style.display=isDrv?'':'none';
+}
+function renderVehicles(){
+  const tb=document.getElementById('vehRows');
+  if(!tb)return;
+  const accts=getAccounts();
+  const u=CURRENT?accts[CURRENT.name]:null;
+  const vs=(u&&u.vehicles)||[];
+  document.getElementById('vehCountV').textContent=vs.length+'';
+  document.getElementById('vehActiveV').textContent=vs.filter(v=>v.status==='启用').length+'';
+  document.getElementById('vehStopV').textContent=vs.filter(v=>v.status!=='启用').length+'';
+  document.getElementById('vehLicV').textContent=u&&u.drivelic?u.drivelic:'C 级';
+  tb.innerHTML=vs.map((v,i)=>'<tr>'+
+    '<td class="mono"><b>'+v.plate+'</b></td>'+
+    '<td class="mono" style="font-size:11px">'+v.model+'</td>'+
+    '<td class="mono" style="font-size:11px">'+(u.vehcard?u.vehcard.id:'—')+'</td>'+
+    '<td>'+(v.status==='启用'?'<span class="badge ok">运行中</span>':'<span class="badge gray">停用</span>')+'</td>'+
+    '<td><div class="u-ops"><button class="u-op'+(v.status==='启用'?' warn':'')+'" data-vt="toggle" data-i="'+i+'">'+(v.status==='启用'?'停用':'启用')+'</button><button class="u-op danger" data-vt="del" data-i="'+i+'">移除</button></div></td>'+
+  '</tr>').join('')||'<tr><td colspan="5" class="empty-td">暂无登记车辆 · 请在上方登记新车</td></tr>';
+  tb.querySelectorAll('.u-op').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const accts=getAccounts();
+      const u=CURRENT?accts[CURRENT.name]:null;
+      if(!u)return;
+      const i=+btn.dataset.i;
+      if(btn.dataset.vt==='toggle')u.vehicles[i].status=u.vehicles[i].status==='启用'?'停用':'启用';
+      if(btn.dataset.vt==='del')u.vehicles.splice(i,1);
+      saveAccounts(accts);
+      renderVehicles();renderVehcard();
+    });
+  });
+}
+document.getElementById('vehAddBtn').addEventListener('click',()=>{
+  const plate=document.getElementById('inVehPlate').value.trim();
+  const model=document.getElementById('inVehModel').value.trim();
+  if(!plate){toast('warn','请填写车牌号','例如 UEG-0714');return}
+  if(!model){toast('warn','请填写车型','例如 斗式运载车 I 型');return}
+  const accts=getAccounts();
+  const u=CURRENT?accts[CURRENT.name]:null;
+  if(!u)return;
+  if(!u.vehicles)u.vehicles=[];
+  if(u.vehicles.some(v=>v.plate===plate)){toast('err','车牌已存在','该车辆已在台账中');return}
+  u.vehicles.push({plate:plate,model:model,status:'启用'});
+  saveAccounts(accts);
+  toast('ok','新车已登记',plate+' · '+model+'（已绑定车卡）');
+  appendLog(['ok',CURRENT.name,'登记新车：'+plate+' '+model],0);
+  document.getElementById('inVehPlate').value='';
+  document.getElementById('inVehModel').value='';
+  renderVehicles();renderVehcard();
+});
+function renderVehcard(){
+  const accts=getAccounts();
+  const u=CURRENT?accts[CURRENT.name]:null;
+  if(!u)return;
+  const vc=u.vehcard||{id:'—',status:'正常'};
+  document.getElementById('vcCardIdV').textContent=vc.id;
+  document.getElementById('vcStateV').textContent=vc.status;
+  document.getElementById('vcClassV').textContent=u.drivelic||'C 级';
+  document.getElementById('vcFleetV').textContent=(u.vehicles||[]).length+'';
+  const vcDot=document.getElementById('vcStatusDot');
+  if(vcDot){vcDot.className='status-dot '+(vc.status==='正常'?'':'warn');vcDot.textContent=vc.status==='正常'?'车卡正常':'车卡'+vc.status;}
+  document.getElementById('vcLicOptions').innerHTML=DRIVER_LIC.map(l=>{
+    const cur=(u.drivelic||'C 级')===l;
+    return '<div class="lic-opt'+(cur?' cur':'')+'" data-lic="'+l+'">'+l+'</div>';
+  }).join('');
+  document.querySelectorAll('#vcLicOptions .lic-opt').forEach(el=>el.addEventListener('click',()=>{
+    const l=el.dataset.lic;
+    const accts=getAccounts();
+    const u=CURRENT?accts[CURRENT.name]:null;
+    if(!u)return;
+    u.drivelic=l;
+    saveAccounts(accts);
+    toast('ok','驾驶员分级已更新',CURRENT.name+' → '+l+' · 行星级驾驶执照');
+    appendLog(['ok',CURRENT.name,'驾驶员分级更新：'+l],0);
+    renderVehcard();renderVehicles();
+  }));
+  const tb=document.getElementById('vcRows');
+  const vs=(u.vehicles)||[];
+  tb.innerHTML=vs.map((v,i)=>'<tr>'+
+    '<td class="mono"><b>'+v.plate+'</b></td>'+
+    '<td class="mono" style="font-size:11px">'+v.model+'</td>'+
+    '<td>'+(v.status==='启用'?'<span class="badge ok">运行中</span>':'<span class="badge gray">停用</span>')+'</td>'+
+    '<td><button class="u-op'+(v.status==='启用'?' warn':'')+'" data-vc="toggle" data-i="'+i+'">'+(v.status==='启用'?'停用车辆':'启用车辆')+'</button></td>'+
+  '</tr>').join('')||'<tr><td colspan="4" class="empty-td">暂无绑定车辆</td></tr>';
+  tb.querySelectorAll('.u-op').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const accts=getAccounts();
+      const u=CURRENT?accts[CURRENT.name]:null;
+      if(!u)return;
+      const i=+btn.dataset.i;
+      u.vehicles[i].status=u.vehicles[i].status==='启用'?'停用':'启用';
+      saveAccounts(accts);
+      renderVehcard();renderVehicles();
+    });
+  });
+}
+document.getElementById('vcLostBtn').addEventListener('click',()=>{
+  const accts=getAccounts();const u=CURRENT?accts[CURRENT.name]:null;
+  if(!u)return;
+  u.vehcard=u.vehcard||{id:'—',status:'正常'};
+  u.vehcard.status='已挂失';
+  saveAccounts(accts);
+  toast('warn','车卡已挂失','车卡已失效，所有绑定车辆停用，请联系管理员补办');
+  appendLog(['warn',CURRENT.name,'车卡挂失'],0);
+  renderVehcard();
+});
+document.getElementById('vcRecoverBtn').addEventListener('click',()=>{
+  const accts=getAccounts();const u=CURRENT?accts[CURRENT.name]:null;
+  if(!u)return;
+  u.vehcard=u.vehcard||{id:'—',status:'正常'};
+  u.vehcard.status='正常';
+  saveAccounts(accts);
+  toast('ok','车卡已恢复','车卡恢复有效，绑定车辆可正常启用');
+  appendLog(['ok',CURRENT.name,'车卡恢复'],0);
+  renderVehcard();
+});
 
 /* 生物特征档位切换 */
 const vitalsModal=document.getElementById('vitalsModal');
