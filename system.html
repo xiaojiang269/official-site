@@ -512,6 +512,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
 .occ-card:hover{border-color:rgba(55,230,255,.45)}
 .occ-card p{font-size:12px;color:rgba(220,240,255,.72);margin:8px 0 0;line-height:1.65}
 .occ-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.occ-card-priv{margin-top:7px;font-size:11px;color:var(--amber);font-family:var(--mono);letter-spacing:.03em;border-left:2px solid rgba(255,185,74,.6);padding-left:8px;line-height:1.5}
 .occ-mine-flag{border-color:rgba(255,185,74,.55);background:linear-gradient(135deg,rgba(255,185,74,.08),rgba(20,30,60,.4))}
 .occ-mine-row{display:flex;flex-direction:column;gap:6px;padding:10px 2px}
 .occ-mine-name{font-size:20px;font-weight:700;color:var(--cyan);font-family:var(--mono)}
@@ -1376,7 +1377,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         <div class="panel hud">
           <div class="panel-title"><h3>全职业体系 · 共 24 项</h3><span class="en">UEG OCCUPATION DIRECTORY</span></div>
           <div class="occ-grid" id="occGrid"></div>
-          <div class="users-hint">职业由联合政府统一分配。部分职业附带专属权限：货运司机可进入「驾驶员查看」，地下城管理员可参与地下城治理等。如有疑问请联系管理员。</div>
+          <div class="users-hint">职业由联合政府统一分配，每个职业均配有专属特权。其中货运司机可进入「驾驶员查看」，地下城管理员可参与地下城治理等。如有疑问请联系管理员。</div>
         </div>
       </section>
 
@@ -3793,7 +3794,31 @@ const OCC_DESC={
  '维修技工':'负责各类机械设备与公共设施的日常检修。',
  '气象学家':'负责全球气象与大气环境监测，为航线提供数据支撑。'
 };
-const OCC_SPECIAL={'货运司机':'驾驶员查看','地下城管理员':'地下城管理','宇航员':'航天任务档案','量子主机维护员':'MOSS 维护通道','领航员':'航线数据'};
+const OCC_SPECIAL={
+ '待分配':'完成职业分配后解锁专属特权',
+ '宇航员':'航天任务档案 · 空间站通行',
+ '领航员':'航线数据 · 导航调度',
+ '行星发动机工程师':'发动机检修面板 · 推力调校',
+ '空间站工程师':'空间站运维终端',
+ '货运司机':'驾驶员查看（车辆/车卡台账）',
+ '战机飞行员':'空域警戒台 · 防卫任务',
+ '联合政府军人':'防卫任务通道 · 警戒情报',
+ '医疗人员':'医疗急救通道 · 健康档案',
+ '科学家':'科研数据舱 · 实验档案',
+ '数字生命研究员':'数字生命档案柜',
+ '数据工程师':'数据中心控制台 · 云端运维',
+ '量子主机维护员':'MOSS 维护通道 · 量子主机',
+ '地下城管理员':'地下城管理 · 户籍与资源',
+ '矿工':'资源开采调度 · 矿区台账',
+ '农业技术员':'生态循环面板 · 粮食数据',
+ '教师':'教育系统 · 教学档案',
+ '治安官':'治安执法记录 · 巡逻调度',
+ '建筑师':'基建蓝图库 · 建设工单',
+ '播音员':'广播发布通道 · 信息传达',
+ '厨师':'后勤配给清单 · 餐饮调度',
+ '维修技工':'设备检修工单 · 故障上报',
+ '气象学家':'气象预警数据 · 大气监测'
+};
 function renderOccupations(){
   const accts=getAccounts();
   const u=CURRENT?accts[CURRENT.name]:null;
@@ -3819,8 +3844,8 @@ function renderOccupations(){
     return '<div class="occ-card'+(mineFlag?' occ-mine-flag':'')+'">'+
       '<div class="occ-card-top"><b>'+o+'</b>'+
       (mineFlag?'<span class="badge warn">我的职业</span>':'')+
-      (sp?'<span class="badge">'+sp+'</span>':'')+
       '</div>'+
+      '<div class="occ-card-priv">专属特权 · '+(OCC_SPECIAL[o]||'—')+'</div>'+
       '<p>'+(OCC_DESC[o]||'—')+'</p>'+
     '</div>';
   }).join('');
