@@ -507,6 +507,16 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
 .engine-ignite{width:100%;justify-content:center;margin-top:16px;padding:12px;font-size:14px;color:var(--amber);border-color:rgba(255,185,74,.5);background:linear-gradient(135deg, rgba(255,185,74,.14), rgba(255,90,110,.08))}
 .engine-ignite:hover{background:linear-gradient(135deg, rgba(255,185,74,.26), rgba(255,90,110,.14));box-shadow:0 0 22px rgba(255,185,74,.25)}
 .engine-ignite:disabled{opacity:.45;cursor:not-allowed}
+.occ-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
+.occ-card{border:1px solid rgba(55,230,255,.18);border-radius:6px;padding:12px 14px;background:linear-gradient(135deg,rgba(55,230,255,.05),rgba(20,30,60,.35));transition:border-color .2s}
+.occ-card:hover{border-color:rgba(55,230,255,.45)}
+.occ-card p{font-size:12px;color:rgba(220,240,255,.72);margin:8px 0 0;line-height:1.65}
+.occ-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.occ-mine-flag{border-color:rgba(255,185,74,.55);background:linear-gradient(135deg,rgba(255,185,74,.08),rgba(20,30,60,.4))}
+.occ-mine-row{display:flex;flex-direction:column;gap:6px;padding:10px 2px}
+.occ-mine-name{font-size:20px;font-weight:700;color:var(--cyan);font-family:var(--mono)}
+.occ-mine-desc{font-size:13px;color:rgba(220,240,255,.8);line-height:1.7}
+.occ-mine-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 #engineTable tr{cursor:pointer;transition:background .15s}
 #engineTable tr:hover{background:rgba(55,230,255,.05)}
 #engineTable tr.sel{background:rgba(55,230,255,.09)}
@@ -760,6 +770,10 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         系统日志 <span class="n-idx">07</span>
       </button>
       <div class="nav-sep">EARTH ENGINE · 03</div>
+      <button class="nav-item" data-view="occupations">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        职业查看 <span class="n-idx">JOB</span>
+      </button>
       <button class="nav-item" data-view="engine">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="10" r="6"/><path d="M8.5 15 7 21h10l-1.5-6"/><circle cx="12" cy="10" r="2"/></svg>
         行星发动机控制 <span class="n-idx">08</span>
@@ -1347,6 +1361,22 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
             </table>
           </div>
           <div class="users-hint">车辆与车卡的调度、停用、分级由联合政府（管理员）统一管理。如有异常请联系管理员。</div>
+        </div>
+      </section>
+
+      <!-- ===== 视图：职业查看（全体公民） ===== -->
+      <section class="view" id="view-occupations">
+        <div class="view-head">
+          <h2>职业查看<small>OCCUPATION SYSTEM · 联合政府职业体系</small></h2>
+          <div class="head-actions">
+            <span class="status-dot" id="occStatusDot">职业档案同步</span>
+          </div>
+        </div>
+        <div class="panel hud" id="occMine"></div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>全职业体系 · 共 24 项</h3><span class="en">UEG OCCUPATION DIRECTORY</span></div>
+          <div class="occ-grid" id="occGrid"></div>
+          <div class="users-hint">职业由联合政府统一分配。部分职业附带专属权限：货运司机可进入「驾驶员查看」，地下城管理员可参与地下城治理等。如有疑问请联系管理员。</div>
         </div>
       </section>
 
@@ -2285,6 +2315,7 @@ function showView(name){
   });}
   if(name==='engine'&&!engineChartInit){initEngineChart();}
   if(name==='engine'){if(typeof refreshIgnitePerm==='function')refreshIgnitePerm();}
+  if(name==='occupations'){renderOccupations();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderOccupations();}});}
   if(name==='adm-users')renderUsers();
   if(name==='adm-settings')renderSettings();
   if(chartsInit)Object.values(echartsInstances).forEach(c=>c&&c.resize());
@@ -3737,6 +3768,64 @@ function nationOf(u){return u&&u.nation?u.nation:'中国';}
 const OCCUPATIONS=[
  '待分配','宇航员','领航员','行星发动机工程师','空间站工程师','货运司机','战机飞行员','联合政府军人','医疗人员','科学家','数字生命研究员','数据工程师','量子主机维护员','地下城管理员','矿工','农业技术员','教师','治安官','建筑师','播音员','厨师','维修技工','气象学家'
 ];
+const OCC_DESC={
+ '待分配':'职业档案待联合政府分配。可先完成个人档案与数字生命登记。',
+ '宇航员':'执行近地轨道与深空任务，负责空间站驻留、外太空作业与星际航行。',
+ '领航员':'负责航线规划与导航系统运行，保障地球航向与各地下城交通调度。',
+ '行星发动机工程师':'负责一万座行星发动机的运行维护、推力调校与点火序列保障。',
+ '空间站工程师':'负责空间站的系统运维、能源管理与舱外设备检修。',
+ '货运司机':'驾驶 UEG 运载车执行地表运输与物资输送。专属权限：驾驶员查看（车卡与车辆台账）。',
+ '战机飞行员':'驾驶行星战机执行大气层与太空防卫任务。',
+ '联合政府军人':'负责防卫、护航与地球联合政府各项任务的执行。',
+ '医疗人员':'负责公民医疗救治、公共卫生与防疫，保障地下城医疗体系。',
+ '科学家':'从事行星科学、材料学与基础科研，支撑移山计划。',
+ '数字生命研究员':'参与数字生命计划研究，维护数字生命档案与意识上传体系。',
+ '数据工程师':'负责联合政府数据中心、公民档案与云端数据库的运维。',
+ '量子主机维护员':'负责 550W 量子主机与 MOSS 系统的运行维护与安全。',
+ '地下城管理员':'负责地下城户籍、资源、安全与公共事务治理（管理岗位）。',
+ '矿工':'负责行星发动机燃料与工业原料的开采输送。',
+ '农业技术员':'负责地下城农业与循环生态，保障粮食供给。',
+ '教师':'负责公民教育与技术培训，培养下一代地球文明。',
+ '治安官':'负责地下城治安巡逻与秩序维护。',
+ '建筑师':'负责地下城与行星发动机基础设施的设计建造。',
+ '播音员':'负责联合政府广播与公民信息传达。',
+ '厨师':'负责地下城公共餐饮与后勤保障。',
+ '维修技工':'负责各类机械设备与公共设施的日常检修。',
+ '气象学家':'负责全球气象与大气环境监测，为航线提供数据支撑。'
+};
+const OCC_SPECIAL={'货运司机':'驾驶员查看','地下城管理员':'地下城管理','宇航员':'航天任务档案','量子主机维护员':'MOSS 维护通道','领航员':'航线数据'};
+function renderOccupations(){
+  const accts=getAccounts();
+  const u=CURRENT?accts[CURRENT.name]:null;
+  const my=occupationOf(u);
+  const st=document.getElementById('occStatusDot');
+  if(st)st.className='status-dot';
+  const mine=document.getElementById('occMine');
+  if(mine){
+    const sp=OCC_SPECIAL[my];
+    mine.innerHTML='<div class="panel-title"><h3>我的职业档案</h3><span class="en">MY OCCUPATION · '+(u&&u.id?u.id:'—')+'</span></div>'+
+      '<div class="occ-mine-row"><div class="occ-mine-name">'+my+'</div><div class="occ-mine-desc">'+(OCC_DESC[my]||'职业档案待更新。')+'</div></div>'+
+      '<div class="occ-mine-tags">'+
+      (sp?'<span class="badge warn">专属权限 · '+sp+'</span>':'')+
+      (isDriver(u)?'<span class="badge ok">车卡已登记</span>':'')+
+      (u&&u.drivelic?'<span class="badge">执照 '+licLabel(u.drivelic)+'</span>':'')+
+      '</div>';
+  }
+  const grid=document.getElementById('occGrid');
+  const cur=CURRENT&&CURRENT.name;
+  grid.innerHTML=OCCUPATIONS.map(o=>{
+    const mineFlag=(u&&occupationOf(u)===o);
+    const sp=OCC_SPECIAL[o];
+    return '<div class="occ-card'+(mineFlag?' occ-mine-flag':'')+'">'+
+      '<div class="occ-card-top"><b>'+o+'</b>'+
+      (mineFlag?'<span class="badge warn">我的职业</span>':'')+
+      (sp?'<span class="badge">'+sp+'</span>':'')+
+      '</div>'+
+      '<p>'+(OCC_DESC[o]||'—')+'</p>'+
+    '</div>';
+  }).join('');
+}
+
 const DRIVER_LIC=['D 级','C 级','B 级','A 级','S 级'];
 const DRIVER_LIC_CN={'D 级':'实习驾驶员','C 级':'初级驾驶员','B 级':'中级驾驶员','A 级':'高级驾驶员','S 级':'特级驾驶员'};
 function licLabel(l){l=l||'C 级';return DRIVER_LIC_CN[l]?l+' · '+DRIVER_LIC_CN[l]:l;}
