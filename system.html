@@ -1216,6 +1216,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
                 <div class="slider-labels"><span>STANDBY 0%</span><span id="powerVal">71.4%</span><span>MAX 100%</span></div>
               </div>
               <button class="btn-primary engine-ignite" id="btnIgnite">◉ 联合点火</button>
+              <div class="users-hint" id="igniteDenied" style="display:none;color:var(--red);border:1px solid rgba(255,90,90,.35);background:rgba(255,90,90,.06);padding:8px 12px;border-radius:4px;margin-top:12px">权限受限 · 联合点火仅限联合政府管理员授权执行。当前账号为普通公民，仅可查看发动机状态。</div>
             </div>
           </div>
 
@@ -2283,6 +2284,7 @@ function showView(name){
     }
   });}
   if(name==='engine'&&!engineChartInit){initEngineChart();}
+  if(name==='engine'){if(typeof refreshIgnitePerm==='function')refreshIgnitePerm();}
   if(name==='adm-users')renderUsers();
   if(name==='adm-settings')renderSettings();
   if(chartsInit)Object.values(echartsInstances).forEach(c=>c&&c.resize());
@@ -2489,6 +2491,8 @@ function applyUser(u){
   localStorage.setItem(LS_SESSION,u.name);
   updateClearanceUI();
   refreshAdminNav();
+  if(typeof refreshDriverNav==='function')refreshDriverNav();
+  if(typeof refreshIgnitePerm==='function')refreshIgnitePerm();
 }
 function getCurrentUser(){return CURRENT||{name:'—',pwd:'',id:'UEG-CN-2077-0512-0000',clearance:'Ⅰ'}}
 
@@ -3003,7 +3007,16 @@ document.getElementById('powerSlider').addEventListener('change',e=>{
   toast('ok','推力已调整','发动机 NO.'+engineSel.id+' 推力输出 '+v+'% · 阵列自动平衡中');
 });
 let igniting=false;
+function refreshIgnitePerm(){
+  const btn=document.getElementById('btnIgnite');
+  const denied=document.getElementById('igniteDenied');
+  if(!btn)return;
+  const on=typeof isAdmin==='function'&&isAdmin();
+  btn.style.display=on?'':'none';
+  if(denied)denied.style.display=on?'none':'';
+}
 document.getElementById('btnIgnite').addEventListener('click',()=>{
+  if(!(typeof isAdmin==='function'&&isAdmin())){toast('err','权限不足','联合点火仅限联合政府管理员授权执行');return}
   if(MODE==='offline'){toast('warn','离线模式','行星发动机远程点火需在线授权，请先切换至在线模式');return}
   if(igniting)return;
   igniting=true;
