@@ -518,6 +518,21 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
 .occ-mine-name{font-size:20px;font-weight:700;color:var(--cyan);font-family:var(--mono)}
 .occ-mine-desc{font-size:13px;color:rgba(220,240,255,.8);line-height:1.7}
 .occ-mine-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.priv-admin-row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;padding:6px 2px 12px}
+.priv-selector{min-width:200px;flex:1 1 240px}
+.priv-selector select{width:100%;background:rgba(15,25,50,.9);color:var(--cyan);border:1px solid rgba(55,230,255,.3);border-radius:4px;padding:10px 12px;font-size:14px;font-family:var(--mono)}
+.priv-state{flex:1 1 300px;min-width:240px}
+.priv-state-body{border:1px solid rgba(55,230,255,.18);border-radius:6px;padding:10px 12px;background:rgba(10,20,45,.5);display:flex;flex-direction:column;gap:6px}
+.ps-row{display:flex;justify-content:space-between;font-size:13px;line-height:1.6;color:rgba(220,240,255,.85)}
+.ps-row b{color:var(--cyan);font-weight:600}
+.ps-row b.ok{color:var(--green)}
+.ps-row b.err{color:var(--red)}
+.priv-op-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 2px 14px}
+.priv-op-btn{min-width:120px}
+.priv-lv-group{display:flex;gap:8px}
+.priv-lv-group .btn{padding:9px 16px;font-size:13px;border:1px solid rgba(55,230,255,.3);color:var(--cyan);background:rgba(15,25,50,.6);border-radius:4px;cursor:pointer}
+.priv-lv-group .btn:hover{border-color:rgba(55,230,255,.6)}
+.priv-lv-group .priv-lv-on{background:linear-gradient(135deg,rgba(255,185,74,.25),rgba(255,90,110,.12));border-color:rgba(255,185,74,.55);color:var(--amber)}
 #engineTable tr{cursor:pointer;transition:background .15s}
 #engineTable tr:hover{background:rgba(55,230,255,.05)}
 #engineTable tr.sel{background:rgba(55,230,255,.09)}
@@ -774,6 +789,10 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
       <button class="nav-item" data-view="occupations">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         职业查看 <span class="n-idx">JOB</span>
+      </button>
+      <button class="nav-item" data-view="priv">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        特权中心 <span class="n-idx">PRIV</span>
       </button>
       <button class="nav-item" data-view="engine">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="10" r="6"/><path d="M8.5 15 7 21h10l-1.5-6"/><circle cx="12" cy="10" r="2"/></svg>
@@ -1378,6 +1397,36 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
           <div class="panel-title"><h3 id="occTitle">全职业体系 · 共 23 项</h3><span class="en">UEG OCCUPATION DIRECTORY</span></div>
           <div class="occ-grid" id="occGrid"></div>
           <div class="users-hint">职业由联合政府统一分配，每个职业均配有专属特权。其中货运司机可进入「驾驶员查看」，地下城管理员可参与地下城治理等。如有疑问请联系管理员。</div>
+        </div>
+      </section>
+
+      <!-- ===== 视图：特权中心（全体公民，管理员可设置） ===== -->
+      <section class="view" id="view-priv">
+        <div class="view-head">
+          <h2>特权中心<small>PRIVILEGE CENTER · 职业专属权限</small></h2>
+          <div class="head-actions">
+            <span class="status-dot" id="privStatusDot">特权档案同步</span>
+          </div>
+        </div>
+        <div class="panel hud" id="privMine"></div>
+        <div class="panel hud" id="privAdminPanel" style="display:none">
+          <div class="panel-title"><h3>特权设置 · 管理员</h3><span class="en">PRIVILEGE CONFIGURATION</span></div>
+          <div class="priv-admin-row">
+            <div class="priv-selector">
+              <div class="kicker">管理公民 · SELECT CITIZEN</div>
+              <select id="privUserSel"></select>
+            </div>
+            <div class="priv-state" id="privStateBox">
+              <div class="kicker">当前特权状态</div>
+              <div class="priv-state-body" id="privStateBody">—</div>
+            </div>
+          </div>
+          <div class="priv-op-row" id="privOpRow"></div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>全职业特权目录</h3><span class="en">UEG PRIVILEGE DIRECTORY · 23</span></div>
+          <div class="occ-grid" id="privDirGrid"></div>
+          <div class="users-hint">特权由职业决定，管理员可在上方为公民开启 / 关闭特权并调整权限等级。公民本人仅可查看自己职业的特权。</div>
         </div>
       </section>
 
@@ -2317,6 +2366,7 @@ function showView(name){
   if(name==='engine'&&!engineChartInit){initEngineChart();}
   if(name==='engine'){if(typeof refreshIgnitePerm==='function')refreshIgnitePerm();}
   if(name==='occupations'){renderOccupations();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderOccupations();}});}
+  if(name==='priv'){renderPriv();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderPriv();}});}
   if(name==='adm-users')renderUsers();
   if(name==='adm-settings')renderSettings();
   if(chartsInit)Object.values(echartsInstances).forEach(c=>c&&c.resize());
@@ -3852,6 +3902,110 @@ function renderOccupations(){
     '</div>';
   }).join('');
 }
+
+/* ===== 特权中心 ===== */
+const PRIV_LEVELS=['标准','高级','特级'];
+function privOf(u){
+  if(!u)return null;
+  const occ=occupationOf(u);
+  const base=u.priv&&u.priv[occ]?u.priv[occ]:null;
+  if(occ==='待分配')return {occ:occ,on:false,lv:'—'};
+  return {occ:occ,on:base?base.on!==false:true,lv:base&&base.lv?base.lv:'标准'};
+}
+let privTarget=null;
+function renderPriv(){
+  const accts=getAccounts();
+  const u=CURRENT?accts[CURRENT.name]:null;
+  const my=privOf(u);
+  const st=document.getElementById('privStatusDot');
+  if(st)st.className='status-dot';
+  const mine=document.getElementById('privMine');
+  if(mine){
+    const sp=OCC_SPECIAL[my?my.occ:'待分配'];
+    mine.innerHTML='<div class="panel-title"><h3>我的职业特权</h3><span class="en">MY PRIVILEGE · '+(u&&u.id?u.id:'—')+'</span></div>'+
+      '<div class="occ-mine-row"><div class="occ-mine-name">'+my.occ+'</div>'+
+      '<div class="occ-mine-desc">'+(OCC_DESC[my.occ]||'职业档案待更新。')+'</div></div>'+
+      '<div class="occ-mine-tags">'+
+      (my.on?'<span class="badge ok">特权已启用</span>':'<span class="badge err">特权未启用</span>')+
+      '<span class="badge warn">特权 · '+(sp||'—')+'</span>'+
+      (my.lv!=='—'?'<span class="badge">权限等级 · '+my.lv+'</span>':'')+
+      '</div>';
+  }
+  const dir=document.getElementById('privDirGrid');
+  if(dir)dir.innerHTML=OCCUPATIONS.map(o=>{
+    const m=(u&&occupationOf(u)===o);
+    return '<div class="occ-card'+(m?' occ-mine-flag':'')+'">'+
+      '<div class="occ-card-top"><b>'+o+'</b>'+(m?'<span class="badge warn">我的职业</span>':'')+'</div>'+
+      '<div class="occ-card-priv">专属特权 · '+(OCC_SPECIAL[o]||'—')+'</div>'+
+      '<p>默认权限等级：'+(o==='待分配'?'—':'标准')+'。管理员可在特权设置中调整。</p>'+
+    '</div>';
+  }).join('');
+  const ap=document.getElementById('privAdminPanel');
+  if(ap)ap.style.display=isAdmin()?'':'none';
+  if(isAdmin())renderPrivAdmin();
+}
+function renderPrivAdmin(){
+  const sel=document.getElementById('privUserSel');
+  if(!sel)return;
+  const accts=getAccounts();
+  const names=Object.keys(accts).filter(n=>n!=='周明远');
+  const cur=privTarget&&accts[privTarget]?privTarget:(names[0]||null);
+  if(sel.options.length!==names.length+1){
+    sel.innerHTML='<option value="">— 选择公民 —</option>'+names.map(n=>'<option value="'+n+'">'+n+'</option>').join('');
+  }
+  if(cur&&sel.value!==cur)sel.value=cur;
+  privTarget=cur;
+  const u=cur?accts[cur]:null;
+  const box=document.getElementById('privStateBody');
+  if(box){
+    if(!u){box.textContent='—';}
+    else{
+      const p=privOf(u);
+      box.innerHTML='<div class="ps-row"><span>公民</span><b>'+cur+'</b></div>'+
+        '<div class="ps-row"><span>职业</span><b>'+p.occ+'</b></div>'+
+        '<div class="ps-row"><span>专属特权</span><b>'+(OCC_SPECIAL[p.occ]||'—')+'</b></div>'+
+        '<div class="ps-row"><span>状态</span><b class="'+(p.on?'ok':'err')+'">'+(p.on?'已启用':'已关闭')+'</b></div>'+
+        '<div class="ps-row"><span>权限等级</span><b>'+(p.lv==='—'?'—':p.lv)+'</b></div>';
+    }
+  }
+  const row=document.getElementById('privOpRow');
+  if(row&&u){
+    const p=privOf(u);
+    const canToggle=p.occ!=='待分配';
+    row.innerHTML=(canToggle?
+      '<button class="btn-primary priv-op-btn" id="privToggleBtn">'+(p.on?'关闭特权':'开启特权')+'</button>':'')+
+      (canToggle?'<div class="priv-lv-group">'+PRIV_LEVELS.map(l=>'<button class="btn '+(p.lv===l?'priv-lv-on':'')+'" data-lv="'+l+'">'+l+'</button>').join('')+'</div>':'')+
+      '<span class="users-hint" style="display:inline;margin-left:10px">'+(p.occ==='待分配'?'该公民尚未分配职业，无法配置特权。':'对「'+p.occ+'」的专属特权进行配置，变更将实时同步云端。')+'</span>';
+    const tb=document.getElementById('privToggleBtn');
+    if(tb)tb.onclick=()=>{
+      const ac2=getAccounts();const u2=ac2[privTarget];if(!u2)return;
+      const occ=occupationOf(u2);const base=u2.priv&&u2.priv[occ]?u2.priv[occ]:{};
+      u2.priv=u2.priv||{};u2.priv[occ]={on:!((base.on!==false)),lv:base.lv||'标准'};
+      saveAccounts(ac2);
+      if(CLOUD_ON){cloudSet('accounts',ac2).then(()=>{toast('ok','特权已更新','「'+privTarget+'」的'+occ+'特权已'+(u2.priv[occ].on?'开启':'关闭')+' · 已同步云端');}).catch(()=>toast('err','云端同步失败','特权已保存在本地'));}
+      else toast('ok','特权已更新','「'+privTarget+'」的'+occ+'特权已'+(u2.priv[occ].on?'开启':'关闭'));
+      appendLog(['ok','ADMIN','变更公民特权：'+privTarget+' · '+occ+' → '+(u2.priv[occ].on?'开启':'关闭')],0);
+      renderPrivAdmin();renderPriv();
+    };
+    row.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{
+      const ac2=getAccounts();const u2=ac2[privTarget];if(!u2)return;
+      const occ=occupationOf(u2);const lv=b.dataset.lv;
+      u2.priv=u2.priv||{};const base=u2.priv[occ]||{};
+      u2.priv[occ]={on:base.on!==false,lv:lv};
+      saveAccounts(ac2);
+      if(CLOUD_ON){cloudSet('accounts',ac2).then(()=>{toast('ok','权限等级已更新','「'+privTarget+'」'+occ+'特权等级 → '+lv+' · 已同步云端');}).catch(()=>toast('err','云端同步失败','等级已保存在本地'));}
+      else toast('ok','权限等级已更新','「'+privTarget+'」'+occ+'特权等级 → '+lv);
+      appendLog(['ok','ADMIN','调整特权等级：'+privTarget+' · '+occ+' → '+lv],0);
+      renderPrivAdmin();renderPriv();
+    });
+  }
+}
+document.addEventListener('change',e=>{
+  if(e.target&&e.target.id==='privUserSel'){
+    privTarget=e.target.value||null;
+    renderPrivAdmin();
+  }
+});
 
 const DRIVER_LIC=['D 级','C 级','B 级','A 级','S 级'];
 const DRIVER_LIC_CN={'D 级':'实习驾驶员','C 级':'初级驾驶员','B 级':'中级驾驶员','A 级':'高级驾驶员','S 级':'特级驾驶员'};
