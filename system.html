@@ -3955,6 +3955,7 @@ function renderPrivAdmin(){
   }
   if(cur&&sel.value!==cur)sel.value=cur;
   privTarget=cur;
+  sel.onchange=()=>{privTarget=sel.value||null;renderPrivAdmin();};
   const u=cur?accts[cur]:null;
   const box=document.getElementById('privStateBody');
   if(box){
@@ -4001,7 +4002,7 @@ function renderPrivAdmin(){
   }
 }
 document.addEventListener('change',e=>{
-  if(e.target&&e.target.id==='privUserSel'){
+  if(e.target&&e.target.id==='privUserSel'&&!e.target.onchange){
     privTarget=e.target.value||null;
     renderPrivAdmin();
   }
