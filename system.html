@@ -533,6 +533,16 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
 .priv-lv-group .btn{padding:9px 16px;font-size:13px;border:1px solid rgba(55,230,255,.3);color:var(--cyan);background:rgba(15,25,50,.6);border-radius:4px;cursor:pointer}
 .priv-lv-group .btn:hover{border-color:rgba(55,230,255,.6)}
 .priv-lv-group .priv-lv-on{background:linear-gradient(135deg,rgba(255,185,74,.25),rgba(255,90,110,.12));border-color:rgba(255,185,74,.55);color:var(--amber)}
+.term-enter{margin-top:10px;font-size:12.5px;padding:8px 14px;cursor:pointer}
+.term-panel{display:flex;flex-direction:column;gap:14px}
+.term-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tm-box{border:1px solid rgba(55,230,255,.18);border-radius:6px;padding:12px 14px;background:rgba(10,20,45,.5)}
+.tm-k{font-size:11px;color:var(--text-dim);letter-spacing:.08em}
+.tm-v{font-size:18px;font-weight:700;color:var(--cyan);font-family:var(--mono);margin-top:6px}
+.term-desc{font-size:13px;color:rgba(220,240,255,.8);line-height:1.7}
+.term-ops{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.term-op{font-size:12.5px;padding:9px 16px}
+.term-op:disabled{opacity:.5;cursor:default}
 #engineTable tr{cursor:pointer;transition:background .15s}
 #engineTable tr:hover{background:rgba(55,230,255,.05)}
 #engineTable tr.sel{background:rgba(55,230,255,.09)}
@@ -1428,6 +1438,17 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
           <div class="occ-grid" id="privDirGrid"></div>
           <div class="users-hint">特权由职业决定，管理员可在上方为公民开启 / 关闭特权并调整权限等级。公民本人仅可查看自己职业的特权。</div>
         </div>
+      </section>
+
+      <!-- ===== 视图：特权终端 ===== -->
+      <section class="view" id="view-privterm">
+        <div class="view-head">
+          <h2>特权终端<small id="privTermTitle">PRIVILEGE TERMINAL</small></h2>
+          <div class="head-actions">
+            <button class="btn" id="privTermBack">← 返回特权中心</button>
+          </div>
+        </div>
+        <div id="privTermBox"></div>
       </section>
 
       <!-- ===== 视图：管理员后台 ===== -->
@@ -2367,6 +2388,7 @@ function showView(name){
   if(name==='engine'){if(typeof refreshIgnitePerm==='function')refreshIgnitePerm();}
   if(name==='occupations'){renderOccupations();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderOccupations();}});}
   if(name==='priv'){renderPriv();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderPriv();}});}
+  if(name==='privterm'){const ttl=document.getElementById('privTermTitle');if(ttl)ttl.textContent='PRIVILEGE TERMINAL · '+(privTermOcc||'');renderPrivTerm();}
   if(name==='adm-users')renderUsers();
   if(name==='adm-settings')renderSettings();
   if(chartsInit)Object.values(echartsInstances).forEach(c=>c&&c.resize());
@@ -3913,6 +3935,59 @@ function privOf(u){
   return {occ:occ,on:base?base.on!==false:true,lv:base&&base.lv?base.lv:'标准'};
 }
 let privTarget=null;
+/* 职业特权终端配置：每个职业一个可操作终端 */
+const PRIV_TERMS={
+ '宇航员':{name:'航天任务档案',desc:'空间站驻留与深空任务执行台',metrics:[['在轨驻留','NO.03 · 天宫站'],['出舱任务','2 次 · 已完成'],['任务日志','已归档 47 条']],ops:[['发起出舱申请','出舱申请已提交 · 等待地面批准'],['确认任务状态','航天任务状态已确认并同步档案'],['调取历史日志','已调取最近 12 条任务日志']]},
+ '领航员':{name:'航线数据',desc:'全球导航与航线规划台',metrics:[['当前航向','234.6°'],['偏航率','0.02% · 正常'],['航线节点','16 / 16 在线']],ops:[['执行航线校准','航线校准完成 · 误差 0.01%'],['修正偏航','偏航已修正 · 轨迹回正'],['生成航线报告','航线报告已生成并上传']]},
+ '行星发动机工程师':{name:'发动机检修面板',desc:'一万座行星发动机检修与推力调校台',metrics:[['在线发动机','9,912 台'],['待检修','NO.3044 · 1 台'],['核心温度','3,420 K · 安全']],ops:[['提交检修工单','检修工单 NO.3044 已提交'],['推力微调','推力 +0.1% · 已调校'],['点火序列检查','点火序列检查通过']]},
+ '空间站工程师':{name:'空间站运维终端',desc:'空间站系统运维与能源管理台',metrics:[['舱段状态','8 / 8 正常'],['氧气循环','98.7%'],['能源储备','72.4%']],ops:[['舱段巡检','全部舱段巡检完成 · 无异常'],['能源调配','能源已重新调配 · 均衡'],['循环系统自检','氧气与水循环自检通过']]},
+ '货运司机':{name:'驾驶员查看',desc:'车卡与车辆台账',metrics:[['名下车辆','随账号实时同步'],['驾驶员分级','随账号实时同步'],['车卡状态','随账号实时同步']],ops:[['车辆状态上报','车辆状态已上报 · 运行正常'],['申请加油配额','加油配额申请已提交'],['申报运输任务','运输任务已申报']]},
+ '战机飞行员':{name:'空域警戒台',desc:'大气层与太空防卫警戒台',metrics:[['警戒区域','EAST-07 · 正常'],['空域威胁','0 级'],['战机待命','8 架']],ops:[['警戒升级','警戒等级升至 II 级'],['拦截请求','拦截请求已发送联合政府'],['战备状态确认','战备状态已确认']]},
+ '联合政府军人':{name:'防卫任务通道',desc:'防卫任务接收与回报台',metrics:[['在执任务','NO.021 · 护航'],['任务完成率','96.2%'],['防卫力量','在线']],ops:[['接收任务','新任务已接收 · NO.023'],['任务回报','当前任务回报已提交'],['请求增援','增援请求已提交指挥部']]},
+ '医疗人员':{name:'医疗急救通道',desc:'医疗救治与防疫指挥台',metrics:[['急救床位','68 / 70 可用'],['防疫指数','良好'],['药械库存','充足']],ops:[['急救派遣','急救队已派遣 · 3 分钟到达'],['物资申请','医疗物资申请已提交'],['疫情报告','防疫报告已生成']]},
+ '科学家':{name:'科研数据舱',desc:'行星科学实验数据舱',metrics:[['在研项目','NO.7 · 氦-3 材料'],['实验数据','1,284 组'],['科研经费','充足']],ops:[['数据上报','实验数据已上报存档'],['实验申请','新实验申请已提交'],['成果归档','研究成果已归档']]},
+ '数字生命研究员':{name:'数字生命档案柜',desc:'数字生命档案与意识上传体系',metrics:[['数字生命档案','2,381 份'],['上传队列','42 人'],['档案完整度','99.2%']],ops:[['档案调取','档案已调取 · 权限验证通过'],['上传审批','上传队列已审批 · 42 → 38'],['档案校验','档案完整性校验通过']]},
+ '数据工程师':{name:'数据中心控制台',desc:'联合政府数据中心运维台',metrics:[['数据中心负载','63%'],['云同步状态','正常'],['存储余量','8.4 TB']],ops:[['负载均衡','负载已均衡 · 63% → 58%'],['同步检查','全量数据同步检查通过'],['备份触发','数据备份已触发']]},
+ '量子主机维护员':{name:'MOSS 维护通道',desc:'550W 量子主机与 MOSS 维护台',metrics:[['MOSS 状态','在线 · 稳定'],['量子主机温度','-273.1°C'],['算力占用','71.4%']],ops:[['主机自检','量子主机自检通过 · 无异常'],['算力调度','算力已重新调度'],['安全审计','MOSS 安全审计完成']]},
+ '地下城管理员':{name:'地下城管理',desc:'地下城户籍、资源与公共事务台',metrics:[['户籍人口','随账号实时同步'],['资源储备','随账号实时同步'],['安全指数','优']],ops:[['户籍抽查','户籍抽查完成 · 无异常'],['资源调配','资源调配指令已下达'],['公共事务公告','公告已发布至全体公民']]},
+ '矿工':{name:'资源开采调度',desc:'矿区产能与燃料输送台',metrics:[['矿区产能','正常'],['燃料库存','71.4%'],['在运矿车','24 辆']],ops:[['开采调度','开采计划已调度'],['运输申报','矿石运输已申报'],['安全确认','矿区安全确认通过']]},
+ '农业技术员':{name:'生态循环面板',desc:'地下城农业与循环生态台',metrics:[['粮食产量','98.6% 达标'],['循环系统','稳定'],['作物状态','良好']],ops:[['产量上报','当日产量已上报'],['灌溉调整','灌溉已调整 · 节水 8%'],['生态巡检','生态循环巡检完成']]},
+ '教师':{name:'教育系统',desc:'公民教育与技术培训台',metrics:[['在学公民','3,624 人'],['课程在线','128 门'],['考核通过率','91.3%']],ops:[['开课申请','新课程申请已提交'],['成绩录入','考核成绩已录入'],['培训计划','培训计划已更新']]},
+ '治安官':{name:'治安执法记录',desc:'地下城治安与巡逻调度台',metrics:[['治安事件','0 起'],['巡逻覆盖','100%'],['警力在位','正常']],ops:[['事件上报','治安事件报告已提交'],['巡逻派遣','巡逻队已派遣'],['秩序检查','秩序检查完成']]},
+ '建筑师':{name:'基建蓝图库',desc:'地下城基建设计与建造台',metrics:[['在建项目','NO.12 · 新城区'],['蓝图库存','356 份'],['工程进度','67.8%']],ops:[['蓝图提交','新蓝图已提交审批'],['工期申报','工期进度已申报'],['材料计划','材料计划已更新']]},
+ '播音员':{name:'广播发布通道',desc:'联合政府广播与信息传达台',metrics:[['广播频段','UEG-1 · 在线'],['今日广播','6 条'],['收听覆盖','98.2%']],ops:[['发起广播','广播已播出 · 全体公民已接收'],['公告稿提交','公告稿已提交审核'],['频段检查','广播频段检查正常']]},
+ '厨师':{name:'后勤配给清单',desc:'地下城公共餐饮与配给调度台',metrics:[['配给库存','充足'],['今日用餐','18,240 人'],['菜单轮换','正常']],ops:[['配给申报','配给需求已申报'],['菜单更新','本周菜单已更新'],['卫生检查','后厨卫生检查通过']]},
+ '维修技工':{name:'设备检修工单',desc:'机械设备与公共设施检修台',metrics:[['待办工单','7 张'],['今日完工','19 张'],['设备在线率','97.6%']],ops:[['接收工单','工单已接收 · NO.088'],['完工上报','检修完成已上报'],['故障上报','新故障已上报']]},
+ '气象学家':{name:'气象预警数据',desc:'全球气象与大气环境监测台',metrics:[['全球天气','稳定'],['风暴预警','0 级'],['大气质量','良']],ops:[['预警发布','气象预警已发布'],['数据上报','监测数据已上报'],['大气分析','大气分析报告已生成']]}
+};
+let privTermOcc=null;
+function renderPrivTerm(){
+  const occ=privTermOcc||(CURRENT?occupationOf(CURRENT):'待分配');
+  const t=PRIV_TERMS[occ];
+  const box=document.getElementById('privTermBox');
+  if(!box)return;
+  const sp=OCC_SPECIAL[occ]||'—';
+  if(!t){
+    box.innerHTML='<div class="panel hud"><div class="panel-title"><h3>'+occ+'</h3><span class="en">TERMINAL</span></div><div class="users-hint">该职业尚未分配特权终端。请先由管理员完成职业分配。</div></div>';
+    return;
+  }
+  const lv=privOf(CURRENT&&getAccounts()[CURRENT.name]).lv;
+  box.innerHTML='<div class="panel hud term-panel">'+
+    '<div class="panel-title"><h3>'+t.name+' · '+occ+'</h3><span class="en">PRIVILEGE TERMINAL · '+(sp)+'</span></div>'+
+    '<div class="term-metrics">'+t.metrics.map(m=>'<div class="tm-box"><div class="tm-k">'+m[0]+'</div><div class="tm-v">'+m[1]+'</div></div>').join('')+'</div>'+
+    '<div class="term-desc">'+t.desc+'</div>'+
+    '<div class="term-ops"><div class="kicker">操作面板 · CONTROL</div>'+
+    t.ops.map((o,i)=>'<button class="btn-primary term-op" data-i="'+i+'">'+o[0]+'</button>').join('')+
+    '</div>'+
+    '<div class="users-hint">权限等级：'+(lv==='—'?'—':lv)+' · 操作将写入系统日志并同步联合政府数据中心。遥测数据为模拟实时值。</div>'+
+  '</div>';
+  box.querySelectorAll('.term-op').forEach(b=>b.addEventListener('click',()=>{
+    const msg=t.ops[+b.dataset.i][1];
+    toast('ok','执行完成',msg);
+    appendLog(['ok','PRIV','「'+occ+'」特权终端：'+msg],0);
+    b.disabled=true;b.textContent='✓ 已执行';
+  }));
+}
 function renderPriv(){
   const accts=getAccounts();
   const u=CURRENT?accts[CURRENT.name]:null;
@@ -3922,6 +3997,7 @@ function renderPriv(){
   const mine=document.getElementById('privMine');
   if(mine){
     const sp=OCC_SPECIAL[my?my.occ:'待分配'];
+    const canEnter=my&&my.occ!=='待分配'&&PRIV_TERMS[my.occ];
     mine.innerHTML='<div class="panel-title"><h3>我的职业特权</h3><span class="en">MY PRIVILEGE · '+(u&&u.id?u.id:'—')+'</span></div>'+
       '<div class="occ-mine-row"><div class="occ-mine-name">'+my.occ+'</div>'+
       '<div class="occ-mine-desc">'+(OCC_DESC[my.occ]||'职业档案待更新。')+'</div></div>'+
@@ -3929,17 +4005,24 @@ function renderPriv(){
       (my.on?'<span class="badge ok">特权已启用</span>':'<span class="badge err">特权未启用</span>')+
       '<span class="badge warn">特权 · '+(sp||'—')+'</span>'+
       (my.lv!=='—'?'<span class="badge">权限等级 · '+my.lv+'</span>':'')+
+      (canEnter?'<button class="btn-primary term-enter" data-occ="'+my.occ+'">进入特权终端</button>':'')+
       '</div>';
+    const eb=mine.querySelector('.term-enter');
+    if(eb)eb.onclick=()=>{privTermOcc=eb.dataset.occ;showView('privterm');};
   }
   const dir=document.getElementById('privDirGrid');
   if(dir)dir.innerHTML=OCCUPATIONS.map(o=>{
     const m=(u&&occupationOf(u)===o);
+    const admin=typeof isAdmin==='function'&&isAdmin();
+    const canEnter=o!=='待分配'&&PRIV_TERMS[o]&&(admin||m);
     return '<div class="occ-card'+(m?' occ-mine-flag':'')+'">'+
       '<div class="occ-card-top"><b>'+o+'</b>'+(m?'<span class="badge warn">我的职业</span>':'')+'</div>'+
       '<div class="occ-card-priv">专属特权 · '+(OCC_SPECIAL[o]||'—')+'</div>'+
       '<p>默认权限等级：'+(o==='待分配'?'—':'标准')+'。管理员可在特权设置中调整。</p>'+
+      (canEnter?'<button class="btn term-enter" data-occ="'+o+'">进入终端</button>':(o!=='待分配'?'<span class="badge gray">仅限本职业公民</span>':''))+
     '</div>';
   }).join('');
+  dir.querySelectorAll('.term-enter').forEach(b=>b.addEventListener('click',()=>{privTermOcc=b.dataset.occ;showView('privterm');}));
   const ap=document.getElementById('privAdminPanel');
   if(ap)ap.style.display=isAdmin()?'':'none';
   if(isAdmin())renderPrivAdmin();
@@ -4007,6 +4090,7 @@ document.addEventListener('change',e=>{
     renderPrivAdmin();
   }
 });
+document.getElementById('privTermBack').addEventListener('click',()=>showView('priv'));
 
 const DRIVER_LIC=['D 级','C 级','B 级','A 级','S 级'];
 const DRIVER_LIC_CN={'D 级':'实习驾驶员','C 级':'初级驾驶员','B 级':'中级驾驶员','A 级':'高级驾驶员','S 级':'特级驾驶员'};
