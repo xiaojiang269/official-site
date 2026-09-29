@@ -765,6 +765,10 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         行星发动机控制 <span class="n-idx">08</span>
       </button>
       <div class="nav-sep driver-sep" style="display:none">TRANSPORT · 04</div>
+      <button class="nav-item driver-view-nav" data-view="driverview" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="9" width="18" height="7" rx="1.5"/><path d="M5 16v3h3v-3M16 16v3h3v-3"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/><path d="M6 9l1.5-3h9L18 9"/></svg>
+        驾驶员查看 <span class="n-idx">09</span>
+      </button>
       <button class="nav-item driver-nav" data-view="vehicles" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="9" width="18" height="7" rx="1.5"/><path d="M5 16v3h3v-3M16 16v3h3v-3"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/><path d="M6 9l1.5-3h9L18 9"/></svg>
         车辆管理 <span class="n-idx">09</span>
@@ -1314,6 +1318,34 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         <div class="ctl-row">
           <button class="btn-ghost" id="vcLostBtn">车卡挂失（当前公民）</button>
           <button class="btn-ghost" id="vcRecoverBtn">车卡恢复（当前公民）</button>
+        </div>
+      </section>
+
+      <!-- ===== 视图：驾驶员查看（货运司机专属 · 只读） ===== -->
+      <section class="view" id="view-driverview">
+        <div class="view-head">
+          <h2>驾驶员查看<small>DRIVER OVERVIEW · 我的车辆与车卡</small></h2>
+          <div class="head-actions">
+            <span class="status-dot" id="dvStatusDot">车卡正常</span>
+          </div>
+        </div>
+        <div class="scope-bar" id="dvScopeBar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 14px;border:1px solid rgba(55,230,255,.35);border-radius:6px;background:rgba(55,230,255,.06);margin-bottom:14px;font-family:var(--mono);font-size:11px;color:var(--cyan)"></div>
+        <div class="engine-hero">
+          <div class="panel hud vital"><div class="v-label">车卡编号 · CARD ID</div><div class="v-value" id="dvCardIdV" style="font-size:clamp(13px,1.7vw,17px)">—</div><div class="v-trend">UEG 运载车车卡</div></div>
+          <div class="panel hud vital"><div class="v-label">驾驶员分级 · CLASS</div><div class="v-value" id="dvClassV" style="font-size:clamp(15px,1.9vw,20px)">C 级</div><div class="v-trend">行星级执照</div></div>
+          <div class="panel hud vital"><div class="v-label">车卡状态 · STATUS</div><div class="v-value" id="dvStateV" style="font-size:clamp(14px,1.8vw,18px)">正常</div><div class="v-trend">实时同步</div></div>
+          <div class="panel hud vital"><div class="v-label">名下车辆 · FLEET</div><div class="v-value" id="dvFleetV">0<span class="u">辆</span></div><div class="v-trend">绑定车辆</div></div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>我的运载车 · 车辆台账</h3><span class="en">MY FLEET · UEG 运载车（只读）</span></div>
+          <div class="table-wrap">
+            <table class="tbl">
+              <colgroup><col style="width:24%"><col style="width:34%"><col style="width:24%"><col style="width:18%"></colgroup>
+              <thead><tr><th>车牌号</th><th>车型</th><th>车卡绑定</th><th>状态</th></tr></thead>
+              <tbody id="dvRows"></tbody>
+            </table>
+          </div>
+          <div class="users-hint">车辆与车卡的调度、停用、分级由联合政府（管理员）统一管理。如有异常请联系管理员。</div>
         </div>
       </section>
 
@@ -2231,11 +2263,13 @@ let chartsInit=false;
 function showView(name){
   if((name==='admin'||name.indexOf('adm-')===0)&&!isAdmin()){toast('err','访问被拒绝','管理员后台仅限 周明远 账号访问');return}
   if((name==='vehicles'||name==='vehcard')&&!(CURRENT&&typeof isAdmin==='function'&&isAdmin())){toast('err','访问被拒绝','车辆/车卡管理仅限管理员模式访问');return}
+  if(name==='driverview'&&!(CURRENT&&typeof isDriver==='function'&&isDriver(CURRENT))){toast('err','访问被拒绝','驾驶员查看仅限货运司机账号访问');return}
   navItems.forEach(n=>n.classList.toggle('active',n.dataset.view===name));
   views.forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
   if(name==='vitals'&&!chartsInit){initCharts();chartsInit=true;}
   if(name==='vehicles')renderVehicles();
   if(name==='vehcard')renderVehcard();
+  if(name==='driverview'){renderDriverView();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderDriverView();}});}
   if((name==='vitals'||name==='profile')&&CLOUD_ON){cloudGetAll().then(()=>{
     const accts=getAccounts();
     if(CURRENT&&accts[CURRENT.name]){
@@ -3800,10 +3834,38 @@ occModal.addEventListener('click',e=>{if(e.target===occModal)occModal.classList.
 
 /* ============ 司机专属：车辆管理 / 车卡管理 ============ */
 function refreshDriverNav(){
-  const on=typeof isAdmin==='function'&&isAdmin();
-  document.querySelectorAll('.driver-nav').forEach(b=>{b.style.display=on?'':'none';});
+  const adminOn=typeof isAdmin==='function'&&isAdmin();
+  const drvOn=CURRENT&&typeof isDriver==='function'&&isDriver(CURRENT);
+  document.querySelectorAll('.driver-nav').forEach(b=>{b.style.display=adminOn?'':'none';});
+  document.querySelectorAll('.driver-view-nav').forEach(b=>{b.style.display=drvOn?'':'none';});
   const sep=document.querySelector('.driver-sep');
-  if(sep)sep.style.display=on?'':'none';
+  if(sep)sep.style.display=(adminOn||drvOn)?'':'none';
+}
+function renderDriverView(){
+  const accts=getAccounts();
+  const u=CURRENT?accts[CURRENT.name]:null;
+  const sb=document.getElementById('dvScopeBar');
+  if(sb)sb.innerHTML='<span>公民 <b style="color:var(--cyan)">'+(CURRENT?CURRENT.name:'—')+'</b> · '+((CURRENT&&CURRENT.id)?CURRENT.id:'—')+'</span><span>职业 · 货运司机　数据实时同步云端</span>';
+  if(!u){
+    const tb=document.getElementById('dvRows');
+    if(tb)tb.innerHTML='<tr><td colspan="4" class="empty-td">暂无数据</td></tr>';
+    return;
+  }
+  const vc=u.vehcard||{id:'—',status:'正常'};
+  document.getElementById('dvCardIdV').textContent=vc.id;
+  document.getElementById('dvClassV').textContent=licLabel(u.drivelic);
+  document.getElementById('dvStateV').textContent=vc.status;
+  document.getElementById('dvFleetV').textContent=(u.vehicles||[]).length+'';
+  const dot=document.getElementById('dvStatusDot');
+  if(dot){dot.className='status-dot '+(vc.status==='正常'?'':'warn');dot.textContent=vc.status==='正常'?'车卡正常':'车卡'+vc.status;}
+  const tb=document.getElementById('dvRows');
+  const vs=(u.vehicles)||[];
+  tb.innerHTML=vs.map(v=>'<tr>'+
+    '<td class="mono"><b>'+v.plate+'</b></td>'+
+    '<td class="mono" style="font-size:11px">'+v.model+'</td>'+
+    '<td class="mono" style="font-size:11px">'+vc.id+'</td>'+
+    '<td>'+(v.status==='启用'?'<span class="badge ok">运行中</span>':'<span class="badge gray">停用</span>')+'</td>'+
+  '</tr>').join('')||'<tr><td colspan="4" class="empty-td">暂无登记车辆</td></tr>';
 }
 function vehAllTargets(){
   const accts=getAccounts();
