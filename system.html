@@ -267,6 +267,8 @@ button{font-family:inherit;cursor:pointer}
 .topbar .spacer{flex:1}
 .sys-status{display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:11px;color:var(--text-dim);letter-spacing:.1em}
 .clock{font-family:var(--mono);font-size:14px;color:var(--cyan);text-shadow:0 0 10px rgba(55,230,255,.5);white-space:nowrap}
+.lang-btn{font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:6px 12px;border:1px solid rgba(55,230,255,.4);color:var(--cyan);background:rgba(55,230,255,.07);border-radius:4px;cursor:pointer;transition:all .2s}
+.lang-btn:hover{background:rgba(55,230,255,.18);box-shadow:0 0 12px rgba(55,230,255,.25)}
 .user-chip{display:flex;align-items:center;gap:9px;padding:5px 12px 5px 6px;border:1px solid var(--line);background:rgba(55,230,255,.05)}
 .user-chip .u-av{width:26px;height:26px;border-radius:50%;border:1px solid var(--line-strong);display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--cyan-deep),var(--panel2))}
 .user-chip .u-name{font-size:12px;color:var(--text)}
@@ -739,6 +741,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
       </div>
     </div>
     <div class="spacer"></div>
+    <button class="lang-btn" id="langBtn" title="切换语言">中 / EN</button>
     <div class="sys-status">
       <div class="mode-switch" id="modeSwitch">
         <button type="button" class="mode-opt active" data-mode="online">在线</button>
@@ -2410,6 +2413,123 @@ function toast(type,title,desc){
 const LS_ACCOUNTS='ueg_accounts',LS_SESSION='ueg_session';
 let CURRENT=null;
 
+/* ============ 中英文切换 ============ */
+const LS_LANG='ueg_lang';
+let LANG=(localStorage.getItem(LS_LANG)||'zh');
+const I18N={
+ 'nav-profile':['个人档案','PROFILE'],
+ 'nav-digital':['数字生命','DIGITAL LIFE'],
+ 'nav-undercity':['地下城','UNDERCITY'],
+ 'nav-nationality':['国籍','NATIONALITY'],
+ 'nav-settings':['权限设置','SETTINGS'],
+ 'nav-moss':['MOSS 智能体','MOSS AI'],
+ 'nav-log':['系统日志','SYSTEM LOG'],
+ 'nav-occupations':['职业查看','OCCUPATIONS'],
+ 'nav-priv':['特权中心','PRIVILEGE'],
+ 'nav-engine':['行星发动机控制','ENGINE CONTROL'],
+ 'nav-driverview':['驾驶员查看','DRIVER VIEW'],
+ 'nav-vehicles':['车辆管理','VEHICLE MGMT'],
+ 'nav-vehcard':['车卡管理','VEHICLE CARD'],
+ 'nav-admin':['管理员后台','ADMIN CONSOLE'],
+ 'nav-broadcast':['全频道广播','BROADCAST'],
+ 'nav-announce':['公告板','ANNOUNCEMENT'],
+ 'nav-emergency':['紧急公告','EMERGENCY'],
+ 'brand-t1':['联合政府 · 个人身份管理','UEG · IDENTITY MANAGEMENT'],
+ 'mode-online':['在线','ONLINE'],
+ 'mode-offline':['离线','OFFLINE'],
+ 'logout':['注销','LOGOUT'],
+ 'enter-system':['进入系统','ENTER SYSTEM'],
+ 'login-tab':['登 录','LOGIN'],
+ 'reg-tab':['注 册','REGISTER'],
+ 'qr-tab':['扫 码','QR CODE'],
+ 'login-acct':['账号 · ACCOUNT（姓名 或 邮箱）','ACCOUNT · (Name or Email)'],
+ 'login-pwd':['密码 · PASSWORD（姓名首字母）','PASSWORD · (Initials)'],
+ 'login-acct-ph':['请输入姓名或注册邮箱','Enter name or registered email'],
+ 'login-pwd-ph':['如：ZMY','e.g. ZMY'],
+ 'login-btn':['登 录','LOGIN'],
+ 'login-sec':['新用户请切换「注册」创建身份档案','New user? Switch to REGISTER to create your identity'],
+ 'reg-name':['姓名 · FULL NAME','FULL NAME'],
+ 'reg-email':['邮箱 · EMAIL（用于登录）','EMAIL (for login)'],
+ 'reg-name-ph':['请输入您的姓名，如：李雷','Enter your name, e.g. Li Lei'],
+ 'reg-email-ph':['如：lilei@example.com','e.g. lilei@example.com'],
+ 'reg-btn':['创建档案并登录','CREATE & LOGIN'],
+ 'reg-sec':['账号 = 姓名　密码 = 姓名首字母（系统自动生成）','Account = Name · Password = Initials (auto)'],
+ 'status-online':['在线模式 · 已同步','ONLINE · SYNCED'],
+ 'status-offline':['离线模式 · 本地存储','OFFLINE · LOCAL ONLY'],
+ 'title':['联合政府 · 个人身份管理系统 | UEG Identity System','UEG Identity System | 联合政府 · 个人身份管理系统'],
+ 't-profile':['个人档案','PERSONAL PROFILE'],
+ 't-digital':['数字生命','DIGITAL LIFE'],
+ 't-undercity':['地下城','UNDERGROUND CITY'],
+ 't-nationality':['国籍','NATIONALITY'],
+ 't-settings':['权限设置','PERMISSION SETTINGS'],
+ 't-moss':['MOSS 智能体','MOSS AI'],
+ 't-log':['系统日志','SYSTEM LOG'],
+ 't-occupations':['职业查看','OCCUPATION SYSTEM'],
+ 't-priv':['特权中心','PRIVILEGE CENTER'],
+ 't-engine':['行星发动机控制','EARTH ENGINE CONTROL'],
+ 't-driverview':['驾驶员查看','DRIVER OVERVIEW'],
+ 't-vehicles':['车辆管理','VEHICLE MANAGEMENT'],
+ 't-vehcard':['车卡管理','VEHICLE CARD MANAGEMENT'],
+ 't-admin':['管理员后台','UEG ADMIN CONSOLE'],
+ 't-broadcast':['全频道广播','ALL-CHANNEL BROADCAST'],
+ 't-announce':['公告板','ANNOUNCEMENT BOARD']
+};
+function t(k){const pair=I18N[k];return pair?(LANG==='zh'?pair[0]:pair[1]):k;}
+function applyLang(){
+  document.getElementById('langBtn').textContent=LANG==='zh'?'中 / EN':'EN / 中';
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    const v=el.getAttribute('data-view');
+    const map={profile:'nav-profile',digital:'nav-digital',undercity:'nav-undercity',nationality:'nav-nationality',settings:'nav-settings',moss:'nav-moss',log:'nav-log',occupations:'nav-occupations',priv:'nav-priv',engine:'nav-engine',driverview:'nav-driverview',vehicles:'nav-vehicles',vehcard:'nav-vehcard',admin:'nav-admin',broadcast:'nav-broadcast',announce:'nav-announce',emergency:'nav-emergency'};
+    if(map[v]){
+      const texts=el.childNodes;
+      for(let i=0;i<texts.length;i++){if(texts[i].nodeType===3&&texts[i].textContent.trim()){texts[i].textContent=t(map[v]);break;}}
+    }
+  });
+  const b1=document.querySelector('.brand .t1');
+  if(b1)b1.innerHTML=t('brand-t1').replace('·','<em> · </em>');
+  document.querySelectorAll('.mode-opt').forEach(el=>{
+    const m=el.getAttribute('data-mode');
+    el.textContent=m==='online'?t('mode-online'):t('mode-offline');
+  });
+  const sy=document.getElementById('sysStatusDot');
+  if(sy)sy.textContent=MODE==='online'?t('status-online'):t('status-offline');
+  const logout=document.getElementById('btnLogout');
+  if(logout)logout.title=t('logout');
+  document.querySelectorAll('.view').forEach(v=>{
+    const h=v.querySelector('.view-head h2');
+    if(!h)return;
+    const key='t-'+v.id.replace('view-','');
+    if(I18N[key]){
+      for(let i=0;i<h.childNodes.length;i++){if(h.childNodes[i].nodeType===3&&h.childNodes[i].textContent.trim()){h.childNodes[i].textContent=t(key);break;}}
+    }
+  });
+  document.title=t('title');
+  const tabs={tabLogin:'login-tab',tabReg:'reg-tab',tabQr:'qr-tab'};
+  for(const id in tabs){const el=document.getElementById(id);if(el)el.textContent=t(tabs[id]);}
+  const els={
+    '#formLogin label':['login-acct','login-pwd'],
+    '#formLogin button':['login-btn'],
+    '#formLogin .auth-sec':['login-sec'],
+    '#formReg label':['reg-name','reg-email'],
+    '#formReg button':['reg-btn'],
+    '#formReg .auth-sec':['reg-sec']
+  };
+  const labs=document.querySelectorAll('#formLogin label');
+  if(labs[0])labs[0].textContent=t('login-acct');
+  if(labs[1])labs[1].textContent=t('login-pwd');
+  const bl=document.getElementById('btnLogin');if(bl)bl.textContent=t('login-btn');
+  const ls=document.querySelector('#formLogin .auth-sec');if(ls)ls.textContent=t('login-sec');
+  const rl=document.querySelectorAll('#formReg label');
+  if(rl[0])rl[0].textContent=t('reg-name');
+  if(rl[1])rl[1].textContent=t('reg-email');
+  const rb=document.getElementById('btnReg');if(rb)rb.textContent=t('reg-btn');
+  const rs=document.querySelector('#formReg .auth-sec');if(rs)rs.textContent=t('reg-sec');
+  const ia=document.getElementById('inAccount');if(ia)ia.placeholder=t('login-acct-ph');
+  const ip=document.getElementById('inPwd');if(ip)ip.placeholder=t('login-pwd-ph');
+  const rn=document.getElementById('inRegName');if(rn)rn.placeholder=t('reg-name-ph');
+  const re=document.getElementById('inRegEmail');if(re)re.placeholder=t('reg-email-ph');
+}
+
 /* ============ 云端同步层（Supabase · 多设备互通） ============ */
 const SUPABASE_URL='https://ydnytdnumrqflnyctdut.supabase.co';
 const SUPABASE_KEY='sb_publishable_i5kK72ZZlWYCc_A-Mb9StQ_6rX2gyr-';
@@ -2622,6 +2742,12 @@ const bootSuccess=document.getElementById('bootSuccess');
 const scanMsg=document.getElementById('scanMsg');
 const bootId=document.getElementById('bootId');
 const btnEnter=document.getElementById('btnEnter');
+document.getElementById('langBtn').addEventListener('click',()=>{
+  LANG=LANG==='zh'?'en':'zh';
+  localStorage.setItem(LS_LANG,LANG);
+  location.reload();
+});
+applyLang();
 function showAuth(mode){
   document.getElementById('tabLogin').classList.toggle('active',mode==='login');
   document.getElementById('tabReg').classList.toggle('active',mode==='reg');
