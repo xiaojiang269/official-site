@@ -592,6 +592,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
 .nb-sub{font-size:11.5px;color:rgba(190,220,255,.8);margin-top:3px;font-family:var(--mono);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nb-act{flex:none;background:linear-gradient(145deg,#37E6FF,#0B7DA8);color:#02121F;border:none;border-radius:8px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 0 14px rgba(55,230,255,.4)}
 .nb-act.active{background:linear-gradient(145deg,#2EE6A0,#0A8A5A);box-shadow:0 0 14px rgba(46,230,160,.5)}
+.nb-act.nb-stop{background:linear-gradient(145deg,#FF6A4D,#A92E1B);color:#FFF;box-shadow:0 0 14px rgba(255,106,77,.45)}
 .nb-act:disabled{cursor:default}
 .map-canvas{position:relative;overflow:hidden;border-radius:8px;border:1px solid rgba(55,230,255,.14);background:radial-gradient(circle at 50% 50%,rgba(55,230,255,.06),rgba(5,12,28,.6))}
 .map-radar{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:1}
@@ -1573,6 +1574,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
             <div class="nb-sub" id="nbSub">目标：木星借力点 · 实时距离 2.30 AU · 预计 2078-01-14 到达</div>
           </div>
           <button class="nb-act" id="btnNavStart">开始导航</button>
+          <button class="nb-act nb-stop" id="btnNavStop" style="display:none">停止导航</button>
         </div>
         <div class="map-layout">
           <div class="panel hud map-star">
@@ -2574,7 +2576,12 @@ function showView(name){
   if(name==='priv'){renderPriv();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderPriv();}});}
   if(name==='privterm'){const ttl=document.getElementById('privTermTitle');if(ttl)ttl.textContent='PRIVILEGE TERMINAL · '+(privTermOcc||'');renderPrivTerm();}
   if(name==='nav'){renderNav();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderNav();}});}
-  if(name==='map'){renderMap();startMapLive();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderMap();}});}else{stopMapLive();}
+  if(name==='map'){renderMap();startMapLive();if(CLOUD_ON)cloudGetAll().then(()=>{
+    if(cloudCache.navstate)NAVSTATE=cloudCache.navstate;
+    if(NAVSTATE.on&&!mapNavTimer){mapPhase=0;updateNavBar();clearInterval(mapNavTimer);mapNavTimer=setInterval(()=>{mapPhase=(mapPhase+1)%MAP_PHASES.length;updateNavBar();},4000);}
+    syncNavUI(!!NAVSTATE.on);
+    if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderMap();}
+  });}else{stopMapLive();}
   if(name==='adm-users')renderUsers();
   if(name==='adm-settings')renderSettings();
   if(chartsInit)Object.values(echartsInstances).forEach(c=>c&&c.resize());
@@ -2740,7 +2747,7 @@ async function cloudFetch(key,method,body){
 }
 async function cloudGetAll(){
   if(!CLOUD_ON)return false;
-  const keys=['accounts','settings','broadcasts'];
+  const keys=['accounts','settings','broadcasts','navstate'];
   for(const k of keys){
     try{
       const rows=await cloudFetch(k,'GET');
@@ -4248,6 +4255,8 @@ const MAP_CITIES=[
  {c:'迪拜',d:'迪拜地下城',lat:'25.2°N',lon:'55.3°E'},{c:'新德里',d:'新德里地下城',lat:'28.6°N',lon:'77.2°E'}
 ];
 let mapLiveTimer=null,mapNavTimer=null,mapPhase=0;
+const NAVSTATE_KEY='navstate';
+let NAVSTATE={on:false,by:'',at:0};
 const MAP_PHASES=[
  {icon:'M9 20l6-8-6-8',instr:'前方 2.30 AU · 保持航向 234.6° 直行',sub:'目标：木星借力点 · 实时距离 2.30 AU'},
  {icon:'M14 8l-6 4 6 4',instr:'前方 1.60 AU · 右侧偏航修正 · 驶向木星引力范围',sub:'借力点窗口开启 · 建议保持 234.6°'},
@@ -4267,6 +4276,7 @@ function renderMap(q){
   if(con){
     if(canNav){
       con.innerHTML='<button class="btn-primary map-op" data-a="start">开始导航</button>'+
+        '<button class="btn map-op map-stop-op" data-a="stop" style="'+(NAVSTATE.on?'':'display:none')+'">停止导航</button>'+
         '<button class="btn map-op" data-a="voice">语音播报</button>'+
         '<button class="btn map-op" data-a="lock">锁定航迹</button>'+
         '<button class="btn map-op" data-a="up">上报坐标</button>'+
@@ -4276,6 +4286,11 @@ function renderMap(q){
         const a=b.dataset.a;
         if(a==='start'){
           startMapNav();
+          return;
+        }
+        if(a==='stop'){
+          if(!NAVSTATE.on){toast('warn','未在导航','当前全服导航未开启');return;}
+          stopMapNav();
           return;
         }
         if(a==='voice'){toast('ok','语音播报已开启','导航语音：前方 2.30 AU 保持航向 234.6° 直行');appendLog(['ok','MAP','地球地图：开启语音播报'],0);return;}
@@ -4290,15 +4305,42 @@ function renderMap(q){
   }
 }
 function startMapNav(){
+  if(NAVSTATE.on){toast('warn','导航进行中','实时导航已在全服运行，由 '+(NAVSTATE.by||'领航员')+' 发起');return;}
+  NAVSTATE={on:true,by:CURRENT?CURRENT.name:'',at:Date.now()};
+  if(typeof CLOUD_ON!=='undefined'&&CLOUD_ON)cloudSet(NAVSTATE_KEY,NAVSTATE);
   mapPhase=0;updateNavBar();
   clearInterval(mapNavTimer);
   mapNavTimer=setInterval(()=>{mapPhase=(mapPhase+1)%MAP_PHASES.length;updateNavBar();},4000);
+  syncNavUI(true);
+  toast('ok','实时导航已开始','全服导航已开启 · 所有设备同步显示导航中 · 仅领航员/管理员可停止');
+  appendLog(['ok','MAP','地球地图：开始全服实时导航（'+(CURRENT?CURRENT.name:'')+'）'],0);
+}
+function stopMapNav(){
+  NAVSTATE={on:false,by:'',at:0};
+  if(typeof CLOUD_ON!=='undefined'&&CLOUD_ON)cloudSet(NAVSTATE_KEY,NAVSTATE);
+  clearInterval(mapNavTimer);
+  mapNavTimer=null;
+  mapPhase=0;
+  syncNavUI(false);
+  toast('ok','导航已停止','全服导航已结束 · 所有设备恢复待机');
+  appendLog(['ok','MAP','地球地图：停止全服实时导航（'+(CURRENT?CURRENT.name:'')+'）'],0);
+}
+function syncNavUI(on){
   const b=document.getElementById('btnNavStart');
-  if(b){b.textContent='导航中';b.classList.add('active');b.disabled=true;}
+  const st=document.getElementById('btnNavStop');
   const dot=document.getElementById('mapStatusDot');
-  if(dot){dot.textContent='导航进行中';dot.className='status-dot go';}
-  toast('ok','实时导航已开始','正在为您规划航线：地球 → 木星借力点 → 比邻星');
-  appendLog(['ok','MAP','地球地图：开始实时导航（'+(CURRENT?CURRENT.name:'')+'）'],0);
+  const u=CURRENT?getAccounts()[CURRENT.name]:null;
+  const canStop=u&&(occupationOf(u)==='领航员'||(typeof isAdmin==='function'&&isAdmin()));
+  if(on){
+    if(b){b.textContent='导航中';b.classList.add('active');b.disabled=true;}
+    if(st){st.style.display=canStop?'inline-block':'none';}
+    if(dot){dot.textContent='导航进行中 · 全服同步';dot.className='status-dot go';}
+  }else{
+    if(b){b.textContent='开始导航';b.classList.remove('active');b.disabled=false;}
+    if(st)st.style.display='none';
+    if(dot){dot.textContent='实时导航 · 在线';dot.className='status-dot';}
+    updateNavBar();
+  }
 }
 function updateNavBar(){
   const p=MAP_PHASES[mapPhase];
@@ -4357,6 +4399,12 @@ document.addEventListener('input',e=>{
     const u=CURRENT?getAccounts()[CURRENT.name]:null;
     if(u&&(occupationOf(u)==='领航员'||(typeof isAdmin==='function'&&isAdmin()))){startMapNav();}
     else{toast('warn','权限不足','实时导航控制仅限领航员或联合政府管理员');}
+  });
+  const st=document.getElementById('btnNavStop');
+  if(st)st.addEventListener('click',()=>{
+    const u=CURRENT?getAccounts()[CURRENT.name]:null;
+    if(u&&(occupationOf(u)==='领航员'||(typeof isAdmin==='function'&&isAdmin()))){stopMapNav();}
+    else{toast('warn','权限不足','仅领航员或联合政府管理员可停止全服导航');}
   });
 })();
 const NAV_NODES=[
