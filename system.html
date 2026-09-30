@@ -2747,7 +2747,6 @@ document.getElementById('langBtn').addEventListener('click',()=>{
   localStorage.setItem(LS_LANG,LANG);
   location.reload();
 });
-applyLang();
 function showAuth(mode){
   document.getElementById('tabLogin').classList.toggle('active',mode==='login');
   document.getElementById('tabReg').classList.toggle('active',mode==='reg');
@@ -4667,6 +4666,7 @@ function initCharts(){
   echartsInstances.rd=rd;
 }
 window.addEventListener('resize',()=>Object.values(echartsInstances).forEach(c=>c&&c.resize()));
+applyLang();
 </script>
 </body>
 </html>
