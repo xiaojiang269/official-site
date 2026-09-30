@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RoboForge · 管理员后台</title>
+<style>
+:root{
+  --bg:#0f1419;--card:#1a2029;--card2:#212936;--line:#2d3748;--txt:#e5e7eb;--txt-2:#9ca3af;--txt-3:#6b7280;
+  --cyan:#22d3ee;--cyan-dim:rgba(34,211,238,.12);--green:#34d399;--amber:#f59e0b;--red:#ef5b5b;--violet:#a78bfa;
+  --radius:10px;--mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;overflow:hidden}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+
+/* 登录页 */
+.login-wrap{display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(135deg,#0f1419 0%,#1a2a3a 100%)}
+.login-box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:40px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-logo h1{font-size:24px;color:var(--cyan);margin-bottom:6px}
+.login-logo p{color:var(--txt-3);font-size:13px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:13px;color:var(--txt-2);margin-bottom:8px}
+.form-group input{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:14px;outline:none;transition:border .2s}
+.form-group input:focus{border-color:var(--cyan)}
+.login-btn{width:100%;padding:13px;background:var(--cyan);color:#0f1419;border:none;border-radius:8px;font-size:15px;font-weight:600;margin-top:8px}
+.login-btn:hover{opacity:.9}
+.login-error{color:var(--red);font-size:13px;text-align:center;margin-top:12px;display:none}
+
+/* 管理后台布局 */
+.admin-shell{display:none;height:100vh}
+.admin-shell.show{display:flex}
+.sidebar{width:240px;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.sidebar-head{padding:20px;border-bottom:1px solid var(--line)}
+.sidebar-head h2{color:var(--cyan);font-size:18px;margin-bottom:4px}
+.sidebar-head p{color:var(--txt-3);font-size:12px}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;color:var(--txt-2);cursor:pointer;margin-bottom:4px;transition:all .15s;font-size:14px}
+.nav-item:hover{background:var(--card2);color:var(--txt)}
+.nav-item.active{background:var(--cyan-dim);color:var(--cyan)}
+.nav-item svg{width:16px;height:16px}
+.sidebar-foot{padding:16px;border-top:1px solid var(--line)}
+.user-info{display:flex;align-items:center;gap:10px}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--cyan);color:#0f1419;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
+.user-meta{flex:1}
+.user-meta b{display:block;font-size:13px}
+.user-meta span{font-size:11px;color:var(--txt-3)}
+.logout-link{color:var(--red);font-size:13px;cursor:pointer}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:60px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.topbar h1{font-size:18px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-time{color:var(--txt-3);font-size:13px;font-family:var(--mono)}
+.content{flex:1;padding:24px;overflow-y:auto}
+
+/* 卡片 */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.stat-card .label{color:var(--txt-3);font-size:13px;margin-bottom:8px}
+.stat-card .value{font-size:28px;font-weight:700;font-family:var(--mono)}
+.stat-card .change{font-size:12px;margin-top:6px}
+.stat-card .change.up{color:var(--green)}
+.stat-card .change.down{color:var(--red)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:20px}
+.panel-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.panel-head h3{font-size:15px}
+.panel-body{padding:20px}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 12px;color:var(--txt-3);font-size:12px;font-weight:500;border-bottom:1px solid var(--line)}
+td{padding:12px;border-bottom:1px solid var(--line);font-size:13px}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px}
+.tag.on{background:rgba(52,211,153,.12);color:var(--green)}
+.tag.off{background:rgba(239,91,91,.12);color:var(--red)}
+.tag.warn{background:rgba(245,158,11,.12);color:var(--amber)}
+.tag.violet{background:rgba(167,139,250,.12);color:var(--violet)}
+
+/* 视图切换 */
+.view{display:none}
+.view.active{display:block}
+
+/* 按钮 */
+.btn{padding:8px 16px;background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-size:13px}
+.btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-primary{background:var(--cyan);color:#0f1419;border:none;font-weight:600}
+.btn-primary:hover{opacity:.9}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-danger{background:rgba(239,91,91,.12);color:var(--red);border-color:rgba(239,91,91,.3)}
+
+/* 进度条 */
+.progress{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;border-radius:3px}
+
+/* 日志 */
+.log-line{padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;font-family:var(--mono)}
+.log-line .ts{color:var(--txt-3);margin-right:10px}
+.log-line .lv{display:inline-block;width:50px;font-weight:600}
+.log-line .lv.info{color:var(--cyan)}
+.log-line .lv.warn{color:var(--amber)}
+.log-line .lv.error{color:var(--red)}
+.log-line .lv.ok{color:var(--green)}
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div class="login-wrap" id="loginPage">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>RoboForge 管理后台</h1>
+      <p>Administrator Access Portal</p>
+    </div>
+    <div class="form-group">
+      <label>管理员账号</label>
+      <input type="text" id="adminUser" value="admin" placeholder="请输入管理员账号">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="adminPass" placeholder="请输入密码">
+    </div>
+    <button class="login-btn" onclick="doLogin()">登 录</button>
+    <div class="login-error" id="loginError">账号或密码错误，请重试</div>
+  </div>
+</div>
+
+<!-- 管理后台 -->
+<div class="admin-shell" id="adminShell">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <h2>RoboForge</h2>
+      <p>管理员控制台 v2.6.1</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        仪表盘
+      </div>
+      <div class="nav-item" data-view="devices">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/><circle cx="12" cy="12" r="2.4"/></svg>
+        设备管理
+      </div>
+      <div class="nav-item" data-view="users">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        用户管理
+      </div>
+      <div class="nav-item" data-view="logs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        操作日志
+      </div>
+      <div class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6"/></svg>
+        系统设置
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-info">
+        <div class="user-avatar">A</div>
+        <div class="user-meta">
+          <b>admin</b>
+          <span>超级管理员</span>
+        </div>
+        <span class="logout-link" onclick="doLogout()">退出</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h1 id="pageTitle">仪表盘</h1>
+      <div class="topbar-right">
+        <span class="topbar-time" id="topTime"></span>
+        <span class="tag on">● 系统运行正常</span>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- 仪表盘 -->
+      <div class="view active" id="view-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="label">在线设备</div>
+            <div class="value" style="color:var(--cyan)">0</div>
+            <div class="change up">等待设备接入</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">注册用户</div>
+            <div class="value" style="color:var(--green)">12</div>
+            <div class="change up">↑ 本月 +3</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">今日任务</div>
+            <div class="value" style="color:var(--amber)">0</div>
+            <div class="change down">等待设备上线</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">系统运行时长</div>
+            <div class="value" style="color:var(--violet)">128h</div>
+            <div class="change up">连续运行稳定</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>最近系统事件</h3>
+            <button class="btn btn-sm">查看全部</button>
+          </div>
+          <div class="panel-body">
+            <div class="log-line"><span class="ts">20:50:33</span><span class="lv info">INFO</span> 管理员 admin 登录后台控制台</div>
+            <div class="log-line"><span class="ts">20:50:30</span><span class="lv ok">OK</span> 网关 gz-01 心跳检测正常，延迟 12ms</div>
+            <div class="log-line"><span class="ts">20:45:00</span><span class="lv info">INFO</span> 系统自动备份完成，大小 2.4MB</div>
+            <div class="log-line"><span class="ts">20:30:00</span><span class="lv warn">WARN</span> 设备列表为空，无在线设备可调度</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 设备管理 -->
+      <div class="view" id="view-devices">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>设备列表</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm" id="btn-refresh-devices">刷新</button>
+              <button class="btn btn-sm btn-primary" id="btn-add-device">添加设备</button>
+            </div>
+          </div>
+          <div class="panel-body" style="text-align:center;padding:60px 20px;color:var(--txt-3)">
+            <p style="font-size:16px;margin-bottom:8px">暂无已接入设备</p>
+            <p style="font-size:13px">请在机器人工作台中通过「有线连接」向导接入设备</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户管理 -->
+      <div class="view" id="view-users">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>用户列表</h3>
+            <button class="btn btn-sm btn-primary" id="btn-add-user">添加用户</button>
+          </div>
+          <table>
+            <thead>
+              <tr><th>用户名</th><th>姓名</th><th>部门</th><th>角色</th><th>状态</th><th>最后登录</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-family:var(--mono)">admin</td>
+                <td>系统管理员</td>
+                <td>信息技术部</td>
+                <td><span class="tag violet">超级管理员</span></td>
+                <td><span class="tag on">在线</span></td>
+                <td>2026-09-15 20:50</td>
+                <td><button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--mono)">zhang.wei</td>
+                <td>张工</td>
+                <td>研发部</td>
+                <td><span class="tag on">开发者</span></td>
+                <td><span class="tag on">在线</span></td>
+                <td>2026-09-15 20:45</td>
+                <td><button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--mono)">li.na</td>
+                <td>李娜</td>
+                <td>运维部</td>
+                <td><span class="tag on">运维</span></td>
+                <td><span class="tag off">离线</span></td>
+                <td>2026-09-15 18:22</td>
+                <td><button class="btn btn-sm">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--mono)">wang.qiang</td>
+                <td>王强</td>
+                <td>研发部</td>
+                <td><span class="tag on">开发者</span></td>
+                <td><span class="tag warn">忙碌</span></td>
+                <td>2026-09-15 19:30</td>
+                <td><button class="btn btn-sm">编辑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 操作日志 -->
+      <div class="view" id="view-logs">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>系统操作日志</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm">导出</button>
+              <button class="btn btn-sm">清空</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="log-line"><span class="ts">20:50:33</span><span class="lv info">INFO</span> 用户 admin 登录管理后台</div>
+            <div class="log-line"><span class="ts">20:45:12</span><span class="lv info">INFO</span> 用户 zhang.wei 退出机器人工作台</div>
+            <div class="log-line"><span class="ts">20:30:00</span><span class="lv warn">WARN</span> 网关 gz-01 报告无在线设备</div>
+            <div class="log-line"><span class="ts">20:15:22</span><span class="lv ok">OK</span> 系统配置自动备份完成</div>
+            <div class="log-line"><span class="ts">19:45:08</span><span class="lv ok">OK</span> 网关心跳检测正常，连接稳定</div>
+            <div class="log-line"><span class="ts">19:30:15</span><span class="lv info">INFO</span> 用户 wang.qiang 修改导航参数配置</div>
+            <div class="log-line"><span class="ts">18:22:40</span><span class="lv info">INFO</span> 用户 li.na 登录运维后台</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 系统设置 -->
+      <div class="view" id="view-settings">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>系统配置</h3>
+            <button class="btn btn-primary btn-sm">保存修改</button>
+          </div>
+          <div class="panel-body">
+            <table>
+              <tbody>
+                <tr><td style="width:200px;color:var(--txt-2)">系统名称</td><td>RoboForge 机器人开发平台</td></tr>
+                <tr><td style="color:var(--txt-2)">网关地址</td><td style="font-family:var(--mono)">gz-01.internal.robo</td></tr>
+                <tr><td style="color:var(--txt-2)">通信协议</td><td>MQTT v3.1.1</td></tr>
+                <tr><td style="color:var(--txt-2)">数据保留周期</td><td>90 天</td></tr>
+                <tr><td style="color:var(--txt-2)">自动备份</td><td><span class="tag on">已开启 · 每日 02:00</span></td></tr>
+                <tr><td style="color:var(--txt-2)">双因素认证</td><td><span class="tag warn">未开启</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+function doLogin(){
+  const u=document.getElementById('adminUser').value;
+  const p=document.getElementById('adminPass').value;
+  if(u==='admin'&&p==='admin123'){
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('adminShell').classList.add('show');
+    updateTime();
+    toast('登录成功，欢迎回来 admin');
+  }else{
+    document.getElementById('loginError').style.display='block';
+  }
+}
+function doLogout(){
+  if(confirm('确定要退出管理后台吗？')){
+    document.getElementById('adminShell').classList.remove('show');
+    document.getElementById('loginPage').style.display='flex';
+    document.getElementById('adminPass').value='';
+  }
+}
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+item.dataset.view).classList.add('active');
+    document.getElementById('pageTitle').textContent=item.textContent.trim();
+  });
+});
+function updateTime(){
+  const el=document.getElementById('topTime');
+  if(el) el.textContent=new Date().toLocaleString('zh-CN',{hour12:false});
+  setTimeout(updateTime,1000);
+}
+function toast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;top:20px;right:20px;background:var(--card2);color:var(--txt);padding:10px 20px;border-radius:8px;border:1px solid var(--line);z-index:9999;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.3)';
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2000);
+}
+// 给所有操作按钮绑定点击反馈
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('button');
+  if(!btn) return;
+  const txt=btn.textContent.trim();
+  if(txt==='编辑') toast('打开用户编辑面板');
+  else if(txt==='添加用户'||txt==='添加设备') toast('打开添加表单');
+  else if(txt==='刷新') toast('数据已刷新');
+  else if(txt==='导出') toast('导出任务已开始');
+  else if(txt==='清空'){ if(confirm('确定清空所有日志吗？')) toast('日志已清空'); }
+  else if(txt==='保存修改') toast('配置已保存');
+  else if(txt==='查看全部') toast('查看全部事件');
+});
+document.getElementById('adminPass').addEventListener('keydown',e=>{
+  if(e.key==='Enter') doLogin();
+});
+
+// 添加设备模态框
+const modal = document.createElement('div');
+modal.id = 'addDeviceModal';
+modal.style.cssText = `
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1000;
+`;
+modal.innerHTML = `
+  <div style="background:var(--panel);border-radius:12px;width:420px;max-width:90vw;padding:24px;border:1px solid var(--line)">
+    <h3 style="font-size:16px;margin-bottom:20px">添加新设备</h3>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--txt-3);margin-bottom:6px">设备名称</label>
+      <input type="text" id="devName" placeholder="例如：巡检机器人-01" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt-1);font-size:14px;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--txt-3);margin-bottom:6px">设备类型</label>
+      <select id="devType" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt-1);font-size:14px;box-sizing:border-box">
+        <option value="agv">AGV 搬运机器人</option>
+        <option value="inspect">巡检机器人</option>
+        <option value="arm">机械臂</option>
+        <option value="drone">无人机</option>
+      </select>
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:12px;color:var(--txt-3);margin-bottom:6px">连接方式</label>
+      <select id="devConn" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt-1);font-size:14px;box-sizing:border-box">
+        <option value="wired">有线连接</option>
+        <option value="wifi">Wi-Fi 无线</option>
+        <option value="4g">4G 蜂窝网络</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn" id="btnCancelAdd">取消</button>
+      <button class="btn btn-primary" id="btnConfirmAdd">确认添加</button>
+    </div>
+  </div>
+`;
+document.body.appendChild(modal);
+
+document.getElementById('btn-add-device').addEventListener('click',()=>{
+  modal.style.display='flex';
+});
+document.getElementById('btnCancelAdd').addEventListener('click',()=>{
+  modal.style.display='none';
+});
+document.getElementById('btnConfirmAdd').addEventListener('click',()=>{
+  const name = document.getElementById('devName').value.trim();
+  if(!name){ toast('请输入设备名称'); return; }
+  const type = document.getElementById('devType');
+  const typeText = type.options[type.selectedIndex].text;
+  toast(`设备「${name}」添加成功，类型：${typeText}`);
+  modal.style.display='none';
+  document.getElementById('devName').value='';
+});
+modal.addEventListener('click',e=>{
+  if(e.target===modal) modal.style.display='none';
+});
+
+// 添加用户模态框
+const userModal = document.createElement('div');
+userModal.id = 'addUserModal';
+userModal.style.cssText = `
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1000;
+`;
+userModal.innerHTML = `
+  <div style="background:var(--panel);border-radius:12px;width:420px;max-width:90vw;padding:24px;border:1px solid var(--line)">
+    <h3 style="font-size:16px;margin-bottom:20px">添加新用户</h3>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--txt-3);margin-bottom:6px">用户名</label>
+      <input type="text" id="userName" placeholder="例如：zhang.san" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt-1);font-size:14px;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--txt-3);margin-bottom:6px">姓名</label>
+      <input type="text" id="userFullName" placeholder="例如：张三" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt-1);font-size:14px;box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--txt-3);margin-bottom:6px">部门</label>
+      <select id="userDept" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt-1);font-size:14px;box-sizing:border-box">
+        <option value="rd">研发部</option>
+        <option value="ops">运维部</option>
+        <option value="test">测试部</option>
+        <option value="it">信息技术部</option>
+      </select>
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:12px;color:var(--txt-3);margin-bottom:6px">角色</label>
+      <select id="userRole" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt-1);font-size:14px;box-sizing:border-box">
+        <option value="developer">开发者</option>
+        <option value="operator">操作员</option>
+        <option value="admin">管理员</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn" id="btnCancelUser">取消</button>
+      <button class="btn btn-primary" id="btnConfirmUser">确认添加</button>
+    </div>
+  </div>
+`;
+document.body.appendChild(userModal);
+
+document.getElementById('btn-add-user').addEventListener('click',()=>{
+  userModal.style.display='flex';
+});
+document.getElementById('btnCancelUser').addEventListener('click',()=>{
+  userModal.style.display='none';
+});
+document.getElementById('btnConfirmUser').addEventListener('click',()=>{
+  const name = document.getElementById('userName').value.trim();
+  const fullName = document.getElementById('userFullName').value.trim();
+  if(!name || !fullName){ toast('请填写完整信息'); return; }
+  const role = document.getElementById('userRole');
+  const roleText = role.options[role.selectedIndex].text;
+  toast(`用户「${fullName}」添加成功，角色：${roleText}`);
+  userModal.style.display='none';
+  document.getElementById('userName').value='';
+  document.getElementById('userFullName').value='';
+});
+userModal.addEventListener('click',e=>{
+  if(e.target===userModal) userModal.style.display='none';
+});
+</script>
+</body>
+</html>
