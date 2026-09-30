@@ -2492,7 +2492,7 @@ function applyLang(){
     el.textContent=m==='online'?t('mode-online'):t('mode-offline');
   });
   const sy=document.getElementById('sysStatusDot');
-  if(sy)sy.textContent=MODE==='online'?t('status-online'):t('status-offline');
+  if(sy)sy.textContent=(typeof MODE!=='undefined'&&MODE==='online')?t('status-online'):t('status-offline');
   const logout=document.getElementById('btnLogout');
   if(logout)logout.title=t('logout');
   document.querySelectorAll('.view').forEach(v=>{
