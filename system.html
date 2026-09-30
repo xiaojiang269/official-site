@@ -581,6 +581,26 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
 .map-city em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--amber)}
 .map-op{font-size:12.5px;padding:9px 16px;cursor:pointer}
 .map-op:disabled{opacity:.5;cursor:default}
+.nav-bar{display:flex;align-items:center;gap:14px;padding:12px 16px;margin:2px 0 14px;border:1px solid rgba(55,230,255,.3);border-radius:10px;background:linear-gradient(90deg,rgba(18,46,84,.9),rgba(12,28,58,.92));box-shadow:0 0 18px rgba(55,230,255,.12);position:relative;overflow:hidden}
+.nav-bar::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(55,230,255,.06),transparent);animation:nbSweep 3s linear infinite;pointer-events:none}
+@keyframes nbSweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.nb-icon{flex:none;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#1E88C9,#0E3A63);color:#BFEFFF;border:1px solid rgba(255,255,255,.25);box-shadow:0 0 16px rgba(55,230,255,.45);animation:nbPulse 2s ease-in-out infinite}
+.nb-icon svg{width:30px;height:30px}
+@keyframes nbPulse{0%,100%{box-shadow:0 0 12px rgba(55,230,255,.35)}50%{box-shadow:0 0 22px rgba(55,230,255,.7)}}
+.nb-main{flex:1;min-width:0}
+.nb-instr{font-size:clamp(13px,2vw,16px);font-weight:700;color:#EAF8FF;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nb-sub{font-size:11.5px;color:rgba(190,220,255,.8);margin-top:3px;font-family:var(--mono);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nb-act{flex:none;background:linear-gradient(145deg,#37E6FF,#0B7DA8);color:#02121F;border:none;border-radius:8px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 0 14px rgba(55,230,255,.4)}
+.nb-act.active{background:linear-gradient(145deg,#2EE6A0,#0A8A5A);box-shadow:0 0 14px rgba(46,230,160,.5)}
+.nb-act:disabled{cursor:default}
+.map-canvas{position:relative;overflow:hidden;border-radius:8px;border:1px solid rgba(55,230,255,.14);background:radial-gradient(circle at 50% 50%,rgba(55,230,255,.06),rgba(5,12,28,.6))}
+.map-radar{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none;z-index:1}
+.map-radar::before{content:"";position:absolute;left:-260px;top:-260px;width:520px;height:520px;border-radius:50%;background:conic-gradient(from 0deg,rgba(55,230,255,.16),transparent 70deg,transparent 360deg);animation:radarSpin 3.2s linear infinite}
+@keyframes radarSpin{to{transform:rotate(360deg)}}
+.map-svg{width:100%;height:auto;display:block;position:relative;z-index:2}
+.mp-ring{transform-origin:342px 210px;animation:ringPulse 1.8s ease-out infinite}
+@keyframes ringPulse{0%{transform:scale(.7);opacity:.9}70%{transform:scale(1.9);opacity:.2}100%{transform:scale(2);opacity:0}}
+.status-dot.go{background:#2EE6A0;box-shadow:0 0 10px #2EE6A0}
 #engineTable tr{cursor:pointer;transition:background .15s}
 #engineTable tr:hover{background:rgba(55,230,255,.05)}
 #engineTable tr.sel{background:rgba(55,230,255,.09)}
@@ -1539,42 +1559,58 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
       <!-- ===== 视图：地球地图 ===== -->
       <section class="view" id="view-map">
         <div class="view-head">
-          <h2>地球地图<small>EARTH MAP · 全球坐标与航线星图</small></h2>
+          <h2>地球地图<small>EARTH MAP · 实时导航模式</small></h2>
           <div class="head-actions">
-            <span class="status-dot" id="mapStatusDot">星图在线</span>
+            <span class="status-dot" id="mapStatusDot">实时导航 · 在线</span>
           </div>
+        </div>
+        <div class="nav-bar" id="navBar">
+          <div class="nb-icon" id="nbIcon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 20l6-8-6-8"/></svg>
+          </div>
+          <div class="nb-main">
+            <div class="nb-instr" id="nbInstr">前方 2.30 AU · 保持航向 234.6° 直行</div>
+            <div class="nb-sub" id="nbSub">目标：木星借力点 · 实时距离 2.30 AU · 预计 2078-01-14 到达</div>
+          </div>
+          <button class="nb-act" id="btnNavStart">开始导航</button>
         </div>
         <div class="map-layout">
           <div class="panel hud map-star">
-            <div class="panel-title"><h3>太阳系航线星图</h3><span class="en">SOLAR SYSTEM ROUTE CHART</span></div>
-            <svg viewBox="0 0 460 420" class="map-svg" id="mapSvg">
-              <circle cx="230" cy="210" r="8" fill="#FFD873" opacity=".95"/>
-              <circle cx="230" cy="210" r="16" fill="none" stroke="#FFD873" stroke-width="1" opacity=".35"/>
-              <circle cx="230" cy="210" r="26" fill="none" stroke="#FFD873" stroke-width="1" opacity=".18"/>
-              <circle cx="230" cy="210" r="46" fill="none" stroke="rgba(55,230,255,.28)" stroke-width="1" stroke-dasharray="2 4"/>
-              <circle cx="230" cy="210" r="78" fill="none" stroke="rgba(55,230,255,.28)" stroke-width="1" stroke-dasharray="2 4"/>
-              <circle cx="230" cy="210" r="112" fill="none" stroke="rgba(55,230,255,.34)" stroke-width="1.2"/>
-              <circle cx="230" cy="210" r="150" fill="none" stroke="rgba(55,230,255,.34)" stroke-width="1.2"/>
-              <circle cx="230" cy="210" r="192" fill="none" stroke="rgba(55,230,255,.34)" stroke-width="1.2"/>
-              <circle cx="230" cy="210" r="232" fill="none" stroke="rgba(55,230,255,.28)" stroke-width="1" stroke-dasharray="2 4"/>
-              <circle cx="276" cy="210" r="4" fill="#BFE8FF"/><text x="282" y="206" class="mp-lab">水星</text>
-              <circle cx="230" cy="132" r="5" fill="#FFE9B8"/><text x="238" y="128" class="mp-lab">金星</text>
-              <circle cx="342" cy="210" r="6" fill="#37E6FF" class="mp-earth"/><text x="350" y="206" class="mp-lab mp-earth-lab">地球 · 当前位置</text>
-              <circle cx="152" cy="300" r="5" fill="#FF9E7A"/><text x="140" y="316" class="mp-lab">火星</text>
-              <circle cx="380" cy="122" r="12" fill="#E8C49A"/><text x="392" y="118" class="mp-lab">木星 · 借力点</text>
-              <path d="M 342 210 C 372 232, 390 268, 410 300" fill="none" stroke="#FFB94A" stroke-width="2" stroke-dasharray="6 6" class="mp-route"/>
-              <circle cx="410" cy="300" r="7" fill="none" stroke="#FFB94A" stroke-width="1.5"/>
-              <text x="330" y="330" class="mp-lab mp-dest">比邻星 · 目的地 4.22 光年</text>
-              <text x="16" y="380" class="mp-note">地球已脱离原轨道 · 借木星引力弹弓加速 · 航迹线实时更新</text>
-            </svg>
+            <div class="panel-title"><h3>太阳系航线星图</h3><span class="en">LIVE SOLAR ROUTE · 实时动态</span></div>
+            <div class="map-canvas">
+              <div class="map-radar"></div>
+              <svg viewBox="0 0 460 420" class="map-svg" id="mapSvg">
+                <circle cx="230" cy="210" r="8" fill="#FFD873" opacity=".95"/>
+                <circle cx="230" cy="210" r="16" fill="none" stroke="#FFD873" stroke-width="1" opacity=".35"/>
+                <circle cx="230" cy="210" r="26" fill="none" stroke="#FFD873" stroke-width="1" opacity=".18"/>
+                <circle cx="230" cy="210" r="46" fill="none" stroke="rgba(55,230,255,.28)" stroke-width="1" stroke-dasharray="2 4"/>
+                <circle cx="230" cy="210" r="78" fill="none" stroke="rgba(55,230,255,.28)" stroke-width="1" stroke-dasharray="2 4"/>
+                <circle cx="230" cy="210" r="112" fill="none" stroke="rgba(55,230,255,.34)" stroke-width="1.2"/>
+                <circle cx="230" cy="210" r="150" fill="none" stroke="rgba(55,230,255,.34)" stroke-width="1.2"/>
+                <circle cx="230" cy="210" r="192" fill="none" stroke="rgba(55,230,255,.34)" stroke-width="1.2"/>
+                <circle cx="230" cy="210" r="232" fill="none" stroke="rgba(55,230,255,.28)" stroke-width="1" stroke-dasharray="2 4"/>
+                <g class="mp-planet" data-p="0"><circle cx="276" cy="210" r="4" fill="#BFE8FF"/></g><text x="282" y="206" class="mp-lab">水星</text>
+                <g class="mp-planet" data-p="1"><circle cx="230" cy="132" r="5" fill="#FFE9B8"/></g><text x="238" y="128" class="mp-lab">金星</text>
+                <circle cx="342" cy="210" r="6" fill="#37E6FF" class="mp-earth"/>
+                <circle cx="342" cy="210" r="12" fill="none" stroke="#37E6FF" stroke-width="1" class="mp-ring"/>
+                <text x="350" y="206" class="mp-lab mp-earth-lab">地球 · 实时位置</text>
+                <g class="mp-planet" data-p="2"><circle cx="152" cy="300" r="5" fill="#FF9E7A"/></g><text x="140" y="316" class="mp-lab">火星</text>
+                <g class="mp-planet" data-p="3"><circle cx="380" cy="122" r="12" fill="#E8C49A"/></g><text x="392" y="118" class="mp-lab">木星 · 借力点</text>
+                <path d="M 342 210 C 372 232, 390 268, 410 300" fill="none" stroke="#FFB94A" stroke-width="2" stroke-dasharray="6 6" class="mp-route"/>
+                <circle cx="410" cy="300" r="7" fill="none" stroke="#FFB94A" stroke-width="1.5"/>
+                <text x="330" y="330" class="mp-lab mp-dest">比邻星 · 目的地 4.22 光年</text>
+                <text x="16" y="380" class="mp-note">行星实时公转 · 地球航线实时推进 · 数据每秒刷新</text>
+              </svg>
+            </div>
           </div>
           <div class="panel hud map-side">
-            <div class="panel-title"><h3>地球当前位置</h3><span class="en">EARTH POSITION</span></div>
+            <div class="panel-title"><h3>实时航行数据</h3><span class="en">LIVE TELEMETRY</span></div>
             <div class="map-pos">
-              <div class="ps-row"><span>航行坐标</span><b id="mapPos">距太阳 1.42 AU · 航向 234.6°</b></div>
-              <div class="ps-row"><span>航线阶段</span><b>加速段 · 34%</b></div>
-              <div class="ps-row"><span>下一节点</span><b>木星借力点</b></div>
-              <div class="ps-row"><span>导航精度</span><b>±0.02°</b></div>
+              <div class="ps-row"><span>实时航向</span><b id="mapPos">234.6°</b></div>
+              <div class="ps-row"><span>实时速度</span><b id="mapVel">0.42 km/s</b></div>
+              <div class="ps-row"><span>距借力点</span><b id="mapDist">2.30 AU</b></div>
+              <div class="ps-row"><span>预计到达</span><b id="mapEta">2078-01-14</b></div>
+              <div class="ps-row"><span>航行阶段</span><b>加速段 · 34%</b></div>
             </div>
             <div class="panel-title" style="margin-top:14px"><h3>全球坐标检索</h3><span class="en">GLOBAL COORDINATE SEARCH</span></div>
             <input class="nation-search map-search" id="mapSearch" placeholder="搜索城市 / 地下城，如：北京、上海…">
@@ -1582,9 +1618,9 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
           </div>
         </div>
         <div class="panel hud">
-          <div class="panel-title"><h3>地图控制台</h3><span class="en">MAP CONSOLE</span></div>
+          <div class="panel-title"><h3>导航控制台</h3><span class="en">NAV CONSOLE · 实时模式</span></div>
           <div class="nav-console" id="mapConsole"></div>
-          <div class="users-hint">坐标检索对所有公民开放。航迹锁定与坐标上报仅限领航员或联合政府管理员执行。</div>
+          <div class="users-hint">坐标检索对所有公民开放。实时导航控制（开始导航 / 语音播报 / 航迹锁定）仅限领航员或联合政府管理员执行。</div>
         </div>
       </section>
 
@@ -2538,7 +2574,7 @@ function showView(name){
   if(name==='priv'){renderPriv();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderPriv();}});}
   if(name==='privterm'){const ttl=document.getElementById('privTermTitle');if(ttl)ttl.textContent='PRIVILEGE TERMINAL · '+(privTermOcc||'');renderPrivTerm();}
   if(name==='nav'){renderNav();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderNav();}});}
-  if(name==='map'){renderMap();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderMap();}});}
+  if(name==='map'){renderMap();startMapLive();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderMap();}});}else{stopMapLive();}
   if(name==='adm-users')renderUsers();
   if(name==='adm-settings')renderSettings();
   if(chartsInit)Object.values(echartsInstances).forEach(c=>c&&c.resize());
@@ -4211,6 +4247,14 @@ const MAP_CITIES=[
  {c:'莫斯科',d:'莫斯科地下城',lat:'55.8°N',lon:'37.6°E'},{c:'悉尼',d:'悉尼地下城',lat:'33.9°S',lon:'151.2°E'},
  {c:'迪拜',d:'迪拜地下城',lat:'25.2°N',lon:'55.3°E'},{c:'新德里',d:'新德里地下城',lat:'28.6°N',lon:'77.2°E'}
 ];
+let mapLiveTimer=null,mapNavTimer=null,mapPhase=0;
+const MAP_PHASES=[
+ {icon:'M9 20l6-8-6-8',instr:'前方 2.30 AU · 保持航向 234.6° 直行',sub:'目标：木星借力点 · 实时距离 2.30 AU'},
+ {icon:'M14 8l-6 4 6 4',instr:'前方 1.60 AU · 右侧偏航修正 · 驶向木星引力范围',sub:'借力点窗口开启 · 建议保持 234.6°'},
+ {icon:'M3 12h14',instr:'进入木星引力弹弓区 · 前方 0.85 AU · 保持航向',sub:'加速曲线提升中 · 速度持续增加'},
+ {icon:'M9 20l6-8-6-8',instr:'引力弹弓完成 · 航向重校准 188.2° · 驶离木星',sub:'新航线：木星 → 柯伊伯带哨站'},
+ {icon:'M3 12h14',instr:'柯伊伯带 · 前方哨站 · 减速至巡航速度',sub:'深度空间 · 航线偏差 0.01°'}
+];
 function renderMap(q){
   const u=CURRENT?getAccounts()[CURRENT.name]:null;
   const occ=occupationOf(u);
@@ -4222,24 +4266,99 @@ function renderMap(q){
   const con=document.getElementById('mapConsole');
   if(con){
     if(canNav){
-      con.innerHTML='<button class="btn-primary map-op" data-a="lock">锁定航迹</button>'+
+      con.innerHTML='<button class="btn-primary map-op" data-a="start">开始导航</button>'+
+        '<button class="btn map-op" data-a="voice">语音播报</button>'+
+        '<button class="btn map-op" data-a="lock">锁定航迹</button>'+
         '<button class="btn map-op" data-a="up">上报坐标</button>'+
         '<button class="btn map-op" data-a="ref">刷新星图</button>'+
-        '<span class="users-hint" style="display:inline;margin-left:10px">地图控制已授权 · '+(occ==='领航员'?'领航员特权':'管理员全权')+'</span>';
+        '<span class="users-hint" style="display:inline;margin-left:10px">实时导航已授权 · '+(occ==='领航员'?'领航员特权':'管理员全权')+'</span>';
       con.querySelectorAll('.map-op').forEach(b=>b.addEventListener('click',()=>{
-        const acts={lock:'航迹已锁定 · 234.6° 方向确认',up:'当前坐标已上报领航员空间站',ref:'星图已刷新 · 航线数据更新'};
-        toast('ok','地图指令已执行',acts[b.dataset.a]);
-        appendLog(['ok','MAP','地球地图：'+acts[b.dataset.a]],0);
+        const a=b.dataset.a;
+        if(a==='start'){
+          startMapNav();
+          return;
+        }
+        if(a==='voice'){toast('ok','语音播报已开启','导航语音：前方 2.30 AU 保持航向 234.6° 直行');appendLog(['ok','MAP','地球地图：开启语音播报'],0);return;}
+        const acts={lock:'航迹已锁定 · 234.6° 方向确认',up:'实时坐标已上报领航员空间站',ref:'星图已刷新 · 航线数据更新'};
+        toast('ok','地图指令已执行',acts[a]);
+        appendLog(['ok','MAP','地球地图：'+acts[a]],0);
         b.disabled=true;b.textContent='✓ 已执行';
       }));
     }else{
-      con.innerHTML='<span class="users-hint">航迹锁定与坐标上报仅限领航员或联合政府管理员操作。当前账号：'+occ+'（只读）</span>';
+      con.innerHTML='<span class="users-hint">实时导航控制仅限领航员或联合政府管理员操作。当前账号：'+occ+'（只读）</span>';
     }
   }
+}
+function startMapNav(){
+  mapPhase=0;updateNavBar();
+  clearInterval(mapNavTimer);
+  mapNavTimer=setInterval(()=>{mapPhase=(mapPhase+1)%MAP_PHASES.length;updateNavBar();},4000);
+  const b=document.getElementById('btnNavStart');
+  if(b){b.textContent='导航中';b.classList.add('active');b.disabled=true;}
+  const dot=document.getElementById('mapStatusDot');
+  if(dot){dot.textContent='导航进行中';dot.className='status-dot go';}
+  toast('ok','实时导航已开始','正在为您规划航线：地球 → 木星借力点 → 比邻星');
+  appendLog(['ok','MAP','地球地图：开始实时导航（'+(CURRENT?CURRENT.name:'')+'）'],0);
+}
+function updateNavBar(){
+  const p=MAP_PHASES[mapPhase];
+  const ic=document.getElementById('nbIcon');
+  const ins=document.getElementById('nbInstr');
+  const sub=document.getElementById('nbSub');
+  if(ic)ic.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="'+p.icon+'"/></svg>';
+  if(ins)ins.textContent=p.instr;
+  if(sub)sub.textContent=p.sub;
+}
+function startMapLive(){
+  stopMapLive();
+  const pos=document.getElementById('mapPos'),vel=document.getElementById('mapVel'),dist=document.getElementById('mapDist'),eta=document.getElementById('mapEta');
+  if(!pos)return;
+  let h=234.6,v=0.42,d=2.30,tick=0;
+  const upd=()=>{
+    tick++;
+    h=+(h+(Math.random()*0.06-0.03)).toFixed(2);
+    v=+(v+(Math.random()*0.006-0.003)).toFixed(3);
+    d=Math.max(0.85,+(d-(0.002+tick*0.00005)).toFixed(2));
+    if(pos)pos.textContent=h.toFixed(1)+'°';
+    if(vel)vel.textContent=v.toFixed(3)+' km/s';
+    if(dist)dist.textContent=d.toFixed(2)+' AU';
+    if(eta)eta.textContent='2078-01-'+String(14+Math.floor(tick/6)%6).padStart(2,'0');
+    const ring=document.querySelector('.mp-ring');
+    if(ring)ring.setAttribute('cx',342+tick%3);
+  };
+  upd();
+  mapLiveTimer=setInterval(upd,1200);
+  const svg=document.getElementById('mapSvg');
+  const planets=svg?svg.querySelectorAll('.mp-planet'):[];
+  if(planets.length){
+    const base=[{x:276,y:210},{x:230,y:132},{x:152,y:300},{x:380,y:122}];
+    let pt=0;
+    setInterval(()=>{
+      pt++;
+      planets.forEach((g,i)=>{
+        const b=base[i];
+        const off=Math.sin((pt+i)*0.4)*6;
+        const c=g.querySelector('circle');
+        if(c){c.setAttribute('cx',b.x+off);c.setAttribute('cy',b.y+(pt%2?1:-1)*(i+1));}
+      });
+    },600);
+  }
+}
+function stopMapLive(){
+  if(mapLiveTimer)clearInterval(mapLiveTimer);
+  mapLiveTimer=null;
 }
 document.addEventListener('input',e=>{
   if(e.target&&e.target.id==='mapSearch')renderMap(e.target.value);
 });
+(function(){
+  const sb=document.getElementById('btnNavStart');
+  if(sb)sb.addEventListener('click',()=>{
+    const u=CURRENT?getAccounts()[CURRENT.name]:null;
+    if(u&&(occupationOf(u)==='领航员'||(typeof isAdmin==='function'&&isAdmin()))){startMapNav();}
+    else{toast('warn','权限不足','实时导航控制仅限领航员或联合政府管理员');}
+  });
+})();
 const NAV_NODES=[
  {name:'领航员空间站',type:'同步轨道站',status:'在线',note:'地球导航中枢 · 航线计算与修正'},
  {name:'木星借力点',type:'加速航段',status:'待抵达',note:'引力弹弓 · 航向 234.6° · 预计 2078 年 1 月'},
