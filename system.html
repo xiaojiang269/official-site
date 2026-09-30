@@ -545,6 +545,22 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
 .term-ops{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .term-op{font-size:12.5px;padding:9px 16px}
 .term-op:disabled{opacity:.5;cursor:default}
+.nav-progress{padding:10px 2px 4px}
+.np-track{height:10px;border-radius:5px;background:rgba(55,230,255,.08);border:1px solid rgba(55,230,255,.25);overflow:hidden}
+.np-track i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,rgba(55,230,255,.7),rgba(255,185,74,.8));box-shadow:0 0 14px rgba(55,230,255,.4);transition:width .8s}
+.np-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-dim);margin-top:8px;font-family:var(--mono);letter-spacing:.04em}
+.nav-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.ns-item{border:1px solid rgba(55,230,255,.14);border-radius:6px;padding:10px 12px;background:rgba(10,20,45,.4);display:flex;flex-direction:column;gap:4px}
+.ns-item span{font-size:11px;color:var(--text-dim);letter-spacing:.06em}
+.ns-item b{font-size:15px;color:var(--cyan);font-family:var(--mono)}
+.nav-nodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;padding:4px 0 6px}
+.nav-node{border:1px solid rgba(55,230,255,.16);border-radius:6px;padding:11px 13px;background:linear-gradient(135deg,rgba(55,230,255,.05),rgba(20,30,60,.35))}
+.nav-node .nn-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;margin-bottom:4px}
+.nav-node .nn-meta{font-family:var(--mono);font-size:10.5px;color:var(--amber);letter-spacing:.08em}
+.nav-node p{font-size:12px;color:rgba(220,240,255,.72);margin-top:5px;line-height:1.6}
+.nav-console{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0 12px}
+.nav-op{font-size:12.5px;padding:9px 16px;cursor:pointer}
+.nav-op:disabled{opacity:.5;cursor:default}
 #engineTable tr{cursor:pointer;transition:background .15s}
 #engineTable tr:hover{background:rgba(55,230,255,.05)}
 #engineTable tr.sel{background:rgba(55,230,255,.09)}
@@ -810,6 +826,10 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
       <button class="nav-item" data-view="engine">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="10" r="6"/><path d="M8.5 15 7 21h10l-1.5-6"/><circle cx="12" cy="10" r="2"/></svg>
         行星发动机控制 <span class="n-idx">08</span>
+      </button>
+      <button class="nav-item" data-view="nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3 9 15l3-4 3 4z"/></svg>
+        导航系统 <span class="n-idx">NAV</span>
       </button>
       <div class="nav-sep driver-sep" style="display:none">TRANSPORT · 04</div>
       <button class="nav-item driver-view-nav" data-view="driverview" style="display:none">
@@ -1440,6 +1460,55 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
           <div class="panel-title"><h3>全职业特权目录</h3><span class="en">UEG PRIVILEGE DIRECTORY · 23</span></div>
           <div class="occ-grid" id="privDirGrid"></div>
           <div class="users-hint">特权由职业决定，管理员可在上方为公民开启 / 关闭特权并调整权限等级。公民本人仅可查看自己职业的特权。</div>
+        </div>
+      </section>
+
+      <!-- ===== 视图：导航系统 ===== -->
+      <section class="view" id="view-nav">
+        <div class="view-head">
+          <h2>导航系统<small>GLOBAL NAVIGATION · 地球航线导航</small></h2>
+          <div class="head-actions">
+            <span class="status-dot" id="navStatusDot">航线稳定</span>
+          </div>
+        </div>
+        <div class="engine-hero">
+          <div class="panel hud vital">
+            <div class="v-label">航向 · HEADING</div>
+            <div class="v-value">234.6<span class="u">°</span></div>
+            <div class="v-trend up">偏航 0.02% · 自动修正中</div>
+          </div>
+          <div class="panel hud vital">
+            <div class="v-label">航行速度 · VELOCITY</div>
+            <div class="v-value">0.42<span class="u">km/s</span></div>
+            <div class="v-trend">目标加速曲线 71.4%</div>
+          </div>
+          <div class="panel hud vital">
+            <div class="v-label">目的地 · DESTINATION</div>
+            <div class="v-value" style="font-size:clamp(15px,1.9vw,20px)">比邻星</div>
+            <div class="v-trend">半人马座 α · 4.22 光年</div>
+          </div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>地球航线进度</h3><span class="en">EARTH ROUTE · 加速阶段</span></div>
+          <div class="nav-progress">
+            <div class="np-track"><i id="navProgBar" style="width:34%"></i></div>
+            <div class="np-labels"><span>地球 · 出发点</span><span>木星借力点</span><span>柯伊伯带</span><span>比邻星 · 目标</span></div>
+          </div>
+          <div class="nav-stats">
+            <div class="ns-item"><span>已航行</span><b>约 6.2 亿 km</b></div>
+            <div class="ns-item"><span>剩余航程</span><b>4.2 光年</b></div>
+            <div class="ns-item"><span>当前阶段</span><b>加速段 · 第 34%</b></div>
+            <div class="ns-item"><span>导航精度</span><b>±0.02°</b></div>
+          </div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>导航节点</h3><span class="en">NAVIGATION NODES · 4</span></div>
+          <div class="nav-nodes" id="navNodes"></div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>导航控制台</h3><span class="en">NAV CONSOLE</span></div>
+          <div class="nav-console" id="navConsole"></div>
+          <div class="users-hint" id="navPermHint">航线校准与导航控制仅限领航员或联合政府管理员执行。所有公民可查看航线数据。</div>
         </div>
       </section>
 
@@ -2392,6 +2461,7 @@ function showView(name){
   if(name==='occupations'){renderOccupations();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderOccupations();}});}
   if(name==='priv'){renderPriv();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderPriv();}});}
   if(name==='privterm'){const ttl=document.getElementById('privTermTitle');if(ttl)ttl.textContent='PRIVILEGE TERMINAL · '+(privTermOcc||'');renderPrivTerm();}
+  if(name==='nav'){renderNav();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderNav();}});}
   if(name==='adm-users')renderUsers();
   if(name==='adm-settings')renderSettings();
   if(chartsInit)Object.values(echartsInstances).forEach(c=>c&&c.resize());
@@ -2427,6 +2497,7 @@ const I18N={
  'nav-occupations':['职业查看','OCCUPATIONS'],
  'nav-priv':['特权中心','PRIVILEGE'],
  'nav-engine':['行星发动机控制','ENGINE CONTROL'],
+ 'nav-nav':['导航系统','NAVIGATION'],
  'nav-driverview':['驾驶员查看','DRIVER VIEW'],
  'nav-vehicles':['车辆管理','VEHICLE MGMT'],
  'nav-vehcard':['车卡管理','VEHICLE CARD'],
@@ -2467,6 +2538,7 @@ const I18N={
  't-occupations':['职业查看','OCCUPATION SYSTEM'],
  't-priv':['特权中心','PRIVILEGE CENTER'],
  't-engine':['行星发动机控制','EARTH ENGINE CONTROL'],
+ 't-nav':['导航系统','GLOBAL NAVIGATION'],
  't-driverview':['驾驶员查看','DRIVER OVERVIEW'],
  't-vehicles':['车辆管理','VEHICLE MANAGEMENT'],
  't-vehcard':['车卡管理','VEHICLE CARD MANAGEMENT'],
@@ -2479,7 +2551,7 @@ function applyLang(){
   document.getElementById('langBtn').textContent=LANG==='zh'?'中 / EN':'EN / 中';
   document.querySelectorAll('.nav-item').forEach(el=>{
     const v=el.getAttribute('data-view');
-    const map={profile:'nav-profile',digital:'nav-digital',undercity:'nav-undercity',nationality:'nav-nationality',settings:'nav-settings',moss:'nav-moss',log:'nav-log',occupations:'nav-occupations',priv:'nav-priv',engine:'nav-engine',driverview:'nav-driverview',vehicles:'nav-vehicles',vehcard:'nav-vehcard',admin:'nav-admin',broadcast:'nav-broadcast',announce:'nav-announce',emergency:'nav-emergency'};
+    const map={profile:'nav-profile',digital:'nav-digital',undercity:'nav-undercity',nationality:'nav-nationality',settings:'nav-settings',moss:'nav-moss',log:'nav-log',occupations:'nav-occupations',priv:'nav-priv',engine:'nav-engine',nav:'nav-nav',driverview:'nav-driverview',vehicles:'nav-vehicles',vehcard:'nav-vehcard',admin:'nav-admin',broadcast:'nav-broadcast',announce:'nav-announce',emergency:'nav-emergency'};
     if(map[v]){
       const texts=el.childNodes;
       for(let i=0;i<texts.length;i++){if(texts[i].nodeType===3&&texts[i].textContent.trim()){texts[i].textContent=t(map[v]);break;}}
@@ -4050,7 +4122,39 @@ function renderOccupations(){
   }).join('');
 }
 
-/* ===== 特权中心 ===== */
+/* ===== 导航系统 ===== */
+const NAV_NODES=[
+ {name:'领航员空间站',type:'同步轨道站',status:'在线',note:'地球导航中枢 · 航线计算与修正'},
+ {name:'木星借力点',type:'加速航段',status:'待抵达',note:'引力弹弓 · 航向 234.6° · 预计 2078 年 1 月'},
+ {name:'柯伊伯带哨站',type:'深空哨站',status:'待命',note:'外缘探测 · 航线偏差监测'},
+ {name:'比邻星前哨',type:'目标星域',status:'规划中',note:'半人马座 α · 距离 4.22 光年'}
+];
+function renderNav(){
+  const u=CURRENT?getAccounts()[CURRENT.name]:null;
+  const occ=occupationOf(u);
+  const canNav=occ==='领航员'||(typeof isAdmin==='function'&&isAdmin());
+  const dot=document.getElementById('navStatusDot');
+  if(dot)dot.className='status-dot';
+  const nodes=document.getElementById('navNodes');
+  if(nodes)nodes.innerHTML=NAV_NODES.map(n=>'<div class="nav-node"><div class="nn-top"><b>'+n.name+'</b><span class="badge '+(n.status==='在线'?'ok':'warn')+'">'+n.status+'</span></div><div class="nn-meta">'+n.type+'</div><p>'+n.note+'</p></div>').join('');
+  const con=document.getElementById('navConsole');
+  if(con){
+    if(canNav){
+      con.innerHTML='<button class="btn-primary nav-op" data-a="cal">校准航线</button>'+
+        '<button class="btn nav-op" data-a="lock">锁定航向</button>'+
+        '<button class="btn nav-op" data-a="log">上报航行日志</button>'+
+        '<span class="users-hint" style="display:inline;margin-left:10px">导航控制已授权 · '+(occ==='领航员'?'领航员特权':'管理员全权')+'</span>';
+      con.querySelectorAll('.nav-op').forEach(b=>b.addEventListener('click',()=>{
+        const acts={cal:'航线校准完成 · 误差 0.01°',lock:'航向已锁定 · 234.6°',log:'航行日志已上报领航员空间站'};
+        toast('ok','导航指令已执行',acts[b.dataset.a]);
+        appendLog(['ok','NAV','导航系统：'+acts[b.dataset.a]],0);
+        b.disabled=true;b.textContent='✓ 已执行';
+      }));
+    }else{
+      con.innerHTML='<span class="users-hint">导航控制台仅限领航员或联合政府管理员操作。当前账号：'+occ+'（只读）</span>';
+    }
+  }
+}
 const PRIV_LEVELS=['标准','高级','特级'];
 function privOf(u){
   if(!u)return null;
