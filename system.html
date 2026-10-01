@@ -580,7 +580,14 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
 .map-city span{color:rgba(220,240,255,.8);flex:1}
 .map-city em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--amber)}
 .map-op{font-size:12.5px;padding:9px 16px;cursor:pointer}
-.map-op:disabled{opacity:.5;cursor:default}
+.priv-type{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(55,230,255,.18);border-radius:5px;padding:7px 11px;font-size:12.5px;cursor:pointer;background:rgba(10,20,45,.4);color:rgba(220,240,255,.85)}
+.priv-type input{accent-color:#37E6FF}
+.priv-types{display:flex;flex-wrap:wrap;gap:8px;padding:10px 2px}
+.priv-row{flex-wrap:wrap}
+.priv-row .priv-tags{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.priv-row .priv-tags em{font-style:normal;font-size:10.5px;font-family:var(--mono);color:#FFD9A0;border:1px solid rgba(255,185,74,.4);padding:1px 7px;border-radius:2px;letter-spacing:.03em}
+.priv-row i{font-style:normal;font-size:10.5px;color:var(--text-dim);font-family:var(--mono)}
+.priv-del{font-size:11.5px;padding:5px 10px}
 .nav-bar{display:flex;align-items:center;gap:14px;padding:12px 16px;margin:2px 0 14px;border:1px solid rgba(55,230,255,.3);border-radius:10px;background:linear-gradient(90deg,rgba(18,46,84,.9),rgba(12,28,58,.92));box-shadow:0 0 18px rgba(55,230,255,.12);position:relative;overflow:hidden}
 .nav-bar::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(55,230,255,.06),transparent);animation:nbSweep 3s linear infinite;pointer-events:none}
 @keyframes nbSweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
@@ -898,6 +905,10 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M10 21v-5h4v5"/><path d="M9 7h6"/></svg>
         地下城管理 <span class="n-idx">UC</span>
       </button>
+      <button class="nav-item admin-nav" data-view="privileged">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.9 2.3L21.2 18l-2.3.7L18 21l-.9-2.3-2.3-.7 2.3-.7z"/><path d="M6 16l.8 2 2 .8-2 .8L6 21.5l-.8-2-2-.8 2-.8z"/></svg>
+        特惠人员设置 <span class="n-idx">PR</span>
+      </button>
     </nav>
 
     <main class="content">
@@ -951,6 +962,7 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
               <div class="it"><div class="k">OCCUPATION · 职业分配</div><div class="v" id="idOccupation" data-occupation>待分配</div></div>
               <div class="it"><div class="k">CLEARANCE · 权限等级</div><div class="v" id="idClearance">Ⅴ 级 · 最高权限</div></div>
               <div class="it"><div class="k">LIFE STATE · 生命状态</div><div class="v" id="lifeStateV" style="color:var(--green)">存活 · ACTIVE</div></div>
+              <div class="it"><div class="k">PRIVILEGED · 特惠身份</div><div class="v" id="idPrivileged"><span class="badge gray">普通公民</span></div></div>
             </div>
           </div>
 
@@ -2121,6 +2133,31 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         </div>
       </section>
 
+      <!-- ===== 视图：特惠人员设置（仅管理员） ===== -->
+      <section class="view" id="view-privileged">
+        <div class="view-head">
+          <h2>特惠人员设置<small>PRIVILEGED CITIZENS · 联合政府特惠名单</small></h2>
+          <div class="head-actions">
+            <span class="status-dot" id="privDot">特惠名单 · N 人</span>
+          </div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>添加特惠人员</h3><span class="en">ADD PRIVILEGED CITIZEN</span></div>
+          <div class="ctl-row">
+            <select id="privTarget" class="nation-search" style="flex:1;min-width:180px"></select>
+          </div>
+          <div class="priv-types" id="privTypes"></div>
+          <div class="ctl-row">
+            <input class="nation-search" id="privNote" placeholder="特惠备注（可选）" style="flex:1">
+            <button class="btn-primary" id="btnPrivAdd">添加到特惠名单</button>
+          </div>
+        </div>
+        <div class="panel hud">
+          <div class="panel-title"><h3>特惠名单</h3><span class="en">PRIVILEGED LIST · 跨账号同步</span></div>
+          <div class="map-coords" id="privList"></div>
+        </div>
+      </section>
+
       <!-- ===== 子视图：人口与户籍管理（独立页） ===== -->
       <section class="view" id="view-adm-registry">
         <div class="view-head">
@@ -2574,6 +2611,7 @@ function showView(name){
   if(name==='engine'){if(typeof refreshIgnitePerm==='function')refreshIgnitePerm();}
   if(name==='occupations'){renderOccupations();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderOccupations();}});}
   if(name==='priv'){renderPriv();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderPriv();}});}
+  if(name==='privileged'){renderPrivileged();if(CLOUD_ON)cloudGetAll().then(()=>{renderPrivileged();});}
   if(name==='privterm'){const ttl=document.getElementById('privTermTitle');if(ttl)ttl.textContent='PRIVILEGE TERMINAL · '+(privTermOcc||'');renderPrivTerm();}
   if(name==='nav'){renderNav();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderNav();}});}
   if(name==='map'){renderMap();startMapLive();if(CLOUD_ON)cloudGetAll().then(()=>{
@@ -2623,6 +2661,7 @@ const I18N={
  'nav-vehicles':['车辆管理','VEHICLE MGMT'],
  'nav-vehcard':['车卡管理','VEHICLE CARD'],
  'nav-admin':['管理员后台','ADMIN CONSOLE'],
+ 'nav-privileged':['特惠人员设置','PRIVILEGED CITIZENS'],
  'nav-broadcast':['全频道广播','BROADCAST'],
  'nav-announce':['公告板','ANNOUNCEMENT'],
  'nav-emergency':['紧急公告','EMERGENCY'],
@@ -2665,6 +2704,7 @@ const I18N={
  't-vehicles':['车辆管理','VEHICLE MANAGEMENT'],
  't-vehcard':['车卡管理','VEHICLE CARD MANAGEMENT'],
  't-admin':['管理员后台','UEG ADMIN CONSOLE'],
+ 't-privileged':['特惠人员设置','PRIVILEGED CITIZENS'],
  't-broadcast':['全频道广播','ALL-CHANNEL BROADCAST'],
  't-announce':['公告板','ANNOUNCEMENT BOARD']
 };
@@ -2673,7 +2713,7 @@ function applyLang(){
   document.getElementById('langBtn').textContent=LANG==='zh'?'中 / EN':'EN / 中';
   document.querySelectorAll('.nav-item').forEach(el=>{
     const v=el.getAttribute('data-view');
-    const map={profile:'nav-profile',digital:'nav-digital',undercity:'nav-undercity',nationality:'nav-nationality',settings:'nav-settings',moss:'nav-moss',log:'nav-log',occupations:'nav-occupations',priv:'nav-priv',engine:'nav-engine',nav:'nav-nav',map:'nav-map',driverview:'nav-driverview',vehicles:'nav-vehicles',vehcard:'nav-vehcard',admin:'nav-admin',broadcast:'nav-broadcast',announce:'nav-announce',emergency:'nav-emergency'};
+    const map={profile:'nav-profile',digital:'nav-digital',undercity:'nav-undercity',nationality:'nav-nationality',settings:'nav-settings',moss:'nav-moss',log:'nav-log',occupations:'nav-occupations',priv:'nav-priv',engine:'nav-engine',nav:'nav-nav',map:'nav-map',driverview:'nav-driverview',vehicles:'nav-vehicles',vehcard:'nav-vehcard',admin:'nav-admin',privileged:'nav-privileged',broadcast:'nav-broadcast',announce:'nav-announce',emergency:'nav-emergency'};
     if(map[v]){
       const texts=el.childNodes;
       for(let i=0;i<texts.length;i++){if(texts[i].nodeType===3&&texts[i].textContent.trim()){texts[i].textContent=t(map[v]);break;}}
@@ -2843,6 +2883,11 @@ function updateClearanceUI(){
   const top=lv==='Ⅴ';
   const uLv=document.getElementById('uLv');if(uLv)uLv.textContent='LV.'+m.lv;
   const ic=document.getElementById('idClearance');if(ic)ic.textContent=m.label;
+  const ip=document.getElementById('idPrivileged');
+  if(ip){
+    const p=CURRENT&&CURRENT.privileged&&CURRENT.privileged.on;
+    ip.innerHTML=p?'<span class="badge ok">★ 特惠人员 · '+(CURRENT.privileged.types&&CURRENT.privileged.types.length?CURRENT.privileged.types.join('、'):'全项特惠')+'</span>':'<span class="badge gray">普通公民</span>';
+  }
   const lvNum=document.getElementById('lvNum');if(lvNum)lvNum.textContent=m.lv;
   const lvSub=document.getElementById('lvSub');if(lvSub)lvSub.textContent=m.sub;
   const lvRing=document.getElementById('lvRing');if(lvRing)lvRing.setAttribute('stroke-dashoffset',String(Math.round(339.3*(1-LV_NUM[lv]/5))));
@@ -4244,7 +4289,61 @@ function renderOccupations(){
   }).join('');
 }
 
-/* ===== 地球地图 ===== */
+/* ===== 特惠人员设置 ===== */
+const PRIV_TYPES=['地下城优先分配','食品配额加成','免检快速通行','资源优先配额','医疗优先通道'];
+function renderPrivileged(){
+  const accs=getAccounts();
+  const sel=document.getElementById('privTarget');
+  if(sel){
+    const names=Object.keys(accs).filter(n=>!(accs[n]&&accs[n].admin));
+    sel.innerHTML=names.map(n=>'<option value="'+n+'">'+n+(accs[n]&&accs[n].privileged&&accs[n].privileged.on?'（已特惠）':'')+'</option>').join('');
+  }
+  const pt=document.getElementById('privTypes');
+  if(pt&&!pt.dataset.bound){
+    pt.dataset.bound='1';
+    pt.innerHTML=PRIV_TYPES.map((t,i)=>'<label class="priv-type"><input type="checkbox" value="'+t+'"><span>'+t+'</span></label>').join('');
+  }
+  const list=document.getElementById('privList');
+  if(list){
+    const rows=Object.keys(accs).filter(n=>accs[n]&&accs[n].privileged&&accs[n].privileged.on).map(n=>{
+      const p=accs[n].privileged;
+      const d=new Date(p.since||Date.now());
+      return '<div class="map-city priv-row"><b>'+n+'</b><span class="priv-tags">'+(p.types&&p.types.length?p.types.map(t=>'<em>'+t+'</em>').join(''):'<em>全项特惠</em>')+'</span><i>'+d.getMonth()+1+'月'+d.getDate()+'日生效</i><button class="ac-btn priv-del" data-n="'+n+'">取消特惠</button></div>';
+    }).join('')||'<div class="users-hint">特惠名单为空 · 请在上方添加特惠人员</div>';
+    list.innerHTML=rows;
+    list.querySelectorAll('.priv-del').forEach(b=>b.addEventListener('click',()=>{
+      const n=b.dataset.n;
+      const a=getAccounts();
+      if(a[n]){delete a[n].privileged;saveAccounts(a);if(CLOUD_ON)cloudSet('accounts',a);}
+      toast('ok','特惠已取消',n+' 已移出特惠名单');
+      appendLog(['ok','PRIV','特惠人员设置：取消 '+n+' 特惠'],0);
+      renderPrivileged();
+    }));
+  }
+  const dot=document.getElementById('privDot');
+  if(dot)dot.textContent='特惠名单 · '+Object.keys(accs).filter(n=>accs[n]&&accs[n].privileged&&accs[n].privileged.on).length+' 人';
+}
+function addPrivileged(){
+  const sel=document.getElementById('privTarget');
+  if(!sel||!sel.value){toast('warn','未选择公民','请先选择要添加特惠的公民');return;}
+  const n=sel.value;
+  const types=Array.from(document.querySelectorAll('#privTypes input:checked')).map(i=>i.value);
+  if(!types.length){toast('warn','未选择特惠类型','请至少勾选一项特惠类型');return;}
+  const note=(document.getElementById('privNote').value||'').trim();
+  const a=getAccounts();
+  if(!a[n]){toast('warn','账号不存在','未找到公民 '+n);return;}
+  a[n].privileged={on:true,types:types,note:note,since:Date.now()};
+  saveAccounts(a);
+  if(CLOUD_ON)cloudSet('accounts',a);
+  toast('ok','已添加特惠人员',n+' 已加入特惠名单：'+types.join('、'));
+  appendLog(['ok','PRIV','特惠人员设置：'+n+' 添加特惠（'+types.join('、')+'）'],0);
+  document.getElementById('privNote').value='';
+  renderPrivileged();
+}
+(function(){
+  const add=document.getElementById('btnPrivAdd');
+  if(add)add.addEventListener('click',addPrivileged);
+})();
 const MAP_CITIES=[
  {c:'北京',d:'北京地下城',lat:'39.9°N',lon:'116.4°E'},{c:'上海',d:'上海地下城',lat:'31.2°N',lon:'121.5°E'},
  {c:'广州',d:'广州地下城',lat:'23.1°N',lon:'113.3°E'},{c:'成都',d:'成都地下城',lat:'30.6°N',lon:'104.1°E'},
