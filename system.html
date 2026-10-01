@@ -4308,7 +4308,7 @@ function renderPrivileged(){
     const rows=Object.keys(accs).filter(n=>accs[n]&&accs[n].privileged&&accs[n].privileged.on).map(n=>{
       const p=accs[n].privileged;
       const d=new Date(p.since||Date.now());
-      return '<div class="map-city priv-row"><b>'+n+'</b><span class="priv-tags">'+(p.types&&p.types.length?p.types.map(t=>'<em>'+t+'</em>').join(''):'<em>全项特惠</em>')+'</span><i>'+d.getMonth()+1+'月'+d.getDate()+'日生效</i><button class="ac-btn priv-del" data-n="'+n+'">取消特惠</button></div>';
+      return '<div class="map-city priv-row"><b>'+n+'</b><span class="priv-tags">'+(p.types&&p.types.length?p.types.map(t=>'<em>'+t+'</em>').join(''):'<em>全项特惠</em>')+'</span><i>'+(d.getMonth()+1)+'月'+d.getDate()+'日生效</i><button class="ac-btn priv-del" data-n="'+n+'">取消特惠</button></div>';
     }).join('')||'<div class="users-hint">特惠名单为空 · 请在上方添加特惠人员</div>';
     list.innerHTML=rows;
     list.querySelectorAll('.priv-del').forEach(b=>b.addEventListener('click',()=>{
