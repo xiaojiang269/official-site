@@ -875,11 +875,11 @@ td .mono{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="10" r="6"/><path d="M8.5 15 7 21h10l-1.5-6"/><circle cx="12" cy="10" r="2"/></svg>
         行星发动机控制 <span class="n-idx">08</span>
       </button>
-      <button class="nav-item" data-view="nav">
+      <button class="nav-item admin-nav" data-view="nav">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3 9 15l3-4 3 4z"/></svg>
         导航系统 <span class="n-idx">NAV</span>
       </button>
-      <button class="nav-item" data-view="map">
+      <button class="nav-item admin-nav" data-view="map">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="10" r="4"/><path d="M9 4v2M9 14v2M4 10h2M12 10h2M6 5l1.5 1.5M11 9l1 1M6 15l1.5-1.5"/><circle cx="9" cy="10" r="1.4" fill="currentColor" stroke="none"/><path d="M17 17l-2.5-1.5L14 13"/><circle cx="17" cy="17" r="1.8"/></svg>
         地球地图 <span class="n-idx">MAP</span>
       </button>
@@ -2586,7 +2586,7 @@ const navItems=document.querySelectorAll('.nav-item');
 const views=document.querySelectorAll('.view');
 let chartsInit=false;
 function showView(name){
-  if((name==='admin'||name.indexOf('adm-')===0)&&!isAdmin()){toast('err','访问被拒绝','管理员后台仅限 周明远 账号访问');return}
+  if((name==='admin'||name.indexOf('adm-')===0||name==='nav'||name==='map'||name==='privileged')&&!isAdmin()){toast('err','访问被拒绝','该模块仅限联合政府管理员访问');return}
   if((name==='vehicles'||name==='vehcard')&&!(CURRENT&&typeof isAdmin==='function'&&isAdmin())){toast('err','访问被拒绝','车辆/车卡管理仅限管理员模式访问');return}
   if(name==='driverview'&&!(CURRENT&&typeof isDriver==='function'&&isDriver(CURRENT))){toast('err','访问被拒绝','驾驶员查看仅限货运司机账号访问');return}
   navItems.forEach(n=>n.classList.toggle('active',n.dataset.view===name));
