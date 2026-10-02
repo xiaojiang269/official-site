@@ -243,7 +243,7 @@ const wait = ms =&gt; new Promise(r =&gt; setTimeout(r, ms));
       <dt>双击打开后白屏 / 什么都没有？</dt>
       <dd>换 Chrome 或 Edge；按 F12 看 Console 有没有红色错误，截图排查。</dd>
       <dt>编程视图里编辑器空白？</dt>
-      <dd>Monaco 编辑器需要联网从 CDN 加载。检查网络是否正常，或者刷新页面重试。</dd>
+      <dd>编辑器会自动尝试 3 个 CDN 源（jsDelivr → Cloudflare → unpkg）加载，某个源被屏蔽会 12 秒内自动换源，一般无需手动操作。若三个源都加载失败（终端日志显示「所有 CDN 源均加载失败」），才是网络整体不通，请刷新页面重试或换个网络环境。</dd>
       <dt>终端输入框打不了字？</dt>
       <dd>点一下终端区域任意位置，再试。</dd>
       <dt>Python 一直加载失败？</dt>
