@@ -2691,6 +2691,7 @@ function showView(name){
   if(name==='vehicles')renderVehicles();
   if(name==='vehcard')renderVehcard();
   if(name==='cert')renderCert();
+  if(name==='privileged'){renderPrivileged();if(CLOUD_ON)cloudGetAll().then(()=>{renderPrivileged();});}
   if(name==='driverview'){renderDriverView();if(CLOUD_ON)cloudGetAll().then(()=>{if(CURRENT&&getAccounts()[CURRENT.name]){CURRENT=Object.assign({},CURRENT,getAccounts()[CURRENT.name]);renderDriverView();}});}
   if((name==='vitals'||name==='profile')&&CLOUD_ON){cloudGetAll().then(()=>{
     const accts=getAccounts();
