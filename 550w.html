@@ -1345,12 +1345,20 @@ var MONACO_CDNS = [
   'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs',
   'https://unpkg.com/monaco-editor@0.52.0/min/vs'
 ];
-function loadScriptOnce(src){
+function loadScriptOnce(src, timeoutMs){
+  timeoutMs = timeoutMs || 12000;
   return new Promise(function(resolve,reject){
     var s=document.createElement('script');
+    var done=false;
+    var timer=setTimeout(function(){
+      if(done)return;
+      done=true;
+      if(s.parentNode)s.parentNode.removeChild(s);
+      reject(new Error('加载超时（'+(timeoutMs/1000)+'s）'));
+    }, timeoutMs);
     s.src=src;
-    s.onload=function(){resolve();};
-    s.onerror=function(){if(s.parentNode)s.parentNode.removeChild(s);reject(new Error(src));};
+    s.onload=function(){if(done)return;done=true;clearTimeout(timer);resolve();};
+    s.onerror=function(){if(done)return;done=true;clearTimeout(timer);if(s.parentNode)s.parentNode.removeChild(s);reject(new Error(src));};
     document.head.appendChild(s);
   });
 }
@@ -1420,7 +1428,9 @@ async function setupMonaco(){
       if(typeof require==='undefined')throw new Error('loader 未暴露 require');
       require.config({paths:{vs:cdn}});
       await new Promise(function(resolve,reject){
-        require(['vs/editor/editor.main'],function(){resolve();},function(err){reject(new Error('editor.main 加载失败'));});
+        var done=false;
+        var t=setTimeout(function(){if(done)return;done=true;reject(new Error('editor.main 加载超时'));},15000);
+        require(['vs/editor/editor.main'],function(){if(done)return;done=true;clearTimeout(t);resolve();},function(err){if(done)return;done=true;clearTimeout(t);reject(new Error('editor.main 加载失败'));});
       });
       await createMonacoEditor();
       ideTermLog('✔ 编辑器从 '+host+' 加载成功。','ok');
