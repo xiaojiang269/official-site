@@ -4,180 +4,313 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>550W 综合指挥系统 · 部署教程</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e6f7ff'><rect x='3' y='5' width='18' height='14' rx='2'/></svg>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23020814'/%3E%3Cpath d='M20 46 L32 14 L44 46 M26 34 H38' stroke='%23ff4d3b' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#070d1a;--panel:rgba(13,26,48,.82);--panel2:rgba(9,18,36,.6);--line:rgba(64,224,255,.18);--cyan:#40e0ff;--cyan-dim:#1d9fc4;--gold:#ffd873;--text:#d8ecff;--dim:#7fa3c7;--mono:'JetBrains Mono','Courier New',monospace}
-body{background:radial-gradient(1200px 700px at 20% -10%,rgba(29,159,196,.14),transparent 60%),radial-gradient(900px 600px at 90% 110%,rgba(64,224,255,.08),transparent 55%),var(--bg);color:var(--text);font-family:'PingFang SC','Microsoft YaHei',system-ui,sans-serif;line-height:1.7;min-height:100vh}
-.wrap{max-width:1080px;margin:0 auto;padding:34px 22px 80px}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:26px}
-.brand{display:flex;align-items:center;gap:12px}
-.brand svg{width:34px;height:34px;flex:none}
-.brand b{font-size:17px;letter-spacing:.12em;color:#eaf7ff}
-.brand small{display:block;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.2em;margin-top:2px}
-.top-actions{display:flex;gap:8px;flex-wrap:wrap}
-.top-actions a{color:var(--text);text-decoration:none;font-size:12.5px;padding:7px 14px;border:1px solid var(--line);border-radius:20px;transition:.15s}
-.top-actions a:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px rgba(64,224,255,.15)}
-.hero{background:linear-gradient(135deg,rgba(29,159,196,.16),rgba(13,26,48,.6) 60%);border:1px solid var(--line);border-radius:14px;padding:30px 28px;margin-bottom:30px;position:relative;overflow:hidden}
-.hero::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
-.hero h1{font-size:26px;letter-spacing:.08em;color:#eaf7ff;margin-bottom:8px}
-.hero h1 em{font-style:normal;color:var(--gold)}
-.hero p{color:var(--dim);font-size:13.5px;max-width:760px}
-.hero .ver{display:inline-block;font-family:var(--mono);font-size:10.5px;color:var(--cyan);border:1px solid rgba(64,224,255,.35);padding:2px 10px;border-radius:12px;margin-top:12px;letter-spacing:.12em}
-.hud{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px 26px;margin-bottom:24px;position:relative}
-.hud::before{content:'';position:absolute;top:8px;right:10px;width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
-.h-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.h-title h2{font-size:16.5px;letter-spacing:.06em;color:#eaf7ff}
+:root{--bg:#050608;--panel:rgba(14,10,10,.62);--pline:rgba(255,77,59,.3);
+  --main:#ff4d3b;--main-dim:#ff8a5c;--main-glow:rgba(255,77,59,.35);
+  --green:#3dff7a;--amber:#ffcc33;--accent:#6fe0ff;
+  --text:#e9efe9;--dim:#8a8f8a;
+  --mono:'JetBrains Mono','Courier New',Consolas,monospace;
+  --cn:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif}
+body{background:radial-gradient(1200px 700px at 70% -10%,var(--main-glow),transparent 60%),
+  radial-gradient(900px 600px at 10% 110%,rgba(111,224,255,.06),transparent 55%),var(--bg);
+  color:var(--text);font-family:var(--cn);line-height:1.75;min-height:100vh}
+.wrap{max-width:1060px;margin:0 auto;padding:32px 22px 80px}
+.topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;
+  border:1px solid var(--pline);border-radius:6px;
+  background:linear-gradient(180deg,rgba(14,32,60,.75),rgba(12,9,9,.6));margin-bottom:26px}
+.logo{font-family:var(--mono);font-weight:900;font-size:22px;letter-spacing:2px;
+  color:var(--main);text-shadow:0 0 14px var(--main-glow)}
+.brand .sub{font-size:11px;color:var(--dim);letter-spacing:2px}
+.top-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.top-actions a{color:var(--text);text-decoration:none;font-size:12.5px;padding:7px 14px;
+  border:1px solid var(--pline);border-radius:20px;transition:.15s;white-space:nowrap}
+.top-actions a:hover{border-color:var(--main);color:var(--main);box-shadow:0 0 12px var(--main-glow)}
+.top-actions a.solid{background:var(--main);border-color:var(--main);color:#fff;font-weight:600}
+.top-actions a.solid:hover{background:var(--main-dim);box-shadow:0 0 16px var(--main-glow)}
+.hero{border:1px solid var(--pline);border-radius:12px;padding:28px;margin-bottom:26px;
+  background:linear-gradient(135deg,rgba(255,77,59,.14),rgba(10,8,8,.5) 60%);position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--main),transparent)}
+.hero h1{font-size:25px;letter-spacing:.06em;margin-bottom:8px;color:#fff}
+.hero h1 em{font-style:normal;color:var(--main)}
+.hero p{color:var(--dim);font-size:13.5px;max-width:780px}
+.hero .ver{display:inline-block;font-family:var(--mono);font-size:10.5px;color:var(--main);
+  border:1px solid var(--pline);padding:2px 10px;border-radius:12px;margin-top:12px;letter-spacing:.12em}
+.hud{background:var(--panel);border:1px solid var(--pline);border-radius:10px;padding:22px 24px;margin-bottom:22px;position:relative}
+.hud::before{content:'';position:absolute;top:8px;right:10px;width:6px;height:6px;border-radius:50%;
+  background:var(--main);box-shadow:0 0 8px var(--main)}
+.h-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.h-title h2{font-size:16px;letter-spacing:.05em;color:#fff}
 .h-title span{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.18em}
-.steps{list-style:none}
-.steps>li{position:relative;padding-left:44px;padding-bottom:26px}
-.steps>li::before{content:'';position:absolute;left:14px;top:26px;bottom:-2px;width:1px;background:rgba(64,224,255,.28)}
-.steps>li:last-child::before{display:none}
-.steps>li:last-child{padding-bottom:0}
-.step-dot{position:absolute;left:7px;top:2px;width:16px;height:16px;border-radius:50%;border:2px solid var(--cyan);background:var(--bg);z-index:1}
-.steps>li.done .step-dot{background:var(--cyan);box-shadow:0 0 10px rgba(64,224,255,.6)}
-.steps b{display:block;font-size:14.5px;color:#eaf7ff;letter-spacing:.04em;margin-bottom:4px}
-.steps .en{font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.16em;margin-bottom:8px}
-.steps p{font-size:13px;color:var(--text);margin-bottom:8px}
-.steps p.dim{color:var(--dim);font-size:12.5px}
-pre{background:#04080f;border:1px solid rgba(64,224,255,.22);border-left:3px solid var(--cyan);border-radius:8px;padding:14px 16px;font-family:var(--mono);font-size:11.8px;line-height:1.75;overflow-x:auto;color:#a8e8ff;margin:10px 0 12px;white-space:pre}
-pre .cm{color:#4a6b8c}
-pre .ok{color:#7df0a2}
-pre .warn{color:var(--gold)}
+.h-title .idx{font-family:var(--mono);font-size:12px;color:var(--main);margin-right:4px}
+ol.steps{list-style:none}
+ol.steps>li{position:relative;padding-left:40px;padding-bottom:22px}
+ol.steps>li::before{content:'';position:absolute;left:13px;top:24px;bottom:-2px;width:1px;background:rgba(255,77,59,.35)}
+ol.steps>li:last-child::before{display:none}
+ol.steps>li:last-child{padding-bottom:0}
+.step-dot{position:absolute;left:6px;top:2px;width:16px;height:16px;border-radius:50%;
+  border:2px solid var(--main);background:var(--bg);z-index:1}
+ol.steps>li.done .step-dot{background:var(--main);box-shadow:0 0 10px var(--main-glow)}
+ol.steps b{display:block;font-size:14.5px;color:#fff;margin-bottom:6px}
+ol.steps p{font-size:13px;margin-bottom:8px}
+p.dim{color:var(--dim);font-size:12.5px}
+pre{background:#04050a;border:1px solid var(--pline);border-left:3px solid var(--main);border-radius:8px;
+  padding:14px 16px;font-family:var(--mono);font-size:12px;line-height:1.7;overflow-x:auto;
+  color:#a8e8ff;margin:10px 0 12px;white-space:pre;position:relative}
+pre .cm{color:#4a5a6a}
+pre .ok{color:var(--green)}
+pre .warn{color:var(--amber)}
+pre .rd{color:var(--main)}
+pre .cp{position:absolute;top:8px;right:10px;background:rgba(255,77,59,.15);border:1px solid var(--pline);
+  color:var(--main-dim);font-size:10.5px;padding:2px 10px;border-radius:10px;cursor:pointer;font-family:var(--mono);transition:.15s}
+pre .cp:hover{background:rgba(255,77,59,.35);color:#fff}
+table{width:100%;border-collapse:collapse;font-size:12.8px;margin:10px 0}
+th,td{border:1px solid rgba(255,77,59,.22);padding:9px 12px;text-align:left}
+th{background:rgba(255,77,59,.1);color:#ffd0c4;font-weight:600;letter-spacing:.04em;white-space:nowrap}
+td{color:var(--text)}
+td code,li code{font-family:var(--mono);font-size:11.5px;color:#ffb3a6;background:rgba(255,77,59,.1);padding:1px 6px;border-radius:4px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:760px){.grid2{grid-template-columns:1fr}}
-.mcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
-.mcard b{display:block;font-size:13.5px;color:#eaf7ff;margin-bottom:6px;letter-spacing:.04em}
-.mcard p{font-size:12.5px;color:var(--text)}
-.mcard .tag{display:inline-block;font-family:var(--mono);font-size:9.5px;color:var(--gold);border:1px solid rgba(255,216,115,.35);padding:1px 8px;border-radius:10px;margin-bottom:8px;letter-spacing:.1em}
-table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0}
-th,td{border:1px solid rgba(64,224,255,.2);padding:9px 12px;text-align:left}
-th{background:rgba(64,224,255,.08);color:#bfefff;font-weight:600;letter-spacing:.05em;white-space:nowrap}
-td{color:var(--text)}
-td code{font-family:var(--mono);font-size:11.5px;color:#a8e8ff;background:rgba(64,224,255,.08);padding:1px 6px;border-radius:4px}
-.note{border-left:3px solid var(--gold);background:rgba(255,216,115,.07);border-radius:0 8px 8px 0;padding:12px 16px;font-size:12.5px;color:#ffe9b8;margin:12px 0}
-.note b{color:var(--gold)}
-.footer{margin-top:34px;text-align:center;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
-.footer a{color:var(--cyan);text-decoration:none}
-.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
-.flow .fnode{background:rgba(64,224,255,.08);border:1px solid rgba(64,224,255,.3);border-radius:8px;padding:8px 14px;font-size:12px;color:#bfefff}
-.flow .fnode b{display:block;font-size:12.5px;color:#eaf7ff}
-.flow .arrow{color:var(--cyan);font-size:14px}
-@media(max-width:600px){.hero h1{font-size:21px}.hud{padding:18px 16px}.wrap{padding:20px 14px 60px}}
+.os{background:rgba(6,8,12,.7);border:1px solid var(--pline);border-radius:10px;padding:16px 18px}
+.os h4{font-size:13.5px;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.os h4::before{content:'';width:8px;height:8px;background:var(--main);box-shadow:0 0 8px var(--main)}
+.os .cmd{font-family:var(--mono);font-size:12px;color:#ffb3a6;background:#04050a;border:1px solid var(--pline);
+  border-radius:6px;padding:8px 12px;margin:6px 0;display:block}
+.os ol{margin:8px 0 4px 20px;font-size:12.8px}
+.os ol li{margin-bottom:5px}
+.note{border-left:3px solid var(--amber);background:rgba(255,204,51,.07);border-radius:0 8px 8px 0;
+  padding:12px 16px;font-size:12.8px;color:#ffe9a8;margin:12px 0}
+.note b{color:var(--amber)}
+.warn2{border-left:3px solid var(--main);background:rgba(255,77,59,.08);border-radius:0 8px 8px 0;
+  padding:12px 16px;font-size:12.8px;color:#ffd0c4;margin:12px 0}
+.faq dt{font-size:13.5px;color:#ffb3a6;font-weight:600;margin:14px 0 4px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.faq dt::before{content:'Q';font-family:var(--mono);color:var(--main);border:1px solid var(--pline);border-radius:50%;width:20px;height:20px;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px}
+.faq dd{margin:0 0 8px 28px;font-size:12.8px;color:var(--text)}
+.cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0 4px}
+.cta button,.cta a.btn{background:var(--main);border:1px solid var(--main);color:#fff;border-radius:6px;
+  padding:11px 22px;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.05em;
+  text-decoration:none;display:inline-block;transition:.15s}
+.cta button:hover,.cta a.btn:hover{background:var(--main-dim);box-shadow:0 0 16px var(--main-glow)}
+.cta button.alt,.cta a.btn.alt{background:transparent;color:var(--main-dim);font-weight:500}
+.cta button.alt:hover,.cta a.btn.alt:hover{background:var(--main-glow);color:#fff;box-shadow:none}
+.flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin:8px 0 4px}
+.flow .fnode{background:rgba(255,77,59,.07);border:1px solid var(--pline);border-radius:8px;padding:10px 16px;font-size:12px;color:#ffb3a6;flex:1;min-width:150px}
+.flow .fnode b{display:block;font-size:12.5px;color:#fff;margin-bottom:2px}
+.okmark{color:var(--green)}
+.footer{margin-top:30px;text-align:center;color:var(--dim);font-size:12px;border-top:1px solid var(--pline);padding-top:20px}
+.footer a{color:var(--main-dim);text-decoration:none}
+@media(max-width:600px){.hero h1{font-size:20px}.hud{padding:16px 14px}.wrap{padding:20px 14px 60px}.top-actions{margin-left:0}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="topbar">
-    <div class="brand">
-      <svg viewBox="0 0 32 32" fill="none"><rect x="3" y="8" width="26" height="16" rx="2" stroke="#40e0ff" stroke-width="1.6"/><path d="M8 16h16" stroke="#40e0ff" stroke-width="1.4"/><circle cx="11" cy="16" r="1.6" fill="#ffd873"/><circle cx="21" cy="16" r="1.6" fill="#40e0ff"/><path d="M12 8v-2h8v2" stroke="#40e0ff" stroke-width="1.4"/></svg>
-      <div><b>550W 综合指挥系统</b><small>DEPLOYMENT MANUAL · 部署教程</small></div>
-    </div>
+  <header class="topbar">
+    <div class="brand"><span class="logo">550W</span><span class="sub">综合指挥系统 · 部署教程</span></div>
     <div class="top-actions">
+      <a href="550w.html" class="solid" target="_blank">在线体验 550W</a>
       <a href="index.html">返回官网</a>
-      <a href="system.html">进入系统</a>
     </div>
-  </div>
+  </header>
 
   <div class="hero">
     <h1>550W 综合指挥系统 · <em>部署教程</em></h1>
-    <p>本教程面向「联合政府个人身份管理系统」的完整部署链路：指挥终端（前端）托管于 GitHub Pages，550W 量子主机（云端数据库）使用 Supabase，实现跨设备身份档案、权限、广播与地下城调度的实时互通。全程约 15 分钟即可完成上线。</p>
-    <span class="ver">VERSION 1.0 · 联合政府移山计划总部 · 信息化建设处</span>
+    <p>从零开始，把 550W 综合指挥系统部署到你的电脑上：只需一个浏览器和一个文本编辑器，复制一段 HTML 代码保存为文件，双击即可运行。本教程逐步讲解保存、打开、启用 Python、运行春节十二响与常见问题排查。</p>
+    <span class="ver">VERSION 1.0 · 单文件部署 · 无需服务器</span>
   </div>
 
   <div class="hud">
-    <div class="h-title"><h2>一、系统架构总览</h2><span>ARCHITECTURE OVERVIEW</span></div>
-    <div class="flow">
-      <div class="fnode"><b>指挥终端</b>system.html<br>单文件前端 · GitHub Pages</div>
-      <span class="arrow">→</span>
-      <div class="fnode"><b>550W 量子主机</b>Supabase<br>ueg_kv 键值库</div>
-      <span class="arrow">→</span>
-      <div class="fnode"><b>全服公民</b>多设备<br>账号 · 权限 · 广播 · 导航</div>
+    <div class="h-title"><h2><span class="idx">一</span>准备工作</h2><span>PREPARATION</span></div>
+    <p>你需要两样东西：</p>
+    <ul style="margin:8px 0 0 22px;font-size:13.5px">
+      <li>一个<b style="color:var(--green)">浏览器</b>（推荐 Chrome 或 Edge，别用 IE）</li>
+      <li>一个<b style="color:var(--green)">文本编辑器</b>（Windows 用记事本，Mac 用文本编辑）</li>
+    </ul>
+    <div class="cta">
+      <a class="btn" href="550w.html" target="_blank">▶ 不想自己动手？在线直接体验</a>
+      <button class="alt" id="btnDownload">⤓ 下载 550W.html 文件</button>
     </div>
-    <table>
-      <tr><th>组件</th><th>角色</th><th>说明</th></tr>
-      <tr><td>GitHub Pages</td><td>指挥终端托管</td><td>固定网址 <code>https://xiaojiang269.github.io/official-site/</code>，无需服务器，免费 HTTPS</td></tr>
-      <tr><td>Supabase（550W 量子主机）</td><td>云端档案库</td><td>PostgreSQL 数据库，表 <code>public.ueg_kv</code>，账号/权限/广播/导航状态跨设备同步</td></tr>
-      <tr><td>账号体系</td><td>公民身份</td><td>账号=公民姓名，密码=姓名首字母；最高权限档案 <code>周明远 / ZMY</code></td></tr>
-      <tr><td>本地兜底</td><td>离线容灾</td><td>localStorage 同步缓存，云端不可达时自动降级本地运行</td></tr>
-    </table>
+    <p class="dim" style="margin-top:8px">在线体验已由官网部署完毕，打开即用；如需部署到本地电脑，请继续往下看。</p>
   </div>
 
   <div class="hud">
-    <div class="h-title"><h2>二、部署步骤</h2><span>DEPLOYMENT PROCEDURE</span></div>
+    <div class="h-title"><h2><span class="idx">二</span>保存 HTML 文件</h2><span>SAVE THE HTML FILE</span></div>
     <ol class="steps">
-      <li class="done"><span class="step-dot"></span><b>准备 GitHub 仓库并开启 Pages</b><div class="en">STEP 01 · REPOSITORY &amp; PAGES</div>
-        <p>在 GitHub 创建仓库（如 <code>official-site</code>），进入 <b>Settings → Pages</b>，将 <b>Build and deployment</b> 的 Source 设为 <b>Deploy from a branch</b>，分支选 <b>main</b>、目录选 <b>/ (root)</b>，保存后等待分配 Pages 域名。</p>
-        <p class="dim">Pages 域名生成后即为固定网址，勿再更换——本系统所有入口与卡片均引用该域名。</p>
+      <li class="done"><span class="step-dot"></span><b>第 1 步：获取 HTML 代码</b>
+        <p>点击上方「下载 550W.html 文件」按钮直接下载完整文件；或访问 <a href="550w.html" style="color:var(--main-dim)">550W 在线版</a> 后在浏览器右键 → 查看网页源代码 → 全选复制。完整代码以 <code>&lt;!DOCTYPE html&gt;</code> 开头，到 <code>&lt;/html&gt;</code> 结尾。</p>
       </li>
-      <li class="done"><span class="step-dot"></span><b>上传指挥终端（system.html）</b><div class="en">STEP 02 · UPLOAD FRONTEND</div>
-        <p>进入仓库页面，点击 <b>Add file → Upload files</b>，将 <code>system.html</code>（单文件自包含，图片已内嵌 Base64）拖入上传区，填写提交说明后点击 <b>Commit changes</b>。</p>
-        <pre><span class="cm"># 提交后出现以下页面即表示上传成功</span>
-Processing your files…  <span class="ok">✓ 已受理</span>
-
-<span class="cm"># 1-5 分钟后 Pages 缓存刷新，可用强刷参数核验</span>
-https://xiaojiang269.github.io/official-site/system.html?v=1</pre>
+      <li class="done"><span class="step-dot"></span><b>第 2 步：粘贴到记事本</b>
+        <p>打开记事本，按 <b>Ctrl + V</b> 粘贴。</p>
       </li>
-      <li class="done"><span class="step-dot"></span><b>初始化 550W 量子主机（Supabase）</b><div class="en">STEP 03 · CLOUD DATABASE</div>
-        <p>登录 Supabase 控制台 → 新建项目 → SQL Editor 执行建表语句：</p>
-        <pre>create table if not exists public.ueg_kv (
-  key text primary key,
-  value jsonb,
-  updated_at timestamptz default now()
-);
-alter table public.ueg_kv enable row level security;
-create policy "anon read" on public.ueg_kv for select using (true);
-create policy "anon upsert" on public.ueg_kv for insert
-  with check (true) on conflict (key) do update;</pre>
-        <p class="dim">随后在 Settings → API 中获取项目 URL 与 publishable key，写入前端 <code>SUPA_URL / SUPA_KEY</code> 配置常量（云端 key：accounts / settings / broadcasts / navstate）。</p>
-      </li>
-      <li class="done"><span class="step-dot"></span><b>权限初始化与账号核验</b><div class="en">STEP 04 · AUTHORIZATION</div>
-        <p>系统内置最高权限档案 <code>周明远 / ZMY</code>：Ⅴ 级最高权限，数字生命管理、系统管理、联合政府管理员后台全权开通；管理员后台仅限管理员账号进入，8 大子系统全部按钮可实际操作。</p>
-        <pre><span class="cm"># 云端核验账号库（任取其一）</span>
-curl -sS -H "apikey: &lt;KEY&gt;" -H "Authorization: Bearer &lt;KEY&gt;" \
-  "https://&lt;PROJECT&gt;.supabase.co/rest/v1/ueg_kv?key=eq.accounts&amp;select=value"</pre>
-      </li>
-      <li class="done"><span class="step-dot"></span><b>上线验证</b><div class="en">STEP 05 · VERIFICATION</div>
-        <p>部署完成后按以下清单逐项验证，全部通过即上线成功：</p>
+      <li class="done"><span class="step-dot"></span><b>第 3 步：另存为</b>
+        <p>点菜单 <b>文件 → 另存为</b>，按下表填写：</p>
         <table>
-          <tr><th>验证项</th><th>方法</th><th>预期结果</th></tr>
-          <tr><td>前端可访问</td><td>访问固定网址 + <code>?v=n</code> 强刷</td><td>登录页正常显示，无平台水印</td></tr>
-          <tr><td>云端连通</td><td>登录后查看顶栏</td><td>显示「在线模式 · 已同步」</td></tr>
-          <tr><td>多设备互通</td><td>两台设备先后登录同一账号</td><td>档案/权限/广播实时一致</td></tr>
-          <tr><td>权限隔离</td><td>普通公民访问管理模块</td><td>拦截提示「仅限联合政府管理员访问」</td></tr>
-          <tr><td>raw 源核验</td><td><code>raw.githubusercontent.com/…/main/system.html</code></td><td>内容与本地发布版一致</td></tr>
+          <tr><th>项目</th><th>填写内容</th></tr>
+          <tr><td>文件名</td><td><code>550W.html</code></td></tr>
+          <tr><td>保存类型</td><td><code>所有文件</code>（<b style="color:var(--amber)">关键，不能选"文本文档"</b>）</td></tr>
+          <tr><td>保存位置</td><td>桌面（方便找）</td></tr>
+          <tr><td>编码</td><td><code>UTF-8</code></td></tr>
         </table>
+        <p>点 <b>保存</b>。如果保存后文件名变成 <code>550W.html.txt</code>，说明保存类型选错了，删掉重新保存。</p>
       </li>
     </ol>
   </div>
 
   <div class="hud">
-    <div class="h-title"><h2>三、日常运维手册</h2><span>OPERATIONS HANDBOOK</span></div>
-    <div class="grid2">
-      <div class="mcard"><span class="tag">数据备份</span><b>云端快照</b><p>用 SQL 导出 <code>ueg_kv</code> 全表；关键 key（accounts）建议每周备份一次，恢复时直接 upsert 覆盖。</p></div>
-      <div class="mcard"><span class="tag">健康检查</span><b>云端核验</b><p>curl REST 接口拉取 accounts / broadcasts / navstate，核对关键账号字段、广播条数与导航开关状态。</p></div>
-      <div class="mcard"><span class="tag">缓存管理</span><b>强刷发布</b><p>Pages 缓存 1–5 分钟；发布后用 <code>?v=&lt;递增数字&gt;</code> 访问避免读到旧版，raw 源可先行确认 commit。</p></div>
-      <div class="mcard"><span class="tag">异常修复</span><b>档案纠偏</b><p>账号名/权限/地下城异常时，直接改云端 accounts 对应字段（管理员调整后目标账号登录即时生效）。</p></div>
-    </div>
-    <div class="note"><b>注意：</b>单文件前端无法直连外部服务器，"在线模式"为界面模拟联动，真实数据存储在 550W 量子主机（Supabase）与本地浏览器；系统不上传任何水印，产物完全自主可控。</div>
+    <div class="h-title"><h2><span class="idx">三</span>直接打开（最简单）</h2><span>RUN IT DIRECTLY</span></div>
+    <p>双击桌面上的 <code>550W.html</code>，浏览器会打开，你会看到：</p>
+    <ul style="margin:8px 0 12px 22px;font-size:13px">
+      <li>47 节点启动动画</li>
+      <li>右上角有「跳过启动动画」按钮，点一下直接进主界面</li>
+    </ul>
+    <table>
+      <tr><th>功能</th><th>能不能用</th></tr>
+      <tr><td>终端对话（help / status / moss 等指令）</td><td class="okmark">✅ 能</td></tr>
+      <tr><td>编程 — JavaScript</td><td class="okmark">✅ 能</td></tr>
+      <tr><td>编程 — Python</td><td style="color:var(--amber)">❌ 不能（浏览器安全限制）</td></tr>
+      <tr><td>引擎监控</td><td class="okmark">✅ 能</td></tr>
+      <tr><td>训练 MOSS</td><td class="okmark">✅ 能</td></tr>
+    </table>
+    <p>如果你只玩 JavaScript 和终端，到这里就够了。</p>
   </div>
 
   <div class="hud">
-    <div class="h-title"><h2>四、故障排查速查表</h2><span>TROUBLESHOOTING</span></div>
-    <table>
-      <tr><th>现象</th><th>原因</th><th>处理</th></tr>
-      <tr><td>打开显示旧版本</td><td>Pages 缓存未刷新</td><td>URL 追加 <code>?v=n</code> 强刷；等 1–5 分钟再试</td></tr>
-      <tr><td>登录提示账号不存在</td><td>该账号从未注册 / 云端被删</td><td>重新注册；管理员在身份管理核验账号库</td></tr>
-      <tr><td>其他设备不同步</td><td>云端未连接 / 本地覆盖</td><td>确认顶栏「在线模式 · 已同步」；检查 <code>ueg_kv</code> 表数据</td></tr>
-      <tr><td>功能按钮无响应</td><td>本地缓存数据损坏</td><td>清空站点 localStorage 后重新登录</td></tr>
-      <tr><td>上传后页面报错</td><td>发布文件损坏/不完整</td><td>用 <code>node --check</code> 校验 JS 语法后重新生成 embed 版上传</td></tr>
-    </table>
+    <div class="h-title"><h2><span class="idx">四</span>让 Python 也能用（可选）</h2><span>ENABLE PYTHON · LOCAL SERVER</span></div>
+    <p class="dim" style="margin-bottom:12px">Python 需要本地服务器才能跑，步骤稍微多点。</p>
+    <div class="grid2">
+      <div class="os">
+        <h4>Windows 用户</h4>
+        <ol>
+          <li><b>检查有没有 Python：</b>按 <code>Win + R</code> → 输入 <code>cmd</code> → 回车 → 输入 <code>python --version</code> → 回车。显示版本号（如 Python 3.11.5）则跳到第 2 步；显示"不是内部或外部命令"，去 <code>python.org/downloads</code> 下载最新版，安装时<b style="color:var(--amber)">必须勾选 ✅ Add Python to PATH</b>，装完关掉黑窗口重新打开再试。</li>
+          <li><b>启动本地服务器：</b><code>Win + R</code> → <code>cmd</code> → 输入下面两行，回车：</li>
+        </ol>
+        <span class="cmd">cd Desktop</span>
+        <span class="cmd">python -m http.server 8000</span>
+        <p class="dim" style="font-size:12px">看到 <b class="okmark">Serving HTTP on ...</b> 就成功了。⚠️ 这个黑窗口别关，关了服务器就停了。</p>
+      </div>
+      <div class="os">
+        <h4>Mac 用户</h4>
+        <ol>
+          <li>打开「启动台」→ 搜「终端」→ 打开。</li>
+          <li>输入以下两行，回车：</li>
+        </ol>
+        <span class="cmd">cd ~/Desktop</span>
+        <span class="cmd">python3 -m http.server 8000</span>
+        <p class="dim" style="font-size:12px">看到 <b class="okmark">Serving HTTP on ...</b> 就成功了。</p>
+      </div>
+    </div>
+    <div class="warn2"><b>第 3 步：</b>打开 Chrome 或 Edge，地址栏输入 <code>http://localhost:8000/550W.html</code> 回车。这样 Python 就能用了。</div>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2><span class="idx">五</span>怎么确认 Python 好了</h2><span>VERIFY PYTHON</span></div>
+    <p>顶部导航点 <b>「编程」</b> → 语言下拉选 <b>Python</b> → 右侧终端里会看到加载日志：</p>
+    <pre><span class="cm">[时间] [1/4] 尝试 fastly.jsdelivr.net ...</span>
+<span class="cm">[时间] ✔ 从 fastly.jsdelivr.net 加载成功！</span></pre>
+    <p>看到 <b class="okmark">✔</b> 就说明好了。<span class="dim">首次加载约 10–20 秒，之后浏览器会缓存。</span></p>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2><span class="idx">六</span>运行春节十二响</h2><span>SPRING FESTIVAL 12 SHOTS</span></div>
+    <ol class="steps">
+      <li class="done"><span class="step-dot"></span><b>步骤</b>
+        <p>顶部导航点 <b>「编程」</b> → 右上角语言选 <b>JavaScript</b> → 编辑器里全选（Ctrl+A）删掉 → 粘贴下方代码 → 点左下角 <b>「编译执行」</b>。</p>
+      </li>
+      <li class="done"><span class="step-dot"></span><b>示例代码（可直接运行）</b>
+        <pre id="code12"><span class="cm">// 春节十二响 · 550W 风格演示（JS 模式运行）</span>
+const shots = [
+  '初始化 6 条', '端口扫描 7 行', '密码破解 4 段', '防火墙穿透 14 行',
+  '载荷注入 10 行', '点火', '点火', '点火', '点火', '点火', '点火', '点火',
+  '点火', '点火', '点火', '点火', '点火', '点火'
+];
+const wait = ms =&gt; new Promise(r =&gt; setTimeout(r, ms));
+(async () =&gt; {
+  for (let i = 0; i &lt; shots.length; i++) {
+    console.log(`[${String(i + 1).padStart(2, '0')}] ${shots[i]} ✦`);
+    await wait(350);
+  }
+  console.log('春节十二响完成 — 550W 祝全体地球人新年快乐 ✦');
+})();<button class="cp" onclick="copyCode('code12')">复制代码</button></pre>
+      </li>
+    </ol>
+    <p class="dim">你会看到终端逐行刷出进度与火花 ✦，全程约 12 秒。</p>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2><span class="idx">七</span>常见问题</h2><span>FAQ</span></div>
+    <dl class="faq">
+      <dt>双击打开后白屏 / 什么都没有？</dt>
+      <dd>换 Chrome 或 Edge；按 F12 看 Console 有没有红色错误，截图排查。</dd>
+      <dt>编程视图里编辑器空白？</dt>
+      <dd>Monaco 编辑器需要联网从 CDN 加载。检查网络是否正常，或者刷新页面重试。</dd>
+      <dt>终端输入框打不了字？</dt>
+      <dd>点一下终端区域任意位置，再试。</dd>
+      <dt>Python 一直加载失败？</dt>
+      <dd>确认地址栏是 <code>http://localhost:8000/...</code> 而不是 <code>file:///...</code>；确认黑窗口（服务器）没关；试试换网络环境（有些公司/学校网络会屏蔽 CDN）。</dd>
+      <dt>快捷按钮点了没反应？</dt>
+      <dd>先点「跳过启动动画」，或者等 4 秒让启动日志跑完。</dd>
+      <dt>想换主题 / 语音？</dt>
+      <dd>顶栏右侧：<b>◐</b> 切换主题（红 / 琥珀 / 青）；<b>🔊</b> 开关语音（MOSS 回答会朗读）；<b>⛶</b> 全屏。</dd>
+    </dl>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2><span class="idx">八</span>文件清单</h2><span>FILES</span></div>
+    <pre>桌面/
+└── 550W.html        <span class="cm">← 全部功能都在这一个文件里</span></pre>
+    <p class="dim">如果要用 Python，黑窗口（本地服务器）需要一直开着。</p>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2><span class="idx">九</span>快速流程总结</h2><span>QUICK START</span></div>
+    <div class="flow">
+      <div class="fnode"><b>1 · 复制代码</b>记事本 → 另存为 550W.html（所有文件）→ 桌面</div>
+      <div class="fnode"><b>2 · 双击打开</b>点"跳过启动动画"</div>
+      <div class="fnode"><b>3 · 终端</b>输入 help 试指令</div>
+      <div class="fnode"><b>4 · 编程</b>切 JavaScript → 粘贴春节十二响 → 编译执行</div>
+    </div>
+    <p style="margin-top:12px;font-size:13px">要 Python 的话：</p>
+    <pre><span class="cm">5 ·</span> cmd → cd Desktop → python -m http.server 8000
+<span class="cm">6 ·</span> 浏览器打开 http://localhost:8000/550W.html
+<span class="cm">7 ·</span> 编程 → Python → 首次等 10 秒加载 → 编译执行</pre>
   </div>
 
   <div class="footer">
-    <p>烤炉科技 · 550W 综合指挥系统 · 部署教程 — 基于《流浪地球2》联合政府设定 · 演示项目</p>
-    <p><a href="index.html">返回官网首页</a> · <a href="system.html">进入个人身份管理系统</a></p>
+    <p>烤炉科技 · 550W 综合指挥系统 · 部署教程 — 基于《流浪地球2》设定 · 单文件部署</p>
+    <p><a href="index.html">返回官网首页</a> · <a href="550w.html" target="_blank">在线体验 550W</a> · <a href="system.html">进入个人身份管理系统</a></p>
   </div>
 </div>
+<script>
+(function(){
+  window.copyCode=function(id){
+    var pre=document.getElementById(id);
+    var text=pre.innerText.replace('复制代码','').trim();
+    var ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);
+    var btn=pre.querySelector('.cp');
+    if(btn){var o=btn.textContent;btn.textContent='已复制 ✓';setTimeout(function(){btn.textContent=o;},1500);}
+  };
+  var btnDownload=document.getElementById('btnDownload');
+  if(btnDownload)btnDownload.addEventListener('click',function(){
+    fetch('550w.html').then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return r.blob();
+    }).then(function(blob){
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url;a.download='550W.html';
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){URL.revokeObjectURL(url);a.remove();},500);
+      btnDownload.textContent='⤓ 下载成功 ✓';
+      setTimeout(function(){btnDownload.textContent='⤓ 下载 550W.html 文件';},2000);
+    }).catch(function(){
+      btnDownload.textContent='下载失败：请右键 550W 在线页另存为';
+    });
+  });
+})();
+</script>
 </body>
 </html>
