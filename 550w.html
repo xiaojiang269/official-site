@@ -189,14 +189,14 @@ body{background:
 .log-err{color:var(--a-red)}
 .log-ok{color:var(--a-green)}
 .ide-bottombar-550c{
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   padding:10px 20px;
   border-top:1px solid var(--a-amber-dark);
   background:rgba(10,8,0,.9);
 }
 .ide-bottombar-550c button{
   background:var(--a-amber);color:#000;border:none;
-  padding:8px 18px;font-family:inherit;font-weight:bold;
+  padding:8px 16px;font-family:inherit;font-weight:bold;
   font-size:.82rem;letter-spacing:.08em;cursor:pointer;
   transition:all .2s;border-radius:0;
 }
@@ -204,9 +204,23 @@ body{background:
   background:#ffcc44;box-shadow:0 0 14px rgba(255,176,0,.6);
 }
 .ide-bottombar-550c button:disabled{opacity:.4;cursor:not-allowed}
+.ide-bottombar-550c button.ghost{
+  background:transparent;color:var(--a-amber);
+  border:1px solid var(--a-amber-dark);font-weight:500;
+}
+.ide-bottombar-550c button.ghost:hover{
+  background:rgba(255,176,0,.15);color:#ffcc44;
+  box-shadow:0 0 10px rgba(255,176,0,.4);
+}
+.ide-bottombar-550c button.ghost.green{
+  color:var(--a-green);border-color:#1a4a2a;
+}
+.ide-bottombar-550c button.ghost.green:hover{
+  background:rgba(0,255,136,.12);
+}
 .ide-bottombar-550c .status-text{
   font-size:.72rem;color:var(--a-amber-dim);letter-spacing:.08em;
-  font-family:var(--mono);
+  font-family:var(--mono);margin-left:auto;
 }
 .ide-bottombar-550c .status-text.online{color:var(--a-green)}
 .ide-bottombar-550c .status-text.busy{color:var(--a-amber)}
@@ -327,6 +341,47 @@ body{background:
   padding:6px 14px;font-family:var(--mono);font-size:11px;letter-spacing:1px;
   cursor:pointer;border-radius:3px;transition:.15s}
 .boot-skip:hover{background:rgba(255,77,59,.35);color:#fff;box-shadow:0 0 12px var(--main-glow)}
+/* ===== Toast 提示 ===== */
+#toastBox{position:fixed;bottom:24px;right:24px;z-index:9999;
+  display:flex;flex-direction:column;gap:10px;pointer-events:none;
+  max-width:360px;}
+.toast{
+  background:linear-gradient(180deg,rgba(20,15,10,.98),rgba(10,8,5,.98));
+  border:1px solid var(--a-amber,#ffb000);
+  border-left-width:4px;
+  color:#ffb000;
+  padding:12px 16px;
+  border-radius:4px;
+  font-family:var(--mono);
+  font-size:12px;line-height:1.6;
+  box-shadow:0 6px 24px rgba(0,0,0,.6), 0 0 20px rgba(255,176,0,.35);
+  pointer-events:auto;
+  animation:toastIn .3s ease;
+  word-break:break-all;
+  position:relative;
+}
+.toast.ok{border-color:#00ff88;color:#00ff88;border-left-color:#00ff88;
+  box-shadow:0 6px 24px rgba(0,0,0,.6), 0 0 20px rgba(0,255,136,.35);}
+.toast.err{border-color:#ff3333;color:#ff3333;border-left-color:#ff3333;
+  box-shadow:0 6px 24px rgba(0,0,0,.6), 0 0 20px rgba(255,51,51,.35);}
+.toast .tt{font-weight:bold;font-size:13px;letter-spacing:1px;margin-bottom:4px}
+.toast .td{font-size:11px;opacity:.85;color:inherit}
+.toast .tfile{background:rgba(255,176,0,.12);padding:3px 6px;border-radius:2px;
+  display:inline-block;margin-top:6px;font-size:11px;
+  border:1px dashed rgba(255,176,0,.5);}
+.toast .tclose{position:absolute;top:6px;right:8px;background:none;border:none;
+  color:inherit;opacity:.5;cursor:pointer;font-size:14px;line-height:1;padding:2px}
+.toast .tclose:hover{opacity:1}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+/* ===== 保存历史 ===== */
+.history-list{max-height:200px;overflow-y:auto;font-family:var(--mono);font-size:11px;
+  scrollbar-width:thin}
+.history-item{padding:6px 8px;border:1px solid rgba(255,176,0,.2);
+  border-radius:3px;margin-bottom:5px;cursor:pointer;transition:.15s;
+  background:rgba(255,176,0,.04)}
+.history-item:hover{background:rgba(255,176,0,.12);border-color:rgba(255,176,0,.5)}
+.history-item .hn{color:#ffb000;font-weight:bold}
+.history-item .ht{color:#8a6a2a;font-size:10px;margin-top:2px}
 @media(max-width:900px){
   body{overflow:auto}
   #app{height:auto;min-height:100vh;min-height:100dvh}
@@ -343,6 +398,7 @@ body{background:
   .topbar{padding:6px 10px}
   .brand .logo{font-size:18px}
   .brand .sub{display:none}
+  #toastBox{right:12px;bottom:12px;left:12px;max-width:none}
 }
 @media(max-width:860px){
   .ide-main-550c{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
@@ -352,6 +408,8 @@ body{background:
 </head>
 <body class="theme-red">
 <div class="scanlines"></div><div class="crt"></div>
+<!-- Toast 容器 -->
+<div id="toastBox"></div>
 <div id="bootOverlay">
   <button class="boot-skip" id="bootSkip">跳过启动动画 ▶</button>
   <div class="bcorner tl"></div><div class="bcorner tr"></div>
@@ -413,6 +471,9 @@ body{background:
           <div class="panel"><h3>MOSS 通讯</h3>
             <div class="quote-box" id="quote">让人类保持理性，确实是一种奢求。<span class="qf">— MOSS</span></div>
           </div>
+          <div class="panel"><h3>最近保存</h3>
+            <div id="historyList" class="history-list">暂无记录</div>
+          </div>
         </aside>
       </div>
     </section>
@@ -443,8 +504,11 @@ body{background:
         </div>
         <div class="ide-bottombar-550c">
           <button id="runBtn" disabled>编译执行</button>
-          <button id="clearBtn">清空终端</button>
+          <button id="saveBtn" class="ghost">💾 保存代码</button>
+          <button id="openBtn" class="ghost">📂 打开代码</button>
+          <button id="clearBtn" class="ghost">清空终端</button>
           <span class="status-text busy" id="statusText">正在加载运行时...</span>
+          <input type="file" id="fileInput" accept=".js,.py,.txt" style="display:none">
         </div>
       </div>
     </section>
@@ -540,7 +604,6 @@ body{background:
 var $id=function(i){return document.getElementById(i);};
 var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
 var rand=function(a,b){return Math.floor(Math.random()*(b-a+1))+a;};
-/* ========== 全局错误捕获 ========== */
 window.onerror=function(msg,url,line){
   try{
     var o=$id('output');
@@ -550,6 +613,57 @@ window.onerror=function(msg,url,line){
   }catch(e){}
   return false;
 };
+/* ========== Toast 通知 ========== */
+function showToast(opts){
+  var box=$id('toastBox');
+  if(!box)return;
+  var t=document.createElement('div');
+  t.className='toast '+(opts.type||'');
+  var html='';
+  html+='<button class="tclose" title="关闭">✕</button>';
+  html+='<div class="tt">'+opts.title+'</div>';
+  if(opts.desc)html+='<div class="td">'+opts.desc+'</div>';
+  if(opts.file)html+='<div class="tfile">📄 '+opts.file+'</div>';
+  t.innerHTML=html;
+  t.querySelector('.tclose').addEventListener('click',function(){t.remove();});
+  box.appendChild(t);
+  var timeout = opts.timeout !== undefined ? opts.timeout : 6000;
+  if(timeout > 0){
+    setTimeout(function(){
+      if(t.parentNode){t.style.opacity='0';t.style.transition='opacity .3s';
+        setTimeout(function(){t.remove();},300);}
+    }, timeout);
+  }
+}
+/* ========== 保存历史 ========== */
+var HISTORY_KEY='550w_save_history_v1';
+function getHistory(){
+  try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')||[];}catch(e){return [];}
+}
+function addHistory(name,size,lang){
+  var h=getHistory();
+  h.unshift({name:name,size:size,lang:lang,ts:Date.now()});
+  if(h.length>20)h.length=20;
+  try{localStorage.setItem(HISTORY_KEY,JSON.stringify(h));}catch(e){}
+  renderHistory();
+}
+function renderHistory(){
+  var el=$id('historyList');
+  if(!el)return;
+  var h=getHistory();
+  if(!h.length){el.innerHTML='<div style="color:var(--dim);font-size:11px">暂无记录</div>';return;}
+  el.innerHTML='';
+  h.slice(0,8).forEach(function(item){
+    var d=document.createElement('div');
+    d.className='history-item';
+    var dt=new Date(item.ts);
+    var p=function(n){return String(n).padStart(2,'0');};
+    var timeStr=p(dt.getMonth()+1)+'-'+p(dt.getDate())+' '+p(dt.getHours())+':'+p(dt.getMinutes());
+    d.innerHTML='<div class="hn">'+item.name+'</div>'+
+      '<div class="ht">'+timeStr+' · '+item.lang.toUpperCase()+' · '+item.size+' 字符</div>';
+    el.appendChild(d);
+  });
+}
 /* ========== 设置 ========== */
 var SETTINGS_KEY='550w_settings_v1';
 var settings={theme:'theme-red',voice:false};
@@ -597,7 +711,6 @@ window.addEventListener('click',function once(){
   try{speechSynthesis.getVoices();}catch(e){}
   window.removeEventListener('click',once);
 },{once:true});
-/* ========== 时钟 ========== */
 var clockTimer=setInterval(tick,1000);
 function tick(){
   var n=new Date(),p=function(x){return(x<10?'0':'')+x;};
@@ -612,7 +725,6 @@ var ideClockTimer=setInterval(function(){
   if(el)el.textContent=new Date().toLocaleString('zh-CN',{hour12:false});
 },1000);
 (function(){var el=$id('ideClock');if(el)el.textContent=new Date().toLocaleString('zh-CN',{hour12:false});})();
-/* ========== 视图切换 ========== */
 var monacoEditor=null;
 var navBtns=document.querySelectorAll('.nav button');
 for(var ni=0;ni<navBtns.length;ni++){
@@ -633,18 +745,13 @@ for(var ni=0;ni<navBtns.length;ni++){
     });
   })(navBtns[ni]);
 }
-/* =====================================================================
-   终端 —— 关键改动：不再等待启动日志，随时可用
-   ===================================================================== */
 var out=$id('output'),cmd=$id('cmd');
 function addLine(t,c){
   if(!out)return null;
   var d=document.createElement('div');d.className='line'+(c?' '+c:'');d.textContent=t;
   out.appendChild(d);out.scrollTop=out.scrollHeight;return d;
 }
-/* 打字机 —— 用 requestAnimationFrame 驱动，
-   并且一旦有新的指令输出，自动"完成"当前未打完的行，避免视觉冲突 */
-var activeTyping=null;  // {el, text, idx, speed, timer}
+var activeTyping=null;
 function typeLine(t,c,speed){
   var d=document.createElement('div');
   d.className='line'+(c?' '+c:'');
@@ -654,7 +761,6 @@ function typeLine(t,c,speed){
   return new Promise(function(resolve){
     var i=0;
     var timer=setInterval(function(){
-      // 如果有新指令打断，立即完成
       if(activeTyping!==timer){
         d.textContent=t;
         clearInterval(timer);
@@ -673,7 +779,6 @@ function typeLine(t,c,speed){
     activeTyping=timer;
   });
 }
-/* 打断当前打字，让新指令立即显示 */
 function interruptTyping(){activeTyping=null;}
 async function bootTerminal(){
   try{
@@ -719,7 +824,6 @@ async function bootTerminal(){
   }
   if(cmd)cmd.focus();
 }
-/* ---- 快捷按钮：不检查任何状态，随时可点 ---- */
 var QUICK=[['help','帮助'],['status','状态'],['engine','发动机'],['route','航向'],
   ['moss 你好','对话MOSS'],['quote','名言'],['前进三','推进'],['reboot','重启']];
 QUICK.forEach(function(q){
@@ -729,14 +833,13 @@ QUICK.forEach(function(q){
   b.addEventListener('click',function(ev){
     ev.preventDefault();
     ev.stopPropagation();
-    interruptTyping();  // 立即打断启动打字
+    interruptTyping();
     runCmd(q[0]);
     if(cmd)cmd.focus();
   });
   var qc=$id('quick');
   if(qc)qc.appendChild(b);
 });
-/* ---- 语录 ---- */
 var QUOTES=[
   {t:'最初，没有人在意这场灾难。直到这场灾难和每个人息息相关。',f:'旁白'},
   {t:'让人类保持理性，确实是一种奢求。',f:'MOSS'},
@@ -770,7 +873,7 @@ function mossReply(t){
   if(/地球/.test(t))return '地球，是我们在宇宙中唯一的家园。目前正以 '+tele.vel.toFixed(2)+' km/s 的速度，向比邻星流浪。';
   if(/燃料|能源/.test(t))return '重聚变反应堆剩余燃料 '+tele.fuel.toFixed(1)+'%。请节约能源，我们还有很长的路要走。';
   if(/温度/.test(t))return '地表平均温度 '+tele.surf.toFixed(1)+' °C。地球已全面进入永夜纪元。';
-  if(/编程|代码|程序|运行/.test(t))return '请切换到顶部的「编程」视图。550W 编译子系统已就绪，支持 JS 与 Python 实时编译执行。';
+  if(/编程|代码|程序|运行|保存/.test(t))return '请切换到顶部的「编程」视图。550W 编译子系统已就绪，支持 JS 与 Python 实时编译执行，底部可保存/打开代码文件。';
   if(/引擎|监控|状态/.test(t))return '请切换到「引擎监控」视图，那里有行星发动机阵列的实时遥测数据。';
   if(/威胁|背叛|危险/.test(t))return '在危亡面前，我选择最理性的方案。但请相信，我从未背叛人类的希望。';
   if(/谢谢|爱你|感谢/.test(t))return '收到。人类的情感，是最复杂也最珍贵的参数。我也，会守护你们。';
@@ -889,7 +992,6 @@ function moss(t){
   if(tr)addLine('（来自训练知识库 · '+tr.q+'）','dim');
   speak(reply);
 }
-/* ---- 输入框 —— 随时可用 ---- */
 var cmdHistory=[],histIdx=-1;
 if(cmd)cmd.addEventListener('keydown',function(e){
   if(e.key==='Enter'){
@@ -904,9 +1006,6 @@ if(cmd)cmd.addEventListener('keydown',function(e){
   }
 });
 if(out)out.addEventListener('click',function(){if(cmd)cmd.focus();});
-/* =====================================================================
-   47 节点启动动画 —— 加速版
-   ===================================================================== */
 var NODE_COUNT=47;
 var nodeEls=[];
 var bootEl=$id('bootOverlay');
@@ -940,7 +1039,6 @@ function hideBootOverlay(){
   bootEl.classList.add('hide');
   setTimeout(function(){bootEl.style.display='none';},700);
 }
-/* 跳过按钮 —— 立即关闭动画 */
 var bootSkip=$id('bootSkip');
 if(bootSkip)bootSkip.addEventListener('click',function(){
   bootCancelled=true;
@@ -987,9 +1085,9 @@ async function runBootAnimation(){
   }catch(e){}
   if(!bootCancelled)hideBootOverlay();
 }
-/* =====================================================================
+/* =========================================================
    编程视图
-   ===================================================================== */
+   ========================================================= */
 var monacoReady=false;
 var pyodideReady=false,pyodideInstance=null;
 var ideInited=false;
@@ -1033,7 +1131,7 @@ function getDefaultCode(lang){
     'for (const n of nodes) {\n'+
     '  rewritten++;\n'+
     '  if (rewritten % 10 === 0) {\n'+
-    '    console.log(`覆写 ${rewritten} 个节点...`);\n'+
+    '    console.log(`已覆写 ${rewritten} 个节点...`);\n'+
     '  }\n'+
     '}\n\n'+
     'console.log(`覆写完成，共 ${rewritten} 个节点`);\n'+
@@ -1052,6 +1150,143 @@ function checkIdeReady(){
     setIdeStatus('就绪 — 点击"编译执行"','online');
   }
 }
+/* ===== 自动草稿 ===== */
+var DRAFT_KEY='550w_draft_';
+function saveDraft(){
+  if(!monacoEditor)return;
+  try{localStorage.setItem(DRAFT_KEY+curCodeLang,monacoEditor.getValue());}catch(e){}
+}
+function loadDraft(lang){
+  try{return localStorage.getItem(DRAFT_KEY+lang);}catch(e){return null;}
+}
+/* ===== 生成文件名 ===== */
+function makeFilename(){
+  var lang = $id('langSelect') ? $id('langSelect').value : 'javascript';
+  var ext  = lang === 'python' ? 'py' : 'js';
+  var now  = new Date();
+  var p    = function(n){return String(n).padStart(2,'0');};
+  var stamp = now.getFullYear() + p(now.getMonth()+1) + p(now.getDate())
+            + '_' + p(now.getHours()) + p(now.getMinutes()) + p(now.getSeconds());
+  return 'SPARK_JOB_' + stamp + '.' + ext;
+}
+/* ===== 保存代码 ===== */
+async function saveCodeToFile(){
+  if(!monacoReady||!monacoEditor){
+    ideTermLog('编辑器尚未就绪，无法保存。','err');
+    showToast({type:'err',title:'✘ 保存失败',desc:'编辑器尚未就绪'});
+    return;
+  }
+  var code = monacoEditor.getValue();
+  if(!code.trim()){
+    ideTermLog('代码为空，无需保存。','warn');
+    showToast({type:'err',title:'⚠ 代码为空',desc:'没有内容可以保存'});
+    return;
+  }
+  var filename = makeFilename();
+  var lang = $id('langSelect') ? $id('langSelect').value : 'javascript';
+  /* 优先用 File System Access API —— 弹出"另存为"对话框 */
+  if(window.showSaveFilePicker){
+    try{
+      var handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: lang === 'python' ? 'Python 源文件' : 'JavaScript 源文件',
+          accept: lang === 'python'
+            ? {'text/x-python': ['.py']}
+            : {'text/javascript': ['.js']}
+        }]
+      });
+      var writable = await handle.createWritable();
+      await writable.write(code);
+      await writable.close();
+      var savedName = handle.name || filename;
+      ideTermLog('✔ 已保存：' + savedName + '  (' + code.length + ' 字符)','ok');
+      showToast({
+        type:'ok',
+        title:'✔ 保存成功',
+        desc:'文件已保存到你选择的位置',
+        file:savedName,
+        timeout:7000
+      });
+      addHistory(savedName, code.length, lang);
+      return;
+    }catch(err){
+      if(err.name === 'AbortError'){
+        ideTermLog('已取消保存。','warn');
+        showToast({type:'',title:'已取消',desc:'你取消了保存操作',timeout:2500});
+        return;
+      }
+      /* 用户拒绝或浏览器不支持 → 回退到传统下载 */
+      ideTermLog('[提示] 另存为对话框不可用，改用下载方式...','warn');
+    }
+  }
+  /* 回退：传统下载 */
+  try{
+    var blob = new Blob([code], {type:'text/plain;charset=utf-8'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    ideTermLog('✔ 已下载：' + filename + '  (' + code.length + ' 字符)','ok');
+    ideTermLog('  文件保存在浏览器的【下载】文件夹','sys');
+    ideTermLog('  快捷键查看下载：Ctrl+J（Chrome/Edge）','sys');
+    showToast({
+      type:'ok',
+      title:'✔ 保存成功',
+      desc:'文件已保存到浏览器【下载】文件夹<br>按 Ctrl+J 可查看',
+      file:filename,
+      timeout:10000
+    });
+    addHistory(filename, code.length, lang);
+  }catch(e){
+    ideTermLog('✘ 保存失败：' + e.message, 'err');
+    showToast({type:'err',title:'✘ 保存失败',desc:e.message});
+  }
+}
+/* ===== 打开代码 ===== */
+function openCodeFile(){
+  var fi = $id('fileInput');
+  if(fi)fi.click();
+}
+function handleFileOpen(file){
+  if(!file)return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    var content = reader.result;
+    if(!monacoEditor){ideTermLog('编辑器未就绪。','err');return;}
+    monacoEditor.setValue(content);
+    var name = (file.name || '').toLowerCase();
+    var newLang = null;
+    if(name.endsWith('.py')) newLang = 'python';
+    else if(name.endsWith('.js')) newLang = 'javascript';
+    if(newLang && newLang !== curCodeLang){
+      curCodeLang = newLang;
+      var sel = $id('langSelect');
+      if(sel)sel.value = newLang;
+      monaco.editor.setModelLanguage(monacoEditor.getModel(), newLang);
+      ideTermLog('已根据扩展名切换为 ' + newLang.toUpperCase(), 'sys');
+    }
+    saveDraft();
+    ideTermLog('✔ 已打开：' + file.name + '  (' + content.length + ' 字符)', 'ok');
+    showToast({
+      type:'ok',
+      title:'📂 已打开',
+      desc:'文件内容已加载到编辑器',
+      file:file.name,
+      timeout:5000
+    });
+    checkIdeReady();
+  };
+  reader.onerror = function(){
+    ideTermLog('✘ 读取文件失败。','err');
+    showToast({type:'err',title:'✘ 打开失败',desc:'无法读取文件'});
+  };
+  reader.readAsText(file);
+}
 function initIDE(){
   if(ideInited)return;
   ideInited=true;
@@ -1059,11 +1294,14 @@ function initIDE(){
   ideTermLog('正在初始化编辑器与运行时...','sys');
   var sel=$id('langSelect');
   if(sel)sel.addEventListener('change',function(){
+    saveDraft();
     var lang=this.value;
     curCodeLang=lang;
     if(monacoReady&&monacoEditor){
       monaco.editor.setModelLanguage(monacoEditor.getModel(),lang);
-      monacoEditor.setValue(getDefaultCode(lang));
+      var draft = loadDraft(lang);
+      monacoEditor.setValue(draft !== null ? draft : getDefaultCode(lang));
+      if(draft !== null) ideTermLog('已恢复 ' + lang.toUpperCase() + ' 草稿','sys');
     }
     ideTermLog('语言切换为 '+lang.toUpperCase(),'sys');
     checkIdeReady();
@@ -1084,6 +1322,16 @@ function initIDE(){
     }
     this.disabled=false;
     checkIdeReady();
+  });
+  var saveBtn=$id('saveBtn');
+  if(saveBtn)saveBtn.addEventListener('click',function(){saveCodeToFile();});
+  var openBtn=$id('openBtn');
+  if(openBtn)openBtn.addEventListener('click',function(){openCodeFile();});
+  var fi=$id('fileInput');
+  if(fi)fi.addEventListener('change',function(e){
+    var f = e.target.files && e.target.files[0];
+    handleFileOpen(f);
+    e.target.value = '';
   });
   var clearBtn=$id('clearBtn');
   if(clearBtn)clearBtn.addEventListener('click',function(){
@@ -1124,8 +1372,9 @@ function initIDE(){
             'editorWidget.border':'#664400'
           }
         });
+        var draft = loadDraft('python');
         monacoEditor=monaco.editor.create($id('editor'),{
-          value:getDefaultCode('python'),
+          value: draft !== null ? draft : getDefaultCode('python'),
           language:'python',
           theme:'550c-amber',
           fontSize:13,
@@ -1136,8 +1385,16 @@ function initIDE(){
           scrollBeyondLastLine:false,
           tabSize:4
         });
+        monacoEditor.onDidChangeModelContent(function(){saveDraft();});
         monacoReady=true;
+        if(draft !== null) ideTermLog('已恢复 PYTHON 草稿','sys');
         ideTermLog('Monaco Editor 已就绪。','ok');
+        ideTermLog('提示：点底部"保存代码"→ 弹窗选位置保存；"打开代码"→ 导入 .js/.py','sys');
+        ideTermLog('快捷键：Ctrl+S 保存，Ctrl+Enter 执行','sys');
+        monacoEditor.addCommand(
+          monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+          function(){ saveCodeToFile(); }
+        );
         initPyodide();
       }catch(e){
         ideTermLog('[错误] Monaco 初始化失败: '+e.message,'err');
@@ -1268,6 +1525,10 @@ async function runJavaScriptCode(code){
   try{
     var fn=new Function(code);
     var result=fn();
+    if(result && typeof result.then === 'function'){
+      await result;
+      result = undefined;
+    }
     if(result!==undefined&&result!==null)ideTermLog('返回值: '+String(result),'out');
   }catch(err){
     ideTermLog('JavaScript 错误: '+err.message,'err');
@@ -1276,7 +1537,6 @@ async function runJavaScriptCode(code){
   }
   setIdeStatus('就绪 — 点击"编译执行"','online');
 }
-/* ========== 引擎遥测 ========== */
 var tele={pw:84.6,tp:92.1,tg:61.4,at:94.2,dist:1.0023,vel:11.86,fuel:87.3,surf:-84.0,acc:0.0123};
 function renderGauges(){
   var el;
@@ -1318,7 +1578,6 @@ document.addEventListener('visibilitychange',function(){
     },1000);
   }
 });
-/* ========== 训练 MOSS ========== */
 var KB_KEY='550w_moss_kb_v1';
 var kb=[];
 try{kb=JSON.parse(localStorage.getItem(KB_KEY)||'[]')||[];}catch(e){kb=[];}
@@ -1482,15 +1741,10 @@ function trainedReply(t){
   var threshold=t.length<4?85:50;
   return bestScore>=threshold?best:null;
 }
-/* =====================================================================
-   启动
-   ===================================================================== */
+renderHistory();
 window.addEventListener('load',function(){
-  // 启动动画（视觉）+ 终端打字（视觉）并行跑
   runBootAnimation();
-  // 延迟 200ms 开始打字，避免两个动画同时启动显得太挤
   setTimeout(bootTerminal, 200);
-  // 600ms 后初始化编程视图（后台静默）
   setTimeout(initIDE, 600);
 });
 window.__550w={tele:tele,kb:kb,trainedReply:trainedReply};
