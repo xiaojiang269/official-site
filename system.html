@@ -2239,13 +2239,14 @@ body.printing .cert-card{position:fixed;left:50%;top:40px;transform:translateX(-
         <div class="panel hud">
           <div class="panel-title"><h3>添加特惠人员</h3><span class="en">ADD PRIVILEGED CITIZEN</span></div>
           <div class="ctl-row">
-            <select id="privTarget" class="nation-search" style="flex:1;min-width:180px"></select>
+            <input id="privTargetInput" class="nation-search" placeholder="输入公民姓名（账号）…" autocomplete="off" style="flex:1;min-width:180px">
           </div>
           <div class="priv-types" id="privTypes"></div>
           <div class="ctl-row">
             <input class="nation-search" id="privNote" placeholder="特惠备注（可选）" style="flex:1">
             <button class="btn-primary" id="btnPrivAdd">添加到特惠名单</button>
           </div>
+          <div class="users-hint" id="privSearchTip" style="margin-top:8px">输入公民姓名后，系统将自动核验账号并加入特惠名单</div>
         </div>
         <div class="panel hud">
           <div class="panel-title"><h3>特惠名单</h3><span class="en">PRIVILEGED LIST · 跨账号同步</span></div>
@@ -4505,11 +4506,6 @@ function renderCert(){
 const PRIV_TYPES=['地下城优先分配','食品配额加成','免检快速通行','资源优先配额','医疗优先通道'];
 function renderPrivileged(){
   const accs=getAccounts();
-  const sel=document.getElementById('privTarget');
-  if(sel){
-    const names=Object.keys(accs).filter(n=>!(accs[n]&&accs[n].admin));
-    sel.innerHTML=names.map(n=>'<option value="'+n+'">'+n+(accs[n]&&accs[n].privileged&&accs[n].privileged.on?'（已特惠）':'')+'</option>').join('');
-  }
   const pt=document.getElementById('privTypes');
   if(pt&&!pt.dataset.bound){
     pt.dataset.bound='1';
@@ -4536,20 +4532,21 @@ function renderPrivileged(){
   if(dot)dot.textContent='特惠名单 · '+Object.keys(accs).filter(n=>accs[n]&&accs[n].privileged&&accs[n].privileged.on).length+' 人';
 }
 function addPrivileged(){
-  const sel=document.getElementById('privTarget');
-  if(!sel||!sel.value){toast('warn','未选择公民','请先选择要添加特惠的公民');return;}
-  const n=sel.value;
+  const inp=document.getElementById('privTargetInput');
+  if(!inp||!inp.value.trim()){toast('warn','未填写公民姓名','请输入要添加特惠的公民姓名');return;}
+  const n=inp.value.trim();
   const types=Array.from(document.querySelectorAll('#privTypes input:checked')).map(i=>i.value);
   if(!types.length){toast('warn','未选择特惠类型','请至少勾选一项特惠类型');return;}
   const note=(document.getElementById('privNote').value||'').trim();
   const a=getAccounts();
-  if(!a[n]){toast('warn','账号不存在','未找到公民 '+n);return;}
+  if(!a[n]){toast('err','账号不存在','未找到公民 '+n+'，请确认姓名与注册账号一致');return;}
   a[n].privileged={on:true,types:types,note:note,since:Date.now()};
   saveAccounts(a);
   if(CLOUD_ON)cloudSet('accounts',a);
   toast('ok','已添加特惠人员',n+' 已加入特惠名单：'+types.join('、'));
   appendLog(['ok','PRIV','特惠人员设置：'+n+' 添加特惠（'+types.join('、')+'）'],0);
   document.getElementById('privNote').value='';
+  inp.value='';
   renderPrivileged();
 }
 (function(){
