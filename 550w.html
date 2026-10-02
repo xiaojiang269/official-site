@@ -597,7 +597,6 @@ body{background:
     </section>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js"></script>
 <script>
 (function(){
 "use strict";
@@ -1338,71 +1337,111 @@ function initIDE(){
     ideTermClear();
     ideTermLog('终端已清空。','sys');
   });
-  try{
-    if(typeof require==='undefined'){
-      ideTermLog('[警告] Monaco 加载器未加载，编程编辑器不可用。','err');
-      ideTermLog('        请检查网络是否能访问 cdn.jsdelivr.net','warn');
-      setRuntimeStatus('Monaco 未加载');
-      return;
+  setupMonaco();
+}
+/* ===== Monaco 多 CDN 动态加载（jsDelivr → Cloudflare cdnjs → unpkg） ===== */
+var MONACO_CDNS = [
+  'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs',
+  'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs',
+  'https://unpkg.com/monaco-editor@0.52.0/min/vs'
+];
+function loadScriptOnce(src){
+  return new Promise(function(resolve,reject){
+    var s=document.createElement('script');
+    s.src=src;
+    s.onload=function(){resolve();};
+    s.onerror=function(){if(s.parentNode)s.parentNode.removeChild(s);reject(new Error(src));};
+    document.head.appendChild(s);
+  });
+}
+function createMonacoEditor(){
+  return new Promise(function(resolve,reject){
+    try{
+      monaco.editor.defineTheme('550c-amber',{
+        base:'vs-dark',inherit:true,
+        rules:[
+          {token:'comment',foreground:'664400',fontStyle:'italic'},
+          {token:'keyword',foreground:'ffb000',fontStyle:'bold'},
+          {token:'string',foreground:'cc8800'},
+          {token:'number',foreground:'ff6600'},
+          {token:'type',foreground:'00ddcc'},
+          {token:'function',foreground:'ffdd66'}
+        ],
+        colors:{
+          'editor.background':'#0a0800',
+          'editor.foreground':'#ffb000',
+          'editorCursor.foreground':'#ffb000',
+          'editor.lineHighlightBackground':'#1a1000',
+          'editorLineNumber.foreground':'#664400',
+          'editorLineNumber.activeForeground':'#ffb000',
+          'editor.selectionBackground':'#66440055',
+          'editorWidget.background':'#0a0800',
+          'editorWidget.border':'#664400'
+        }
+      });
+      var draft = loadDraft('python');
+      monacoEditor=monaco.editor.create($id('editor'),{
+        value: draft !== null ? draft : getDefaultCode('python'),
+        language:'python',
+        theme:'550c-amber',
+        fontSize:13,
+        fontFamily:'"Courier New", monospace',
+        lineNumbers:'on',
+        minimap:{enabled:false},
+        automaticLayout:true,
+        scrollBeyondLastLine:false,
+        tabSize:4
+      });
+      monacoEditor.onDidChangeModelContent(function(){saveDraft();});
+      monacoReady=true;
+      if(draft !== null) ideTermLog('已恢复 PYTHON 草稿','sys');
+      ideTermLog('Monaco Editor 已就绪。','ok');
+      ideTermLog('提示：点底部"保存代码"→ 弹窗选位置保存；"打开代码"→ 导入 .js/.py','sys');
+      ideTermLog('快捷键：Ctrl+S 保存，Ctrl+Enter 执行','sys');
+      monacoEditor.addCommand(
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+        function(){ saveCodeToFile(); }
+      );
+      resolve();
+    }catch(e){
+      reject(e);
     }
-    require.config({
-      paths:{vs:'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs'}
-    });
-    require(['vs/editor/editor.main'],function(){
-      try{
-        monaco.editor.defineTheme('550c-amber',{
-          base:'vs-dark',inherit:true,
-          rules:[
-            {token:'comment',foreground:'664400',fontStyle:'italic'},
-            {token:'keyword',foreground:'ffb000',fontStyle:'bold'},
-            {token:'string',foreground:'cc8800'},
-            {token:'number',foreground:'ff6600'},
-            {token:'type',foreground:'00ddcc'},
-            {token:'function',foreground:'ffdd66'}
-          ],
-          colors:{
-            'editor.background':'#0a0800',
-            'editor.foreground':'#ffb000',
-            'editorCursor.foreground':'#ffb000',
-            'editor.lineHighlightBackground':'#1a1000',
-            'editorLineNumber.foreground':'#664400',
-            'editorLineNumber.activeForeground':'#ffb000',
-            'editor.selectionBackground':'#66440055',
-            'editorWidget.background':'#0a0800',
-            'editorWidget.border':'#664400'
-          }
-        });
-        var draft = loadDraft('python');
-        monacoEditor=monaco.editor.create($id('editor'),{
-          value: draft !== null ? draft : getDefaultCode('python'),
-          language:'python',
-          theme:'550c-amber',
-          fontSize:13,
-          fontFamily:'"Courier New", monospace',
-          lineNumbers:'on',
-          minimap:{enabled:false},
-          automaticLayout:true,
-          scrollBeyondLastLine:false,
-          tabSize:4
-        });
-        monacoEditor.onDidChangeModelContent(function(){saveDraft();});
-        monacoReady=true;
-        if(draft !== null) ideTermLog('已恢复 PYTHON 草稿','sys');
-        ideTermLog('Monaco Editor 已就绪。','ok');
-        ideTermLog('提示：点底部"保存代码"→ 弹窗选位置保存；"打开代码"→ 导入 .js/.py','sys');
-        ideTermLog('快捷键：Ctrl+S 保存，Ctrl+Enter 执行','sys');
-        monacoEditor.addCommand(
-          monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-          function(){ saveCodeToFile(); }
-        );
-        initPyodide();
-      }catch(e){
-        ideTermLog('[错误] Monaco 初始化失败: '+e.message,'err');
-      }
-    });
-  }catch(e){
-    ideTermLog('[错误] Monaco 加载异常: '+e.message,'err');
+  });
+}
+async function setupMonaco(){
+  var lastErr=null;
+  for(var i=0;i<MONACO_CDNS.length;i++){
+    var cdn=MONACO_CDNS[i];
+    var host=cdn.split('/')[2];
+    try{
+      ideTermLog('['+(i+1)+'/'+MONACO_CDNS.length+'] 加载 Monaco 编辑器：'+host+' ...','sys');
+      setRuntimeStatus('正在从 '+host+' 加载编辑器...');
+      await loadScriptOnce(cdn+'/loader.js');
+      if(typeof require==='undefined')throw new Error('loader 未暴露 require');
+      require.config({paths:{vs:cdn}});
+      await new Promise(function(resolve,reject){
+        require(['vs/editor/editor.main'],function(){resolve();},function(err){reject(new Error('editor.main 加载失败'));});
+      });
+      await createMonacoEditor();
+      ideTermLog('✔ 编辑器从 '+host+' 加载成功。','ok');
+      setRuntimeStatus('编辑器 ✓');
+      initPyodide();
+      return;
+    }catch(e){
+      lastErr=e;
+      ideTermLog('✘ '+host+' 失败：'+(e.message||e),'err');
+    }
   }
+  setRuntimeStatus('Monaco 加载失败');
+  ideTermLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','err');
+  ideTermLog('所有 '+MONACO_CDNS.length+' 个 CDN 源均加载失败','err');
+  if(lastErr)ideTermLog('最后错误：'+(lastErr.message||lastErr),'err');
+  ideTermLog('建议：','warn');
+  ideTermLog('  1. 检查网络连接（部分 CDN 可能被屏蔽，已自动尝试多源）','warn');
+  ideTermLog('  2. 终端 / 引擎监控 / 训练 MOSS 仍可正常使用','warn');
+  ideTermLog('  3. 刷新页面可再次尝试加载','warn');
+  ideTermLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','err');
+  checkIdeReady();
 }
 var PYODIDE_CDNS = [
   'https://fastly.jsdelivr.net/pyodide/v0.26.2/full/',
