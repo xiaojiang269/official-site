@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>550W 综合指挥系统 · 部署教程</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e6f7ff'><rect x='3' y='5' width='18' height='14' rx='2'/></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#070d1a;--panel:rgba(13,26,48,.82);--panel2:rgba(9,18,36,.6);--line:rgba(64,224,255,.18);--cyan:#40e0ff;--cyan-dim:#1d9fc4;--gold:#ffd873;--text:#d8ecff;--dim:#7fa3c7;--mono:'JetBrains Mono','Courier New',monospace}
+body{background:radial-gradient(1200px 700px at 20% -10%,rgba(29,159,196,.14),transparent 60%),radial-gradient(900px 600px at 90% 110%,rgba(64,224,255,.08),transparent 55%),var(--bg);color:var(--text);font-family:'PingFang SC','Microsoft YaHei',system-ui,sans-serif;line-height:1.7;min-height:100vh}
+.wrap{max-width:1080px;margin:0 auto;padding:34px 22px 80px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:26px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{font-size:17px;letter-spacing:.12em;color:#eaf7ff}
+.brand small{display:block;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.2em;margin-top:2px}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+.top-actions a{color:var(--text);text-decoration:none;font-size:12.5px;padding:7px 14px;border:1px solid var(--line);border-radius:20px;transition:.15s}
+.top-actions a:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px rgba(64,224,255,.15)}
+.hero{background:linear-gradient(135deg,rgba(29,159,196,.16),rgba(13,26,48,.6) 60%);border:1px solid var(--line);border-radius:14px;padding:30px 28px;margin-bottom:30px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.hero h1{font-size:26px;letter-spacing:.08em;color:#eaf7ff;margin-bottom:8px}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero p{color:var(--dim);font-size:13.5px;max-width:760px}
+.hero .ver{display:inline-block;font-family:var(--mono);font-size:10.5px;color:var(--cyan);border:1px solid rgba(64,224,255,.35);padding:2px 10px;border-radius:12px;margin-top:12px;letter-spacing:.12em}
+.hud{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px 26px;margin-bottom:24px;position:relative}
+.hud::before{content:'';position:absolute;top:8px;right:10px;width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.h-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.h-title h2{font-size:16.5px;letter-spacing:.06em;color:#eaf7ff}
+.h-title span{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.18em}
+.steps{list-style:none}
+.steps>li{position:relative;padding-left:44px;padding-bottom:26px}
+.steps>li::before{content:'';position:absolute;left:14px;top:26px;bottom:-2px;width:1px;background:rgba(64,224,255,.28)}
+.steps>li:last-child::before{display:none}
+.steps>li:last-child{padding-bottom:0}
+.step-dot{position:absolute;left:7px;top:2px;width:16px;height:16px;border-radius:50%;border:2px solid var(--cyan);background:var(--bg);z-index:1}
+.steps>li.done .step-dot{background:var(--cyan);box-shadow:0 0 10px rgba(64,224,255,.6)}
+.steps b{display:block;font-size:14.5px;color:#eaf7ff;letter-spacing:.04em;margin-bottom:4px}
+.steps .en{font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.16em;margin-bottom:8px}
+.steps p{font-size:13px;color:var(--text);margin-bottom:8px}
+.steps p.dim{color:var(--dim);font-size:12.5px}
+pre{background:#04080f;border:1px solid rgba(64,224,255,.22);border-left:3px solid var(--cyan);border-radius:8px;padding:14px 16px;font-family:var(--mono);font-size:11.8px;line-height:1.75;overflow-x:auto;color:#a8e8ff;margin:10px 0 12px;white-space:pre}
+pre .cm{color:#4a6b8c}
+pre .ok{color:#7df0a2}
+pre .warn{color:var(--gold)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.mcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.mcard b{display:block;font-size:13.5px;color:#eaf7ff;margin-bottom:6px;letter-spacing:.04em}
+.mcard p{font-size:12.5px;color:var(--text)}
+.mcard .tag{display:inline-block;font-family:var(--mono);font-size:9.5px;color:var(--gold);border:1px solid rgba(255,216,115,.35);padding:1px 8px;border-radius:10px;margin-bottom:8px;letter-spacing:.1em}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0}
+th,td{border:1px solid rgba(64,224,255,.2);padding:9px 12px;text-align:left}
+th{background:rgba(64,224,255,.08);color:#bfefff;font-weight:600;letter-spacing:.05em;white-space:nowrap}
+td{color:var(--text)}
+td code{font-family:var(--mono);font-size:11.5px;color:#a8e8ff;background:rgba(64,224,255,.08);padding:1px 6px;border-radius:4px}
+.note{border-left:3px solid var(--gold);background:rgba(255,216,115,.07);border-radius:0 8px 8px 0;padding:12px 16px;font-size:12.5px;color:#ffe9b8;margin:12px 0}
+.note b{color:var(--gold)}
+.footer{margin-top:34px;text-align:center;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+.footer a{color:var(--cyan);text-decoration:none}
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+.flow .fnode{background:rgba(64,224,255,.08);border:1px solid rgba(64,224,255,.3);border-radius:8px;padding:8px 14px;font-size:12px;color:#bfefff}
+.flow .fnode b{display:block;font-size:12.5px;color:#eaf7ff}
+.flow .arrow{color:var(--cyan);font-size:14px}
+@media(max-width:600px){.hero h1{font-size:21px}.hud{padding:18px 16px}.wrap{padding:20px 14px 60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none"><rect x="3" y="8" width="26" height="16" rx="2" stroke="#40e0ff" stroke-width="1.6"/><path d="M8 16h16" stroke="#40e0ff" stroke-width="1.4"/><circle cx="11" cy="16" r="1.6" fill="#ffd873"/><circle cx="21" cy="16" r="1.6" fill="#40e0ff"/><path d="M12 8v-2h8v2" stroke="#40e0ff" stroke-width="1.4"/></svg>
+      <div><b>550W 综合指挥系统</b><small>DEPLOYMENT MANUAL · 部署教程</small></div>
+    </div>
+    <div class="top-actions">
+      <a href="index.html">返回官网</a>
+      <a href="system.html">进入系统</a>
+    </div>
+  </div>
+
+  <div class="hero">
+    <h1>550W 综合指挥系统 · <em>部署教程</em></h1>
+    <p>本教程面向「联合政府个人身份管理系统」的完整部署链路：指挥终端（前端）托管于 GitHub Pages，550W 量子主机（云端数据库）使用 Supabase，实现跨设备身份档案、权限、广播与地下城调度的实时互通。全程约 15 分钟即可完成上线。</p>
+    <span class="ver">VERSION 1.0 · 联合政府移山计划总部 · 信息化建设处</span>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2>一、系统架构总览</h2><span>ARCHITECTURE OVERVIEW</span></div>
+    <div class="flow">
+      <div class="fnode"><b>指挥终端</b>system.html<br>单文件前端 · GitHub Pages</div>
+      <span class="arrow">→</span>
+      <div class="fnode"><b>550W 量子主机</b>Supabase<br>ueg_kv 键值库</div>
+      <span class="arrow">→</span>
+      <div class="fnode"><b>全服公民</b>多设备<br>账号 · 权限 · 广播 · 导航</div>
+    </div>
+    <table>
+      <tr><th>组件</th><th>角色</th><th>说明</th></tr>
+      <tr><td>GitHub Pages</td><td>指挥终端托管</td><td>固定网址 <code>https://xiaojiang269.github.io/official-site/</code>，无需服务器，免费 HTTPS</td></tr>
+      <tr><td>Supabase（550W 量子主机）</td><td>云端档案库</td><td>PostgreSQL 数据库，表 <code>public.ueg_kv</code>，账号/权限/广播/导航状态跨设备同步</td></tr>
+      <tr><td>账号体系</td><td>公民身份</td><td>账号=公民姓名，密码=姓名首字母；最高权限档案 <code>周明远 / ZMY</code></td></tr>
+      <tr><td>本地兜底</td><td>离线容灾</td><td>localStorage 同步缓存，云端不可达时自动降级本地运行</td></tr>
+    </table>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2>二、部署步骤</h2><span>DEPLOYMENT PROCEDURE</span></div>
+    <ol class="steps">
+      <li class="done"><span class="step-dot"></span><b>准备 GitHub 仓库并开启 Pages</b><div class="en">STEP 01 · REPOSITORY &amp; PAGES</div>
+        <p>在 GitHub 创建仓库（如 <code>official-site</code>），进入 <b>Settings → Pages</b>，将 <b>Build and deployment</b> 的 Source 设为 <b>Deploy from a branch</b>，分支选 <b>main</b>、目录选 <b>/ (root)</b>，保存后等待分配 Pages 域名。</p>
+        <p class="dim">Pages 域名生成后即为固定网址，勿再更换——本系统所有入口与卡片均引用该域名。</p>
+      </li>
+      <li class="done"><span class="step-dot"></span><b>上传指挥终端（system.html）</b><div class="en">STEP 02 · UPLOAD FRONTEND</div>
+        <p>进入仓库页面，点击 <b>Add file → Upload files</b>，将 <code>system.html</code>（单文件自包含，图片已内嵌 Base64）拖入上传区，填写提交说明后点击 <b>Commit changes</b>。</p>
+        <pre><span class="cm"># 提交后出现以下页面即表示上传成功</span>
+Processing your files…  <span class="ok">✓ 已受理</span>
+
+<span class="cm"># 1-5 分钟后 Pages 缓存刷新，可用强刷参数核验</span>
+https://xiaojiang269.github.io/official-site/system.html?v=1</pre>
+      </li>
+      <li class="done"><span class="step-dot"></span><b>初始化 550W 量子主机（Supabase）</b><div class="en">STEP 03 · CLOUD DATABASE</div>
+        <p>登录 Supabase 控制台 → 新建项目 → SQL Editor 执行建表语句：</p>
+        <pre>create table if not exists public.ueg_kv (
+  key text primary key,
+  value jsonb,
+  updated_at timestamptz default now()
+);
+alter table public.ueg_kv enable row level security;
+create policy "anon read" on public.ueg_kv for select using (true);
+create policy "anon upsert" on public.ueg_kv for insert
+  with check (true) on conflict (key) do update;</pre>
+        <p class="dim">随后在 Settings → API 中获取项目 URL 与 publishable key，写入前端 <code>SUPA_URL / SUPA_KEY</code> 配置常量（云端 key：accounts / settings / broadcasts / navstate）。</p>
+      </li>
+      <li class="done"><span class="step-dot"></span><b>权限初始化与账号核验</b><div class="en">STEP 04 · AUTHORIZATION</div>
+        <p>系统内置最高权限档案 <code>周明远 / ZMY</code>：Ⅴ 级最高权限，数字生命管理、系统管理、联合政府管理员后台全权开通；管理员后台仅限管理员账号进入，8 大子系统全部按钮可实际操作。</p>
+        <pre><span class="cm"># 云端核验账号库（任取其一）</span>
+curl -sS -H "apikey: &lt;KEY&gt;" -H "Authorization: Bearer &lt;KEY&gt;" \
+  "https://&lt;PROJECT&gt;.supabase.co/rest/v1/ueg_kv?key=eq.accounts&amp;select=value"</pre>
+      </li>
+      <li class="done"><span class="step-dot"></span><b>上线验证</b><div class="en">STEP 05 · VERIFICATION</div>
+        <p>部署完成后按以下清单逐项验证，全部通过即上线成功：</p>
+        <table>
+          <tr><th>验证项</th><th>方法</th><th>预期结果</th></tr>
+          <tr><td>前端可访问</td><td>访问固定网址 + <code>?v=n</code> 强刷</td><td>登录页正常显示，无平台水印</td></tr>
+          <tr><td>云端连通</td><td>登录后查看顶栏</td><td>显示「在线模式 · 已同步」</td></tr>
+          <tr><td>多设备互通</td><td>两台设备先后登录同一账号</td><td>档案/权限/广播实时一致</td></tr>
+          <tr><td>权限隔离</td><td>普通公民访问管理模块</td><td>拦截提示「仅限联合政府管理员访问」</td></tr>
+          <tr><td>raw 源核验</td><td><code>raw.githubusercontent.com/…/main/system.html</code></td><td>内容与本地发布版一致</td></tr>
+        </table>
+      </li>
+    </ol>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2>三、日常运维手册</h2><span>OPERATIONS HANDBOOK</span></div>
+    <div class="grid2">
+      <div class="mcard"><span class="tag">数据备份</span><b>云端快照</b><p>用 SQL 导出 <code>ueg_kv</code> 全表；关键 key（accounts）建议每周备份一次，恢复时直接 upsert 覆盖。</p></div>
+      <div class="mcard"><span class="tag">健康检查</span><b>云端核验</b><p>curl REST 接口拉取 accounts / broadcasts / navstate，核对关键账号字段、广播条数与导航开关状态。</p></div>
+      <div class="mcard"><span class="tag">缓存管理</span><b>强刷发布</b><p>Pages 缓存 1–5 分钟；发布后用 <code>?v=&lt;递增数字&gt;</code> 访问避免读到旧版，raw 源可先行确认 commit。</p></div>
+      <div class="mcard"><span class="tag">异常修复</span><b>档案纠偏</b><p>账号名/权限/地下城异常时，直接改云端 accounts 对应字段（管理员调整后目标账号登录即时生效）。</p></div>
+    </div>
+    <div class="note"><b>注意：</b>单文件前端无法直连外部服务器，"在线模式"为界面模拟联动，真实数据存储在 550W 量子主机（Supabase）与本地浏览器；系统不上传任何水印，产物完全自主可控。</div>
+  </div>
+
+  <div class="hud">
+    <div class="h-title"><h2>四、故障排查速查表</h2><span>TROUBLESHOOTING</span></div>
+    <table>
+      <tr><th>现象</th><th>原因</th><th>处理</th></tr>
+      <tr><td>打开显示旧版本</td><td>Pages 缓存未刷新</td><td>URL 追加 <code>?v=n</code> 强刷；等 1–5 分钟再试</td></tr>
+      <tr><td>登录提示账号不存在</td><td>该账号从未注册 / 云端被删</td><td>重新注册；管理员在身份管理核验账号库</td></tr>
+      <tr><td>其他设备不同步</td><td>云端未连接 / 本地覆盖</td><td>确认顶栏「在线模式 · 已同步」；检查 <code>ueg_kv</code> 表数据</td></tr>
+      <tr><td>功能按钮无响应</td><td>本地缓存数据损坏</td><td>清空站点 localStorage 后重新登录</td></tr>
+      <tr><td>上传后页面报错</td><td>发布文件损坏/不完整</td><td>用 <code>node --check</code> 校验 JS 语法后重新生成 embed 版上传</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>烤炉科技 · 550W 综合指挥系统 · 部署教程 — 基于《流浪地球2》联合政府设定 · 演示项目</p>
+    <p><a href="index.html">返回官网首页</a> · <a href="system.html">进入个人身份管理系统</a></p>
+  </div>
+</div>
+</body>
+</html>
