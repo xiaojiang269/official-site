@@ -1,0 +1,42 @@
+{
+  "name": "550w-desktop",
+  "version": "1.0.0",
+  "description": "550W 综合指挥系统 桌面版",
+  "main": "main.js",
+  "author": "xiaojiang269",
+  "license": "MIT",
+  "build": {
+    "appId": "com.xiaojiang.550w",
+    "productName": "550W 综合指挥系统",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "app/**/*",
+      "build/icon.ico"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "550W 综合指挥系统",
+      "artifactName": "550W-Setup-${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  }
+}

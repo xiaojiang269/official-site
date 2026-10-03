@@ -1,0 +1,61 @@
+name: Build 550W Desktop
+
+on:
+  push:
+    paths:
+      - 'desktop-app/**'
+      - '550w.html'
+      - 'assets/**'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Sync latest 550w.html
+        shell: cmd
+        run: |
+          copy /Y 550w.html desktop-app\app\550w.html
+          if not exist desktop-app\app\assets mkdir desktop-app\app\assets
+          copy /Y assets\550w-icon-192.png desktop-app\app\assets\
+          copy /Y assets\550w-icon-512.png desktop-app\app\assets\
+
+      - name: Install dependencies
+        working-directory: desktop-app
+        run: npm install
+
+      - name: Build installer
+        working-directory: desktop-app
+        run: npx electron-builder --win --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 550W-Setup
+          path: desktop-app/dist/*.exe
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: 550W 桌面版 v1.0.${{ github.run_number }}
+          body: |
+            550W 综合指挥系统 · Windows 安装包
+            - 支持 Windows 10 / 11（64 位）
+            - 双击 setup 安装，桌面生成 550W 图标
+            - 独立窗口运行，内置本地服务，Python 编程功能可用
+            - 自动同步官网最新版（本次构建于 commit `${{ github.sha }}`）
+          files: desktop-app/dist/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
