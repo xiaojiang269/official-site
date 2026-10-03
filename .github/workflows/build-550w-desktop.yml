@@ -4,8 +4,6 @@ on:
   push:
     paths:
       - 'desktop-app/**'
-      - '550w.html'
-      - 'assets/**'
 
 jobs:
   build-windows:

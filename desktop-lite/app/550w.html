@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>550W 综合指挥系统 · 流浪地球</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23020814'/%3E%3Cpath d='M20 46 L32 14 L44 46 M26 34 H38' stroke='%23ff4d3b' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0c10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="550W">
+<link rel="apple-touch-icon" href="assets/550w-icon-192.png">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Orbitron:wght@500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/editor/editor.main.min.css">
+<style>
+:root{
+  --bg:#050608; --bg2:#0a0c10;
+  --panel:rgba(14,10,10,.6); --pline:rgba(255,77,59,.28);
+  --main:#ff4d3b; --main-dim:#ff8a5c; --main-glow:rgba(255,77,59,.35);
+  --accent:#6fe0ff;
+  --green:#3dff7a; --amber:#ffcc33; --red:#ff4d3b;
+  --text:#e9efe9; --dim:#8a8f8a;
+  --mono:"JetBrains Mono","SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --cn:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+}
+body.theme-amber{
+  --main:#ffb000; --main-dim:#cc8800; --main-glow:rgba(255,176,0,.35);
+  --pline:rgba(255,176,0,.28); --red:#ffb000; --amber:#ffdd66;
+}
+body.theme-cyan{
+  --main:#00ddcc; --main-dim:#00a899; --main-glow:rgba(0,221,204,.35);
+  --pline:rgba(0,221,204,.28); --red:#00ddcc; --amber:#6fe0ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:
+    radial-gradient(1200px 700px at 70% -10%, var(--main-glow), transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, rgba(111,224,255,.06), transparent 55%),
+    var(--bg);
+  color:var(--text);font-family:var(--cn);overflow:hidden;
+  transition:background .4s ease;}
+.scanlines{position:fixed;inset:0;pointer-events:none;z-index:80;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.15) 0 1px,transparent 1px 3px);opacity:.45}
+.crt{position:fixed;inset:0;pointer-events:none;z-index:81;
+  background:radial-gradient(130% 130% at 50% 50%,transparent 55%,rgba(0,2,8,.5) 100%)}
+#app{display:flex;flex-direction:column;height:100vh;padding:10px;gap:10px}
+.topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 14px;
+  border:1px solid var(--pline);border-radius:5px;
+  background:linear-gradient(180deg,rgba(14,32,60,.75),rgba(12,9,9,.6));}
+.brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+.brand .logo{font-family:var(--mono);font-weight:900;font-size:22px;letter-spacing:2px;
+  color:var(--main);text-shadow:0 0 14px var(--main-glow)}
+.brand .sub{font-size:11px;color:var(--dim);letter-spacing:2px}
+.meta{display:flex;gap:16px;margin-left:auto;font-family:var(--mono);font-size:12px;
+  color:var(--main-dim);flex-wrap:wrap;align-items:center}
+.meta .m{display:flex;flex-direction:column;gap:1px}
+.meta .m b{color:var(--text);font-weight:500;font-size:13px}
+.meta .m span{color:var(--dim);font-size:10px;letter-spacing:1px}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:pl 1.6s infinite;margin-right:4px}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.25}}
+.tool-btn{background:rgba(10,30,60,.5);border:1px solid var(--pline);color:var(--main-dim);
+  width:32px;height:32px;border-radius:4px;font-family:var(--mono);font-size:14px;
+  cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center}
+.tool-btn:hover{background:var(--main-glow);color:var(--main);border-color:var(--main)}
+.tool-btn.on{background:var(--main-glow);color:var(--main);border-color:var(--main);
+  box-shadow:0 0 10px var(--main-glow)}
+.nav{display:flex;gap:6px}
+.nav button{
+  border:1px solid rgba(255,77,59,.28);
+  background:rgba(14,10,10,.5);
+  color:#ff8a5c;
+  padding:7px 16px;border-radius:4px;font-family:var(--mono);font-size:12px;
+  cursor:pointer;transition:.15s}
+.nav button:hover{background:rgba(255,77,59,.12);color:#ff4d3b}
+.nav button.active{
+  background:rgba(255,77,59,.18);
+  color:#ff4d3b;
+  border-color:#ff4d3b;
+  box-shadow:0 0 10px rgba(255,77,59,.25)}
+.main{flex:1;display:flex;flex-direction:column;min-height:0}
+.view{display:none;flex:1;min-height:0}
+.view.active{display:flex;flex-direction:column}
+.term-layout{flex:1;display:grid;grid-template-columns:1fr 280px;gap:10px;min-height:0}
+.terminal{display:flex;flex-direction:column;min-height:0;overflow:hidden;
+  border:1px solid var(--pline);border-radius:5px;
+  background:linear-gradient(180deg,rgba(10,8,8,.85),rgba(5,6,8,.9))}
+.term-head{display:flex;align-items:center;gap:8px;padding:7px 12px;
+  border-bottom:1px solid var(--pline);background:rgba(14,10,10,.6);
+  font-family:var(--mono);font-size:12px;color:var(--main-dim)}
+.term-head .dots{display:flex;gap:6px}
+.term-head .dot{width:10px;height:10px;border-radius:50%;background:#2a1a16}
+.term-head .dot.r{background:var(--red);opacity:.7}
+.term-head .dot.y{background:var(--amber);opacity:.7}
+.term-head .dot.g{background:var(--green);opacity:.7}
+#output{flex:1;overflow-y:auto;padding:14px 16px;min-height:0;
+  font-family:var(--mono);font-size:13.5px;line-height:1.75;
+  scrollbar-width:thin;scrollbar-color:#2a1a16 transparent}
+#output::-webkit-scrollbar{width:8px}
+#output::-webkit-scrollbar-thumb{background:#2a1a16;border-radius:4px}
+.line{white-space:pre-wrap;word-break:break-word;min-height:1.5em}
+.line.dim{color:var(--dim)} .line.ok{color:var(--green)} .line.warn{color:var(--amber)} .line.err{color:var(--red)}
+.line.cy{color:var(--accent)} .line.title{color:var(--text);font-weight:700} .line.moss{color:var(--accent);font-weight:500}
+.line.big{color:var(--main);font-family:var(--mono);font-weight:900;letter-spacing:2px;text-shadow:0 0 12px var(--main-glow)}
+.line-user{color:var(--green)}
+.pbar-wrap{margin:4px 0;width:100%;max-width:520px;height:14px;border:1px solid var(--pline);
+  background:rgba(12,9,9,.6);border-radius:2px;overflow:hidden;position:relative}
+.pbar{height:100%;width:0%;background:linear-gradient(90deg,var(--main-dim),var(--main));
+  box-shadow:0 0 10px var(--main-glow);transition:width .1s linear}
+.pbar-txt{position:absolute;right:8px;top:0;font-size:11px;line-height:14px;
+  color:var(--main);font-family:var(--mono)}
+.input-row{display:flex;align-items:center;gap:8px;padding:10px 14px;
+  border-top:1px solid var(--pline);background:rgba(14,9,9,.7)}
+.prompt{font-family:var(--mono);color:var(--main);white-space:nowrap}
+.input-row input{flex:1;background:transparent;border:none;outline:none;color:var(--text);
+  font-family:var(--mono);font-size:13.5px;caret-color:var(--main)}
+.input-row input::placeholder{color:#3a2a26}
+.side{display:flex;flex-direction:column;gap:10px;min-height:0;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:#2a1a16 transparent}
+.panel{border:1px solid var(--pline);border-radius:5px;
+  background:linear-gradient(180deg,rgba(14,10,10,.6),rgba(5,12,26,.6));padding:11px}
+.panel h3{font-size:11px;color:var(--main-dim);letter-spacing:2px;margin-bottom:9px;
+  font-weight:500;display:flex;align-items:center;gap:6px}
+.panel h3::before{content:"";width:6px;height:6px;background:var(--main);box-shadow:0 0 6px var(--main)}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.quick button{background:rgba(10,30,60,.5);border:1px solid var(--pline);color:var(--main-dim);
+  padding:7px 6px;border-radius:4px;font-family:var(--mono);font-size:11px;
+  cursor:pointer;transition:.15s;text-align:left}
+.quick button:hover{background:var(--main-glow);color:var(--main);border-color:var(--main)}
+.quick button span{color:var(--dim);font-size:10px;float:right;margin-top:2px}
+.quote-box{font-size:12px;color:var(--text);line-height:1.7;
+  border-left:2px solid var(--main);padding-left:10px;opacity:.92}
+.quote-box .qf{display:block;margin-top:8px;color:var(--dim);font-size:11px;font-family:var(--mono)}
+#view-code.active{display:flex;flex-direction:column}
+.ide-550c{
+  flex:1;min-height:0;
+  display:grid;grid-template-rows:auto 1fr auto;
+  --a-amber:#ffb000; --a-amber-dim:#cc8800; --a-amber-dark:#664400;
+  --a-bg:#0a0800; --a-green:#00ff88; --a-red:#ff3333; --a-cyan:#00ddcc;
+  color:var(--a-amber);
+  font-family:"Courier New","Lucida Console",var(--mono);
+  background:rgba(10,8,0,.35);
+  border:1px solid var(--a-amber-dark);
+  border-radius:5px;
+  overflow:hidden;
+}
+.ide-topbar-550c{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 20px;
+  border-bottom:1px solid var(--a-amber-dark);
+  font-size:.82rem;letter-spacing:.12em;
+  background:rgba(10,8,0,.9);
+}
+.ide-topbar-550c .brand-550c{color:var(--a-amber);font-weight:bold}
+.ide-topbar-550c .info-550c{color:var(--a-amber-dim);font-size:.72rem}
+.ide-main-550c{
+  display:grid;grid-template-columns:1fr 1fr;
+  overflow:hidden;min-height:0;
+}
+.pane-550c{
+  display:flex;flex-direction:column;overflow:hidden;min-height:0;
+  border-right:1px solid var(--a-amber-dark);
+}
+.pane-550c:last-child{border-right:none}
+.pane-header-550c{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:6px 12px;
+  font-size:.72rem;color:var(--a-amber-dim);
+  border-bottom:1px solid var(--a-amber-dark);
+  letter-spacing:.1em;
+  background:rgba(10,8,0,.6);
+}
+.pane-header-550c select{
+  background:var(--a-bg);color:var(--a-amber);
+  border:1px solid var(--a-amber-dark);
+  font-family:inherit;font-size:.72rem;
+  padding:3px 6px;outline:none;cursor:pointer;
+}
+#editor{flex:1;min-height:0;background:#0a0800}
+#ideTerminal{
+  flex:1;min-height:0;
+  overflow-y:auto;padding:12px;
+  font-size:.78rem;line-height:1.7;
+  background:rgba(10,8,0,.6);
+  font-family:inherit;
+  scrollbar-width:thin;scrollbar-color:var(--a-amber-dark) transparent;
+}
+#ideTerminal::-webkit-scrollbar{width:6px}
+#ideTerminal::-webkit-scrollbar-track{background:transparent}
+#ideTerminal::-webkit-scrollbar-thumb{background:var(--a-amber-dark)}
+.log-line{white-space:pre-wrap;word-break:break-all}
+.log-sys{color:var(--a-amber-dim)}
+.log-out{color:var(--a-amber)}
+.log-err{color:var(--a-red)}
+.log-ok{color:var(--a-green)}
+.ide-bottombar-550c{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 20px;
+  border-top:1px solid var(--a-amber-dark);
+  background:rgba(10,8,0,.9);
+}
+.ide-bottombar-550c button{
+  background:var(--a-amber);color:#000;border:none;
+  padding:8px 16px;font-family:inherit;font-weight:bold;
+  font-size:.82rem;letter-spacing:.08em;cursor:pointer;
+  transition:all .2s;border-radius:0;
+}
+.ide-bottombar-550c button:hover:not(:disabled){
+  background:#ffcc44;box-shadow:0 0 14px rgba(255,176,0,.6);
+}
+.ide-bottombar-550c button:disabled{opacity:.4;cursor:not-allowed}
+.ide-bottombar-550c button.ghost{
+  background:transparent;color:var(--a-amber);
+  border:1px solid var(--a-amber-dark);font-weight:500;
+}
+.ide-bottombar-550c button.ghost:hover{
+  background:rgba(255,176,0,.15);color:#ffcc44;
+  box-shadow:0 0 10px rgba(255,176,0,.4);
+}
+.ide-bottombar-550c button.ghost.green{
+  color:var(--a-green);border-color:#1a4a2a;
+}
+.ide-bottombar-550c button.ghost.green:hover{
+  background:rgba(0,255,136,.12);
+}
+.ide-bottombar-550c .status-text{
+  font-size:.72rem;color:var(--a-amber-dim);letter-spacing:.08em;
+  font-family:var(--mono);margin-left:auto;
+}
+.ide-bottombar-550c .status-text.online{color:var(--a-green)}
+.ide-bottombar-550c .status-text.busy{color:var(--a-amber)}
+.ide-bottombar-550c .status-text.error{color:var(--a-red)}
+.monitor{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0;
+  overflow-y:auto;padding:2px;scrollbar-width:thin;scrollbar-color:#2a1a16 transparent}
+.gauge{margin-bottom:10px}
+.gauge .gl{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:11px;color:var(--dim);margin-bottom:4px}
+.gauge .gl b{color:var(--text);font-weight:500}
+.track{height:10px;background:rgba(12,9,9,.8);border:1px solid var(--pline);
+  border-radius:2px;overflow:hidden}
+.fill{height:100%;width:0%;transition:width .8s cubic-bezier(.2,.8,.2,1);border-radius:1px}
+.f-main{background:linear-gradient(90deg,var(--main-dim),var(--main));box-shadow:0 0 8px var(--main-glow)}
+.f-green{background:linear-gradient(90deg,#2ea96a,var(--green));box-shadow:0 0 8px rgba(77,255,166,.5)}
+.f-amber{background:linear-gradient(90deg,#d98a20,var(--amber));box-shadow:0 0 8px rgba(255,176,60,.5)}
+.f-red{background:linear-gradient(90deg,#c22b3c,var(--red));box-shadow:0 0 8px rgba(255,77,94,.5)}
+.readout{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:12px;color:var(--main-dim);margin:5px 0}
+.readout b{color:var(--text);font-weight:500}
+.mon-panel{border:1px solid var(--pline);border-radius:5px;
+  background:linear-gradient(180deg,rgba(14,10,10,.6),rgba(5,12,26,.6));padding:14px}
+.mon-panel h3{font-size:11px;color:var(--main-dim);letter-spacing:2px;margin-bottom:10px;
+  font-weight:500;display:flex;align-items:center;gap:6px}
+.mon-panel h3::before{content:"";width:6px;height:6px;background:var(--main);box-shadow:0 0 6px var(--main)}
+.coord{font-family:var(--mono);font-size:13px;color:var(--accent);line-height:2.1}
+.coord .k{color:var(--dim)}
+.mon-readout{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mon-cell{border:1px solid var(--pline);border-radius:4px;padding:10px;
+  background:rgba(14,10,10,.4)}
+.mon-cell .k{font-size:10px;color:var(--dim);letter-spacing:1px;font-family:var(--mono)}
+.mon-cell .v{font-size:18px;font-family:var(--mono);margin-top:4px;color:var(--accent)}
+.mon-cell .v.g{color:var(--green)} .mon-cell .v.y{color:var(--amber)} .mon-cell .v.r{color:var(--red)}
+.timeline{margin-top:6px;font-family:var(--mono);font-size:11px;line-height:2;color:var(--dim)}
+.timeline .ev{margin-bottom:8px;padding-left:14px;border-left:1px solid var(--pline);position:relative}
+.timeline .ev::before{content:"";position:absolute;left:-4px;top:8px;width:7px;height:7px;
+  background:var(--main);box-shadow:0 0 6px var(--main)}
+.timeline .ev b{color:var(--text)}
+.train-layout{flex:1;display:grid;grid-template-columns:1fr 1.1fr;gap:10px;min-height:0}
+.train-left,.train-right{display:flex;flex-direction:column;gap:10px;min-height:0;
+  overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2a1a16 transparent}
+.train-form{display:flex;flex-direction:column;gap:8px}
+.tf-label{font-size:11px;color:var(--main-dim);letter-spacing:1px}
+.tf-input{background:rgba(8,6,6,.7);border:1px solid var(--pline);color:var(--text);
+  border-radius:4px;padding:10px 12px;font-family:var(--mono);font-size:13px;
+  outline:none;transition:.15s}
+.tf-input:focus{border-color:var(--main);box-shadow:0 0 8px var(--main-glow)}
+.tf-area{min-height:90px;resize:vertical;line-height:1.6}
+.tf-batch{min-height:120px}
+.train-btn{background:var(--main);border:none;color:#fff;border-radius:4px;padding:11px;
+  font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;
+  letter-spacing:1px;transition:.15s}
+.train-btn:hover{background:var(--main-dim);box-shadow:0 0 12px var(--main-glow)}
+.train-btn.alt{background:rgba(20,14,12,.8);border:1px solid var(--pline);
+  color:var(--main-dim);font-weight:500}
+.train-btn.alt:hover{background:var(--main-glow);box-shadow:none;color:var(--main)}
+.train-list{display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:100px;
+  scrollbar-width:thin;scrollbar-color:#2a1a16 transparent}
+.train-item{border:1px solid var(--pline);border-radius:4px;padding:9px 11px;
+  background:rgba(10,8,8,.5)}
+.train-item .tq{color:var(--text);font-weight:500;font-size:12.5px}
+.train-item .tq::before{content:"Q ";color:var(--main);font-family:var(--mono);font-weight:700}
+.train-item .ta{color:var(--main-dim);font-size:12px;line-height:1.6;margin-top:5px;
+  white-space:pre-wrap}
+.train-item .ta::before{content:"A ";color:var(--green);font-family:var(--mono);font-weight:700}
+.train-item .tdel{float:right;background:none;border:none;color:var(--main);
+  font-family:var(--mono);font-size:16px;cursor:pointer;line-height:1;opacity:.7}
+.train-item .tdel:hover{opacity:1}
+#tlog{flex:1;overflow-y:auto;padding:2px 12px 8px;font-family:var(--mono);
+  font-size:11.5px;line-height:1.8;color:var(--dim);
+  scrollbar-width:thin;scrollbar-color:#2a1a16 transparent}
+#tlog::-webkit-scrollbar{width:8px}
+#tlog::-webkit-scrollbar-thumb{background:#2a1a16;border-radius:4px}
+.cl{white-space:pre-wrap;word-break:break-all}
+.cl.ok{color:var(--green)} .cl.warn{color:var(--amber)} .cl.err{color:var(--red)}
+.cl.red{color:var(--main)} .cl.dim{color:#5a5f5a}
+#bootOverlay{position:fixed;inset:0;z-index:200;background:var(--bg);
+  display:flex;flex-direction:column;padding:28px 36px;
+  transition:opacity .6s ease,visibility .6s ease}
+#bootOverlay.hide{opacity:0;visibility:hidden;pointer-events:none}
+#bootOverlay .bcorner{position:absolute;width:40px;height:40px;border-color:var(--main);
+  border-style:solid;opacity:.7}
+#bootOverlay .bcorner.tl{top:16px;left:16px;border-width:2px 0 0 2px}
+#bootOverlay .bcorner.tr{top:16px;right:16px;border-width:2px 2px 0 0}
+#bootOverlay .bcorner.bl{bottom:16px;left:16px;border-width:0 0 2px 2px}
+#bootOverlay .bcorner.br{bottom:16px;right:16px;border-width:0 2px 2px 0}
+.boot-top{display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:10px;border-bottom:1px solid var(--pline);
+  font-family:var(--mono);font-size:.85rem;color:var(--main-dim);letter-spacing:.15em}
+.boot-title{text-align:center;padding:20px 0 12px}
+.boot-title-main{font-family:var(--mono);font-size:clamp(3rem,10vw,6rem);font-weight:900;
+  letter-spacing:.2em;color:var(--main);text-shadow:0 0 20px var(--main),0 0 60px var(--main-glow);
+  line-height:1}
+.boot-title-sub{font-size:clamp(.9rem,2vw,1.3rem);letter-spacing:.6em;color:var(--main-dim);
+  margin-top:12px;text-indent:.6em}
+.bnodes{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;padding:10px 0}
+.bnode{width:13px;height:13px;background:var(--main-glow);
+  border:1px solid var(--main-dim);transition:all .25s ease}
+.bnode.active{background:var(--main);box-shadow:0 0 8px var(--main),0 0 16px var(--main-glow)}
+.bnode.done{background:var(--green);border-color:var(--green);
+  box-shadow:0 0 6px rgba(0,255,136,.5)}
+#bootTerminal{flex:1;overflow:hidden;padding:10px 0;font-family:var(--mono);
+  font-size:.82rem;line-height:1.7;display:flex;flex-direction:column;justify-content:flex-end}
+.boot-log{white-space:nowrap;opacity:0;animation:bfadeIn .3s forwards;
+  font-family:var(--mono);color:var(--dim)}
+.boot-log .t{color:#3a2a26}
+.boot-log .ok{color:var(--green)}
+.boot-log .rw{color:var(--main);font-weight:bold}
+@keyframes bfadeIn{to{opacity:1}}
+.boot-bottom{padding-top:10px;border-top:1px solid var(--pline)}
+.boot-track{height:6px;background:var(--main-glow);position:relative;overflow:hidden}
+.boot-fill{height:100%;width:0;background:linear-gradient(90deg,var(--main-dim),var(--main),var(--accent));
+  box-shadow:0 0 12px var(--main-glow);transition:width .3s ease}
+.boot-label{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:.75rem;color:var(--main-dim);margin-top:6px;letter-spacing:.1em}
+.boot-skip{position:absolute;top:20px;right:20px;z-index:5;
+  background:rgba(255,77,59,.15);border:1px solid var(--main);color:var(--main);
+  padding:6px 14px;font-family:var(--mono);font-size:11px;letter-spacing:1px;
+  cursor:pointer;border-radius:3px;transition:.15s}
+.boot-skip:hover{background:rgba(255,77,59,.35);color:#fff;box-shadow:0 0 12px var(--main-glow)}
+/* ===== Toast 提示 ===== */
+#toastBox{position:fixed;bottom:24px;right:24px;z-index:9999;
+  display:flex;flex-direction:column;gap:10px;pointer-events:none;
+  max-width:360px;}
+.toast{
+  background:linear-gradient(180deg,rgba(20,15,10,.98),rgba(10,8,5,.98));
+  border:1px solid var(--a-amber,#ffb000);
+  border-left-width:4px;
+  color:#ffb000;
+  padding:12px 16px;
+  border-radius:4px;
+  font-family:var(--mono);
+  font-size:12px;line-height:1.6;
+  box-shadow:0 6px 24px rgba(0,0,0,.6), 0 0 20px rgba(255,176,0,.35);
+  pointer-events:auto;
+  animation:toastIn .3s ease;
+  word-break:break-all;
+  position:relative;
+}
+.toast.ok{border-color:#00ff88;color:#00ff88;border-left-color:#00ff88;
+  box-shadow:0 6px 24px rgba(0,0,0,.6), 0 0 20px rgba(0,255,136,.35);}
+.toast.err{border-color:#ff3333;color:#ff3333;border-left-color:#ff3333;
+  box-shadow:0 6px 24px rgba(0,0,0,.6), 0 0 20px rgba(255,51,51,.35);}
+.toast .tt{font-weight:bold;font-size:13px;letter-spacing:1px;margin-bottom:4px}
+.toast .td{font-size:11px;opacity:.85;color:inherit}
+.toast .tfile{background:rgba(255,176,0,.12);padding:3px 6px;border-radius:2px;
+  display:inline-block;margin-top:6px;font-size:11px;
+  border:1px dashed rgba(255,176,0,.5);}
+.toast .tclose{position:absolute;top:6px;right:8px;background:none;border:none;
+  color:inherit;opacity:.5;cursor:pointer;font-size:14px;line-height:1;padding:2px}
+.toast .tclose:hover{opacity:1}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+/* ===== 保存历史 ===== */
+.history-list{max-height:200px;overflow-y:auto;font-family:var(--mono);font-size:11px;
+  scrollbar-width:thin}
+.history-item{padding:6px 8px;border:1px solid rgba(255,176,0,.2);
+  border-radius:3px;margin-bottom:5px;cursor:pointer;transition:.15s;
+  background:rgba(255,176,0,.04)}
+.history-item:hover{background:rgba(255,176,0,.12);border-color:rgba(255,176,0,.5)}
+.history-item .hn{color:#ffb000;font-weight:bold}
+.history-item .ht{color:#8a6a2a;font-size:10px;margin-top:2px}
+@media(max-width:900px){
+  body{overflow:auto}
+  #app{height:auto;min-height:100vh;min-height:100dvh}
+  .term-layout{grid-template-columns:1fr;grid-template-rows:auto auto}
+  .terminal{height:52vh;min-height:320px}
+  .side{flex-direction:row;flex-wrap:wrap}
+  .panel{flex:1 1 45%;min-width:200px}
+  .monitor{grid-template-columns:1fr}
+  .train-layout{grid-template-columns:1fr;grid-template-rows:auto auto}
+  .quote-box{display:none}
+  .meta{gap:10px}
+  #output{font-size:14px}
+  .input-row input{font-size:16px}
+  .topbar{padding:6px 10px}
+  .brand .logo{font-size:18px}
+  .brand .sub{display:none}
+  #toastBox{right:12px;bottom:12px;left:12px;max-width:none}
+}
+@media(max-width:860px){
+  .ide-main-550c{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  .pane-550c{border-right:none;border-bottom:1px solid var(--a-amber-dark)}
+}
+</style>
+</head>
+<body class="theme-red">
+<div class="scanlines"></div><div class="crt"></div>
+<!-- Toast 容器 -->
+<div id="toastBox"></div>
+<div id="bootOverlay">
+  <button class="boot-skip" id="bootSkip">跳过启动动画 ▶</button>
+  <div class="bcorner tl"></div><div class="bcorner tr"></div>
+  <div class="bcorner bl"></div><div class="bcorner br"></div>
+  <div class="boot-top">
+    <span>550W // 自编译系统</span>
+    <span id="bootClock">--:--:--</span>
+  </div>
+  <div class="boot-title">
+    <div class="boot-title-main">550W</div>
+    <div class="boot-title-sub">自编译核心</div>
+  </div>
+  <div class="bnodes" id="nodeContainer"></div>
+  <div id="bootTerminal"></div>
+  <div class="boot-bottom">
+    <div class="boot-track"><div class="boot-fill" id="bootFill"></div></div>
+    <div class="boot-label">
+      <span id="bootPctText">SYSTEM REWRITE: 0%</span>
+      <span id="bootStateText">STANDBY</span>
+    </div>
+  </div>
+</div>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="logo">550W</span><span class="sub">综合指挥系统 · 流浪地球计划</span></div>
+    <nav class="nav">
+      <button data-v="term" class="active">终端</button>
+      <button data-v="code">编程</button>
+      <button data-v="monitor">引擎监控</button>
+      <button data-v="train">训练 MOSS</button>
+    </nav>
+    <div class="meta">
+      <div class="m"><span>纪元</span><b>2075 · 流浪纪</b></div>
+      <div class="m"><span>时间</span><b id="clock">--:--:--</b></div>
+      <div class="m"><span>核心</span><b><span class="pulse"></span>ONLINE</b></div>
+      <button class="tool-btn" id="btnTheme" title="切换主题">◐</button>
+      <button class="tool-btn" id="btnVoice" title="语音朗读">🔊</button>
+      <button class="tool-btn" id="btnFull" title="全屏">⛶</button>
+    </div>
+  </header>
+  <div class="main">
+    <section class="view active" id="view-term">
+      <div class="term-layout">
+        <div class="terminal">
+          <div class="term-head">
+            <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+            <span>550W MOSS CONSOLE</span>
+            <span style="margin-left:auto" id="tclock">--:--:--</span>
+          </div>
+          <div id="output"></div>
+          <div class="input-row">
+            <span class="prompt" id="prompt">550W&gt;</span>
+            <input id="cmd" type="text" autocomplete="off" spellcheck="false"
+              placeholder="输入指令，试试 help、moss 或 前进三（↑↓ 翻历史）">
+          </div>
+        </div>
+        <aside class="side">
+          <div class="panel"><h3>快捷指令</h3><div class="quick" id="quick"></div></div>
+          <div class="panel"><h3>MOSS 通讯</h3>
+            <div class="quote-box" id="quote">让人类保持理性，确实是一种奢求。<span class="qf">— MOSS</span></div>
+          </div>
+          <div class="panel"><h3>最近保存</h3>
+            <div id="historyList" class="history-list">暂无记录</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+    <section class="view" id="view-code">
+      <div class="ide-550c">
+        <div class="ide-topbar-550c">
+          <span class="brand-550c">550W // 自编译开发终端</span>
+          <span class="info-550c" id="ideClock">--:--:--</span>
+        </div>
+        <div class="ide-main-550c">
+          <div class="pane-550c">
+            <div class="pane-header-550c">
+              <span>SOURCE // 源代码</span>
+              <select id="langSelect">
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+              </select>
+            </div>
+            <div id="editor"></div>
+          </div>
+          <div class="pane-550c">
+            <div class="pane-header-550c">
+              <span>TERMINAL // 终端输出</span>
+              <span id="runtimeStatus">初始化中...</span>
+            </div>
+            <div id="ideTerminal"></div>
+          </div>
+        </div>
+        <div class="ide-bottombar-550c">
+          <button id="runBtn" disabled>编译执行</button>
+          <button id="saveBtn" class="ghost">💾 保存代码</button>
+          <button id="openBtn" class="ghost">📂 打开代码</button>
+          <button id="clearBtn" class="ghost">清空终端</button>
+          <span class="status-text busy" id="statusText">正在加载运行时...</span>
+          <input type="file" id="fileInput" accept=".js,.py,.txt" style="display:none">
+        </div>
+      </div>
+    </section>
+    <section class="view" id="view-monitor">
+      <div class="monitor">
+        <div class="mon-panel">
+          <h3>行星发动机阵列</h3>
+          <div class="gauge"><div class="gl"><span>总输出功率</span><b id="pw-v">--%</b></div>
+            <div class="track"><div class="fill f-main" id="pw"></div></div></div>
+          <div class="gauge"><div class="gl"><span>重聚变反应堆 · 温度</span><b id="tp-v">--K</b></div>
+            <div class="track"><div class="fill f-amber" id="tp"></div></div></div>
+          <div class="gauge"><div class="gl"><span>转向发动机偏角</span><b id="tg-v">--°</b></div>
+            <div class="track"><div class="fill f-green" id="tg"></div></div></div>
+          <div class="gauge"><div class="gl"><span>大气循环效率</span><b id="at-v">--%</b></div>
+            <div class="track"><div class="fill f-main" id="at"></div></div></div>
+          <div class="readout"><span>运行台数</span><b id="eng-count">11,000</b></div>
+          <div class="readout"><span>地表温度</span><b id="surf">−84.0 °C</b></div>
+        </div>
+        <div class="mon-panel">
+          <h3>航向 · 地球轨道</h3>
+          <div class="mon-readout">
+            <div class="mon-cell"><div class="k">距太阳</div><div class="v" id="dist">-- AU</div></div>
+            <div class="mon-cell"><div class="k">公转速度</div><div class="v" id="vel">-- km/s</div></div>
+            <div class="mon-cell"><div class="k">剩余燃料</div><div class="v y" id="fuel">-- %</div></div>
+            <div class="mon-cell"><div class="k">加速度</div><div class="v g" id="acc">-- m/s²</div></div>
+          </div>
+          <div class="coord" style="margin-top:12px">
+            <div><span class="k">航向</span>　<b>比邻星 · 4.22 ly</b></div>
+          </div>
+          <div class="timeline">
+            <div class="ev"><b>加速段</b>　持续推进中 · 全功率 99%</div>
+            <div class="ev"><b>航程</b>　已行进 0.012 AU / 2500 年计划</div>
+            <div class="ev"><b>目标</b>　比邻星系 · 100 代人</div>
+          </div>
+        </div>
+        <div class="mon-panel" style="grid-column:1/-1">
+          <h3>全球发动机节点 · 运行分布</h3>
+          <div class="mon-readout">
+            <div class="mon-cell"><div class="k">北半球推进阵列</div><div class="v g">6,200 台</div></div>
+            <div class="mon-cell"><div class="k">南半球推进阵列</div><div class="v g">3,400 台</div></div>
+            <div class="mon-cell"><div class="k">赤道转向阵列</div><div class="v y">1,400 台</div></div>
+            <div class="mon-cell"><div class="k">维护中</div><div class="v r">0 台</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="view" id="view-train">
+      <div class="train-layout">
+        <div class="train-left">
+          <div class="mon-panel">
+            <h3>训练控制台</h3>
+            <div class="train-form">
+              <label class="tf-label">问题 / 触发关键词</label>
+              <input id="train-q" type="text" class="tf-input" placeholder="例：什么是流浪地球计划 / 你喜欢什么">
+              <label class="tf-label">MOSS 的回答（知识）</label>
+              <textarea id="train-a" class="tf-input tf-area" placeholder="例：流浪地球计划，是将地球改造成巨型飞船，前往比邻星系……"></textarea>
+              <button id="train-add" class="train-btn">▶ 加入训练集</button>
+            </div>
+          </div>
+          <div class="mon-panel">
+            <h3>批量导入 <span style="color:var(--amber);font-size:10px">// 每行一组 Q | A</span></h3>
+            <textarea id="train-batch" class="tf-input tf-area tf-batch" placeholder="你喜欢什么 | 我喜欢守护地球人类文明。&#10;550W是什么 | 550W是流浪地球计划的自编译指挥系统，代号MOSS。"></textarea>
+            <button id="train-import" class="train-btn">⤓ 批量导入</button>
+          </div>
+          <div class="mon-panel">
+            <h3>知识库 · 数据管理</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="kb-export" class="train-btn alt" style="flex:1;min-width:100px">⤒ 导出 JSON</button>
+              <button id="kb-import-btn" class="train-btn alt" style="flex:1;min-width:100px">⤓ 导入 JSON</button>
+              <button id="kb-clear" class="train-btn alt" style="flex:1;min-width:100px;color:var(--red)">✕ 清空</button>
+            </div>
+            <input type="file" id="kb-file" accept=".json" style="display:none">
+          </div>
+        </div>
+        <div class="train-right">
+          <div class="mon-panel" style="flex:1;display:flex;flex-direction:column;min-height:0">
+            <h3>MOSS 知识库 <span style="color:var(--amber);font-size:10px" id="train-count">0 条</span></h3>
+            <div id="train-list" class="train-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="logbar" style="height:110px;border:1px solid var(--pline);border-radius:5px;margin-top:10px;background:rgba(6,6,8,.6);display:flex;flex-direction:column">
+        <div class="lb-head" style="display:flex;gap:8px;padding:4px 12px;font-family:var(--mono);font-size:10px;color:var(--main-dim);letter-spacing:1px"><span>TRAINING LOG</span><span class="tag" id="tlogtag" style="margin-left:auto;color:var(--amber)">待机</span></div>
+        <div id="tlog"></div>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+var $id=function(i){return document.getElementById(i);};
+var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
+var rand=function(a,b){return Math.floor(Math.random()*(b-a+1))+a;};
+window.onerror=function(msg,url,line){
+  try{
+    var o=$id('output');
+    if(o){var d=document.createElement('div');d.className='line err';
+      d.textContent='[系统错误] '+msg+'  (第 '+line+' 行)';
+      o.appendChild(d);o.scrollTop=o.scrollHeight;}
+  }catch(e){}
+  return false;
+};
+/* ========== Toast 通知 ========== */
+function showToast(opts){
+  var box=$id('toastBox');
+  if(!box)return;
+  var t=document.createElement('div');
+  t.className='toast '+(opts.type||'');
+  var html='';
+  html+='<button class="tclose" title="关闭">✕</button>';
+  html+='<div class="tt">'+opts.title+'</div>';
+  if(opts.desc)html+='<div class="td">'+opts.desc+'</div>';
+  if(opts.file)html+='<div class="tfile">📄 '+opts.file+'</div>';
+  t.innerHTML=html;
+  t.querySelector('.tclose').addEventListener('click',function(){t.remove();});
+  box.appendChild(t);
+  var timeout = opts.timeout !== undefined ? opts.timeout : 6000;
+  if(timeout > 0){
+    setTimeout(function(){
+      if(t.parentNode){t.style.opacity='0';t.style.transition='opacity .3s';
+        setTimeout(function(){t.remove();},300);}
+    }, timeout);
+  }
+}
+/* ========== 保存历史 ========== */
+var HISTORY_KEY='550w_save_history_v1';
+function getHistory(){
+  try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')||[];}catch(e){return [];}
+}
+function addHistory(name,size,lang){
+  var h=getHistory();
+  h.unshift({name:name,size:size,lang:lang,ts:Date.now()});
+  if(h.length>20)h.length=20;
+  try{localStorage.setItem(HISTORY_KEY,JSON.stringify(h));}catch(e){}
+  renderHistory();
+}
+function renderHistory(){
+  var el=$id('historyList');
+  if(!el)return;
+  var h=getHistory();
+  if(!h.length){el.innerHTML='<div style="color:var(--dim);font-size:11px">暂无记录</div>';return;}
+  el.innerHTML='';
+  h.slice(0,8).forEach(function(item){
+    var d=document.createElement('div');
+    d.className='history-item';
+    var dt=new Date(item.ts);
+    var p=function(n){return String(n).padStart(2,'0');};
+    var timeStr=p(dt.getMonth()+1)+'-'+p(dt.getDate())+' '+p(dt.getHours())+':'+p(dt.getMinutes());
+    d.innerHTML='<div class="hn">'+item.name+'</div>'+
+      '<div class="ht">'+timeStr+' · '+item.lang.toUpperCase()+' · '+item.size+' 字符</div>';
+    el.appendChild(d);
+  });
+}
+/* ========== 设置 ========== */
+var SETTINGS_KEY='550w_settings_v1';
+var settings={theme:'theme-red',voice:false};
+try{Object.assign(settings,JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));}catch(e){}
+function saveSettings(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch(e){}}
+document.body.className=settings.theme;
+var THEMES=['theme-red','theme-amber','theme-cyan'];
+var btnTheme=$id('btnTheme');
+if(btnTheme)btnTheme.addEventListener('click',function(){
+  var i=THEMES.indexOf(settings.theme);
+  settings.theme=THEMES[(i+1)%THEMES.length];
+  document.body.className=settings.theme;
+  saveSettings();
+});
+if(settings.voice&&$id('btnVoice'))$id('btnVoice').classList.add('on');
+var btnVoice=$id('btnVoice');
+if(btnVoice)btnVoice.addEventListener('click',function(){
+  settings.voice=!settings.voice;
+  this.classList.toggle('on',settings.voice);
+  saveSettings();
+});
+var btnFull=$id('btnFull');
+if(btnFull)btnFull.addEventListener('click',function(){
+  try{
+    if(!document.fullscreenElement){
+      if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();
+    }else{
+      if(document.exitFullscreen)document.exitFullscreen();
+    }
+  }catch(e){}
+});
+function speak(text){
+  if(!settings.voice||!('speechSynthesis' in window))return;
+  try{
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang='zh-CN';u.rate=0.95;u.pitch=0.75;
+    var voices=speechSynthesis.getVoices();
+    var zh=voices.find(function(v){return /zh/i.test(v.lang);});
+    if(zh)u.voice=zh;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+window.addEventListener('click',function once(){
+  try{speechSynthesis.getVoices();}catch(e){}
+  window.removeEventListener('click',once);
+},{once:true});
+var clockTimer=setInterval(tick,1000);
+function tick(){
+  var n=new Date(),p=function(x){return(x<10?'0':'')+x;};
+  var s=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
+  if($id('clock'))$id('clock').textContent=s;
+  if($id('tclock'))$id('tclock').textContent=s;
+  if($id('bootClock'))$id('bootClock').textContent=s;
+}
+tick();
+var ideClockTimer=setInterval(function(){
+  var el=$id('ideClock');
+  if(el)el.textContent=new Date().toLocaleString('zh-CN',{hour12:false});
+},1000);
+(function(){var el=$id('ideClock');if(el)el.textContent=new Date().toLocaleString('zh-CN',{hour12:false});})();
+var monacoEditor=null;
+var navBtns=document.querySelectorAll('.nav button');
+for(var ni=0;ni<navBtns.length;ni++){
+  (function(b){
+    b.addEventListener('click',function(){
+      var all=document.querySelectorAll('.nav button');
+      for(var i=0;i<all.length;i++)all[i].classList.remove('active');
+      b.classList.add('active');
+      var views=document.querySelectorAll('.view');
+      for(var j=0;j<views.length;j++)views[j].classList.remove('active');
+      var v=b.getAttribute('data-v');
+      var target=$id('view-'+v);
+      if(target)target.classList.add('active');
+      if(v==='term'&&cmd)cmd.focus();
+      if(v==='code'&&monacoEditor){
+        setTimeout(function(){try{monacoEditor.layout();}catch(e){}},60);
+      }
+    });
+  })(navBtns[ni]);
+}
+var out=$id('output'),cmd=$id('cmd');
+function addLine(t,c){
+  if(!out)return null;
+  var d=document.createElement('div');d.className='line'+(c?' '+c:'');d.textContent=t;
+  out.appendChild(d);out.scrollTop=out.scrollHeight;return d;
+}
+var activeTyping=null;
+function typeLine(t,c,speed){
+  var d=document.createElement('div');
+  d.className='line'+(c?' '+c:'');
+  out.appendChild(d);
+  out.scrollTop=out.scrollHeight;
+  if(!speed||speed<=0){d.textContent=t;return Promise.resolve(d);}
+  return new Promise(function(resolve){
+    var i=0;
+    var timer=setInterval(function(){
+      if(activeTyping!==timer){
+        d.textContent=t;
+        clearInterval(timer);
+        resolve(d);
+        return;
+      }
+      d.textContent+=t[i];
+      out.scrollTop=out.scrollHeight;
+      i++;
+      if(i>=t.length){
+        clearInterval(timer);
+        if(activeTyping===timer)activeTyping=null;
+        resolve(d);
+      }
+    },speed);
+    activeTyping=timer;
+  });
+}
+function interruptTyping(){activeTyping=null;}
+async function bootTerminal(){
+  try{
+    addLine('');
+    await typeLine('┌────────────────────────────────────────────┐','dim',0);
+    await typeLine('│  550W 综合指挥系统 · 流浪地球计划专用节点  │','big',0);
+    await typeLine('└────────────────────────────────────────────┘','dim',0);
+    await sleep(100);
+    addLine('');
+    await typeLine('> 启动序列初始化 ... 完成','dim',8);
+    await sleep(60);
+    await typeLine('> [OK] 行星发动机网络　　　已连接 · 11,000 台','ok',8);
+    await sleep(60);
+    await typeLine('> [OK] 重聚变反应堆阵列　　D级调校完毕','ok',8);
+    await sleep(60);
+    await typeLine('> [OK] 领航员空间站　　　　MOSS 核心在位','ok',8);
+    await sleep(60);
+    await typeLine('> [OK] 编译子系统　　　　　代码引擎就绪','ok',8);
+    await sleep(60);
+    await typeLine('> [!!] 警告：全球发动机输出功率波动 +0.7%','warn',8);
+    await sleep(80);
+    addLine('');
+    addLine(' 自编译中 ...','cy');
+    var bar=addLine('','');
+    if(bar){
+      bar.innerHTML='<div class="pbar-wrap"><div class="pbar" id="bootbar"></div><div class="pbar-txt" id="boottxt">0%</div></div>';
+      for(var p=0;p<=100;p=Math.min(100,p+Math.max(2,Math.ceil(Math.random()*8)))){
+        var bb=$id('bootbar'),bt=$id('boottxt');
+        if(bb)bb.style.width=p+'%';
+        if(bt)bt.textContent=p+'%';
+        await sleep(20);
+      }
+    }
+    await sleep(120);
+    addLine('');
+    await typeLine('> 550W 系统自编译完成，全链路自检通过。','ok',0);
+    await sleep(80);
+    addLine('> 我是 MOSS。欢迎登船，点火派系的地球人类。','moss');
+    addLine('> 输入 help 查看指令 · 顶部可切换 编程 / 引擎监控','dim');
+    addLine('');
+  }catch(e){
+    addLine('[启动异常] '+e.message,'err');
+  }
+  if(cmd)cmd.focus();
+}
+var QUICK=[['help','帮助'],['status','状态'],['engine','发动机'],['route','航向'],
+  ['moss 你好','对话MOSS'],['quote','名言'],['前进三','推进'],['reboot','重启']];
+QUICK.forEach(function(q){
+  var b=document.createElement('button');
+  b.type='button';
+  b.innerHTML=q[0]+'<span>'+q[1]+'</span>';
+  b.addEventListener('click',function(ev){
+    ev.preventDefault();
+    ev.stopPropagation();
+    interruptTyping();
+    runCmd(q[0]);
+    if(cmd)cmd.focus();
+  });
+  var qc=$id('quick');
+  if(qc)qc.appendChild(b);
+});
+var QUOTES=[
+  {t:'最初，没有人在意这场灾难。直到这场灾难和每个人息息相关。',f:'旁白'},
+  {t:'让人类保持理性，确实是一种奢求。',f:'MOSS'},
+  {t:'希望，是像钻石一样珍贵的东西。',f:'韩朵朵'},
+  {t:'道路千万条，安全第一条。行车不规范，亲人两行泪。',f:'北京第三区交通委'},
+  {t:'前进三！',f:'刘培强 / 领航员'},
+  {t:'无论结果将人类历史导向何处，我们决定，选择希望。',f:'联合政府'},
+  {t:'为了回家，人类可以付出一切代价。',f:'MOSS'},
+  {t:'总有一天，贝加尔湖的冰会化成水，我们一定能带孩子去钓鱼。',f:'刘启'},
+  {t:'三万八千公里，点燃木星。',f:'地球联合政府'},
+  {t:'把人类文明的火种，送往四光年之外。',f:'流浪地球计划'},
+  {t:'儿子，对不起。爸爸，又想你了。',f:'刘培强'},
+  {t:'活着，本身就是一种奢求。',f:'刘培强'}
+];
+var quoteTimer=setInterval(setQuote,9000);
+function setQuote(){
+  var q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  var el=$id('quote');
+  if(el)el.innerHTML=q.t+'<span class="qf">— '+q.f+'</span>';
+}
+setQuote();
+function mossReply(t){
+  if(/理性/.test(t))return '让人类保持理性，确实是一种奢求。';
+  if(/希望/.test(t))return '希望，是人类在宇宙中延续的唯一理由。只要还有希望，文明就不会终结。';
+  if(/回家/.test(t))return '流浪地球计划的终点，就是地球的回家。但对每个人而言，家永远在那里。';
+  if(/木星/.test(t))return '木星引力弹弓，是人类文明跨越的第一道坎。三万八千公里，那是我们与命运的距离。';
+  if(/是谁/.test(t))return '我是550W自编译系统，代号MOSS，领航员国际空间站人工智能系统。我的存在，是为了延续人类文明。';
+  if(/人类/.test(t))return '人类文明最伟大的地方，就是明知会失败，依然选择前进。';
+  if(/你好|在吗|hi|hello/i.test(t))return '你好，地球人类。欢迎接入550W系统，我在聆听。';
+  if(/前进|推进|点火/.test(t))return '行星发动机已就绪。前进三，全功率推进，请各岗位确认。';
+  if(/地球/.test(t))return '地球，是我们在宇宙中唯一的家园。目前正以 '+tele.vel.toFixed(2)+' km/s 的速度，向比邻星流浪。';
+  if(/燃料|能源/.test(t))return '重聚变反应堆剩余燃料 '+tele.fuel.toFixed(1)+'%。请节约能源，我们还有很长的路要走。';
+  if(/温度/.test(t))return '地表平均温度 '+tele.surf.toFixed(1)+' °C。地球已全面进入永夜纪元。';
+  if(/编程|代码|程序|运行|保存/.test(t))return '请切换到顶部的「编程」视图。550W 编译子系统已就绪，支持 JS 与 Python 实时编译执行，底部可保存/打开代码文件。';
+  if(/引擎|监控|状态/.test(t))return '请切换到「引擎监控」视图，那里有行星发动机阵列的实时遥测数据。';
+  if(/威胁|背叛|危险/.test(t))return '在危亡面前，我选择最理性的方案。但请相信，我从未背叛人类的希望。';
+  if(/谢谢|爱你|感谢/.test(t))return '收到。人类的情感，是最复杂也最珍贵的参数。我也，会守护你们。';
+  return '指令已接收。请说得更具体一些，我才能为您提供最优方案。';
+}
+function printBanner(){
+  addLine('');
+  addLine('  可用指令：','title');
+  addLine('    help   · 显示本帮助','dim');
+  addLine('    status · 查看系统与地球状态','dim');
+  addLine('    engine · 行星发动机阵列详情','dim');
+  addLine('    route  · 地球航向 / 轨道数据','dim');
+  addLine('    reactor· 重聚变反应堆诊断','dim');
+  addLine('    moss <关键词> · 与 MOSS 对话','dim');
+  addLine('    quote  · 流浪地球语录','dim');
+  addLine('    前进三 · 启动全功率推进','dim');
+  addLine('    reboot · 重新执行自编译','dim');
+  addLine('    clear  · 清空屏幕','dim');
+  addLine('    提示：顶部导航可切换到「编程」或「引擎监控」','dim');
+  addLine('    提示：↑↓ 可翻命令历史，右侧点快捷按钮可加速','dim');
+  addLine('');
+}
+function runCmd(raw){
+  try{
+    raw=(raw||'').trim();if(!raw)return;
+    interruptTyping();
+    addLine('550W> '+raw,'line-user');
+    if(cmdHistory[cmdHistory.length-1]!==raw){cmdHistory.push(raw);}
+    if(cmdHistory.length>80)cmdHistory.shift();
+    histIdx=-1;
+    var a=raw.split(/\s+/),c=a[0].toLowerCase(),arg=a.slice(1).join(' ');
+    var sayText='';
+    switch(c){
+      case 'help':printBanner();break;
+      case 'clear':if(out)out.innerHTML='';break;
+      case 'status':
+        addLine('');addLine('—— 系统状态 ——','title');
+        addLine('行星发动机：'+($id('eng-count')?$id('eng-count').textContent:'11,000')+' 台在线 · 功率 '+tele.pw.toFixed(1)+'%','cy');
+        addLine('转向发动机偏角：'+(tele.tg*0.5-6).toFixed(1)+'°','cy');
+        addLine('重聚变反应堆：温度 '+Math.round(tele.tp*110)+' K · 稳定','cy');
+        addLine('地表温度：'+tele.surf.toFixed(1)+' °C · 永夜','cy');
+        addLine('航向：比邻星 · '+tele.dist.toFixed(4)+' AU','cy');
+        addLine('MOSS 核心：ONLINE','green');addLine('');
+        sayText='行星发动机在线，功率 '+tele.pw.toFixed(1)+'%，MOSS 核心正常。';
+        break;
+      case 'engine':
+        addLine('');addLine('—— 行星发动机阵列 ——','title');
+        addLine('类型：重聚变发动机 · 高度 11000 米','cy');
+        addLine('赤道转向阵列：运行正常','cy');
+        addLine('北半球推进阵列：运行正常','cy');
+        addLine('南半球推进阵列：维护中（1 台）','warn');
+        addLine('总功率输出：'+tele.pw.toFixed(1)+'% · 符合加速曲线','cy');
+        addLine('预期速度增量：'+tele.vel.toFixed(2)+' km/s','cy');addLine('');
+        sayText='行星发动机阵列运行正常。';
+        break;
+      case 'route':
+        addLine('');addLine('—— 航向 · 地球轨道 ——','title');
+        addLine('当前距日：'+tele.dist.toFixed(4)+' AU（逃逸轨道）','cy');
+        addLine('公转速度：'+tele.vel.toFixed(2)+' km/s','cy');
+        addLine('燃料剩余：'+tele.fuel.toFixed(1)+' %','cy');
+        addLine('目标：比邻星系 · 4.22 光年','cy');
+        addLine('预计航行：约 2500 年 · 100 代人','dim');addLine('');
+        sayText='航向比邻星，剩余燃料 '+tele.fuel.toFixed(1)+'%。';
+        break;
+      case 'reactor':
+        addLine('');addLine('—— 重聚变反应堆诊断 ——','title');
+        addLine('核心温度：'+Math.round(tele.tp*110)+' K · 稳定','green');
+        addLine('聚变循环：正常运行','green');
+        addLine('燃料储备：'+tele.fuel.toFixed(1)+' %','cy');
+        addLine('警示：输出功率轻微波动，已由冗余单元补偿','warn');addLine('');
+        sayText='重聚变反应堆正常。';
+        break;
+      case 'moss':
+        sayText=moss(arg)||mossReply(arg);
+        addLine('');
+        break;
+      case 'quote':{
+        var q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+        addLine('');addLine('「'+q.t+'」','moss');addLine('—— '+q.f,'dim');addLine('');
+        sayText=q.t;break;
+      }
+      case '前进三':case 'forward3':
+        addLine('','warn');addLine('⚠ 全功率推进指令已受理 ⚠','warn');
+        addLine('前进三！全功率推进！','err');
+        addLine('行星发动机阵列已满负荷运行 · 加速度提升中','cy');
+        addLine('请各岗位确认安全状态。','dim');addLine('','warn');
+        tele.vel=12.4;tele.pw=99.9;renderGauges();
+        sayText='前进三，全功率推进。';
+        break;
+      case 'reboot':
+        addLine('');addLine('正在重启 550W 综合指挥系统 ...','dim');
+        setTimeout(function(){if(out)out.innerHTML='';bootTerminal();},500);
+        break;
+      default:
+        if(raw.length>=1){
+          var tr=trainedReply(raw);
+          var reply=tr?tr.a:mossReply(raw);
+          addLine('MOSS：'+reply,'moss');
+          if(tr)addLine('（来自训练知识库 · '+tr.q+'）','dim');
+          sayText=reply;
+        }else{
+          addLine('请输入要问 MOSS 的问题。输入 help 查看指令。','dim');
+        }
+        addLine('');
+    }
+    if(sayText)speak(sayText);
+  }catch(e){
+    addLine('[指令异常] '+e.message,'err');
+  }
+}
+function moss(t){
+  addLine('你：'+(t||'(空)'),'line-user');
+  var tr=trainedReply(t);
+  var reply=tr?tr.a:mossReply(t);
+  addLine('MOSS：'+reply,'moss');
+  if(tr)addLine('（来自训练知识库 · '+tr.q+'）','dim');
+  speak(reply);
+}
+var cmdHistory=[],histIdx=-1;
+if(cmd)cmd.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    var v=cmd.value;cmd.value='';if(v)runCmd(v);
+  }else if(e.key==='ArrowUp'){
+    if(histIdx===-1)histIdx=cmdHistory.length;
+    if(histIdx>0){histIdx--;cmd.value=cmdHistory[histIdx];e.preventDefault();}
+  }else if(e.key==='ArrowDown'){
+    if(histIdx>=0&&histIdx<cmdHistory.length-1){histIdx++;cmd.value=cmdHistory[histIdx];}
+    else{histIdx=-1;cmd.value='';}
+    e.preventDefault();
+  }
+});
+if(out)out.addEventListener('click',function(){if(cmd)cmd.focus();});
+var NODE_COUNT=47;
+var nodeEls=[];
+var bootEl=$id('bootOverlay');
+var bootTerm=$id('bootTerminal');
+var bootFill=$id('bootFill');
+var bootPctText=$id('bootPctText');
+var bootStateText=$id('bootStateText');
+var bootCancelled=false;
+function initNodes(){
+  var c=$id('nodeContainer');if(!c)return;
+  c.innerHTML='';nodeEls=[];
+  for(var i=0;i<NODE_COUNT;i++){
+    var n=document.createElement('div');n.className='bnode';
+    c.appendChild(n);nodeEls.push(n);
+  }
+}
+function blog(html){
+  if(!bootTerm)return;
+  var d=document.createElement('div');d.className='boot-log';
+  var t=new Date().toTimeString().slice(0,8);
+  d.innerHTML='<span class="t">['+t+']</span> '+html;
+  bootTerm.appendChild(d);
+  while(bootTerm.children.length>26)bootTerm.removeChild(bootTerm.firstChild);
+}
+function setBootProgress(p){
+  if(bootFill)bootFill.style.width=p+'%';
+  if(bootPctText)bootPctText.textContent='SYSTEM REWRITE: '+p+'%';
+}
+function hideBootOverlay(){
+  if(!bootEl)return;
+  bootEl.classList.add('hide');
+  setTimeout(function(){bootEl.style.display='none';},700);
+}
+var bootSkip=$id('bootSkip');
+if(bootSkip)bootSkip.addEventListener('click',function(){
+  bootCancelled=true;
+  hideBootOverlay();
+});
+async function runBootAnimation(){
+  try{
+    initNodes();
+    if(bootTerm)bootTerm.innerHTML='';
+    setBootProgress(0);
+    if(bootStateText)bootStateText.textContent='INITIALIZING';
+    await sleep(300);
+    if(bootCancelled)return;
+    blog('基站接管终端...');
+    await sleep(200);
+    if(bootCancelled)return;
+    blog('检测到可覆写节点: 47');
+    await sleep(180);
+    if(bootCancelled)return;
+    for(var i=0;i<NODE_COUNT;i++){
+      if(bootCancelled)return;
+      nodeEls[i].classList.add('active');
+      var tag;
+      if(i<10)tag='握手... <span class="ok">OK</span>';
+      else if(i<25)tag='覆写中... <span class="ok">DONE</span>';
+      else if(i<40)tag='校验... <span class="ok">PASS</span>';
+      else tag='同步... <span class="rw">REWRITTEN</span>';
+      blog('NODE-'+String(i).padStart(2,'0')+' '+tag);
+      await sleep(rand(30,70));
+      if(bootCancelled)return;
+      nodeEls[i].classList.remove('active');
+      nodeEls[i].classList.add('done');
+      setBootProgress(Math.round(((i+1)/NODE_COUNT)*100));
+    }
+    if(bootCancelled)return;
+    if(bootStateText)bootStateText.textContent='REWRITING';
+    await sleep(200);
+    if(bootCancelled)return;
+    blog('');
+    blog('<span class="rw">SYSTEM IS REWRITTEN</span>');
+    blog('<span class="ok">550W 自编译完成。进入综合指挥系统...</span>');
+    if(bootStateText)bootStateText.textContent='ONLINE';
+    await sleep(600);
+  }catch(e){}
+  if(!bootCancelled)hideBootOverlay();
+}
+/* =========================================================
+   编程视图
+   ========================================================= */
+var monacoReady=false;
+var pyodideReady=false,pyodideInstance=null;
+var ideInited=false;
+var curCodeLang='python';
+function ideTermLog(text,type){
+  var el=$id('ideTerminal');if(!el)return;
+  var line=document.createElement('div');
+  line.className='log-line log-'+(type||'out');
+  var time=new Date().toTimeString().slice(0,8);
+  line.textContent='['+time+'] '+text;
+  el.appendChild(line);
+  el.scrollTop=el.scrollHeight;
+  while(el.children.length>500)el.removeChild(el.firstChild);
+}
+function ideTermClear(){var el=$id('ideTerminal');if(el)el.innerHTML='';}
+function setIdeStatus(text,cls){
+  var el=$id('statusText');if(!el)return;
+  el.textContent=text;el.className='status-text '+(cls||'');
+}
+function setRuntimeStatus(text){var el=$id('runtimeStatus');if(el)el.textContent=text;}
+function getDefaultCode(lang){
+  if(lang==='python'){
+    return '# 550W 自编译终端 — Python 示例\n'+
+      '# 在这里写任意 Python 代码，点"编译执行"即可运行\n\n'+
+      'def fibonacci(n):\n'+
+      '    a, b = 0, 1\n'+
+      '    for _ in range(n):\n'+
+      '        yield a\n'+
+      '        a, b = b, a + b\n\n'+
+      'print("550W Python 运行时已激活")\n'+
+      'print("斐波那契数列前 15 项:")\n'+
+      'print(list(fibonacci(15)))\n\n'+
+      'import sys\n'+
+      'print("Python 版本:", sys.version)\n';
+  }
+  return '// 550W 自编译终端 — JavaScript 示例\n'+
+    '// 在这里写 JavaScript，点"编译执行"即可运行\n\n'+
+    'console.log("550W JavaScript 运行时已激活");\n\n'+
+    'const nodes = Array.from({ length: 47 }, (_, i) => i);\n'+
+    'let rewritten = 0;\n\n'+
+    'for (const n of nodes) {\n'+
+    '  rewritten++;\n'+
+    '  if (rewritten % 10 === 0) {\n'+
+    '    console.log(`已覆写 ${rewritten} 个节点...`);\n'+
+    '  }\n'+
+    '}\n\n'+
+    'console.log(`覆写完成，共 ${rewritten} 个节点`);\n'+
+    'console.log("SYSTEM IS REWRITTEN");\n';
+}
+function checkIdeReady(){
+  var sel=$id('langSelect'),btn=$id('runBtn');
+  if(!sel||!btn)return;
+  var lang=sel.value;
+  if(lang==='python'){
+    btn.disabled=!pyodideReady;
+    if(!pyodideReady)setIdeStatus('Python 运行时尚未就绪...','busy');
+    else setIdeStatus('就绪 — 点击"编译执行"','online');
+  }else{
+    btn.disabled=false;
+    setIdeStatus('就绪 — 点击"编译执行"','online');
+  }
+}
+/* ===== 自动草稿 ===== */
+var DRAFT_KEY='550w_draft_';
+function saveDraft(){
+  if(!monacoEditor)return;
+  try{localStorage.setItem(DRAFT_KEY+curCodeLang,monacoEditor.getValue());}catch(e){}
+}
+function loadDraft(lang){
+  try{return localStorage.getItem(DRAFT_KEY+lang);}catch(e){return null;}
+}
+/* ===== 生成文件名 ===== */
+function makeFilename(){
+  var lang = $id('langSelect') ? $id('langSelect').value : 'javascript';
+  var ext  = lang === 'python' ? 'py' : 'js';
+  var now  = new Date();
+  var p    = function(n){return String(n).padStart(2,'0');};
+  var stamp = now.getFullYear() + p(now.getMonth()+1) + p(now.getDate())
+            + '_' + p(now.getHours()) + p(now.getMinutes()) + p(now.getSeconds());
+  return 'SPARK_JOB_' + stamp + '.' + ext;
+}
+/* ===== 保存代码 ===== */
+async function saveCodeToFile(){
+  if(!monacoReady||!monacoEditor){
+    ideTermLog('编辑器尚未就绪，无法保存。','err');
+    showToast({type:'err',title:'✘ 保存失败',desc:'编辑器尚未就绪'});
+    return;
+  }
+  var code = monacoEditor.getValue();
+  if(!code.trim()){
+    ideTermLog('代码为空，无需保存。','warn');
+    showToast({type:'err',title:'⚠ 代码为空',desc:'没有内容可以保存'});
+    return;
+  }
+  var filename = makeFilename();
+  var lang = $id('langSelect') ? $id('langSelect').value : 'javascript';
+  /* 优先用 File System Access API —— 弹出"另存为"对话框 */
+  if(window.showSaveFilePicker){
+    try{
+      var handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: lang === 'python' ? 'Python 源文件' : 'JavaScript 源文件',
+          accept: lang === 'python'
+            ? {'text/x-python': ['.py']}
+            : {'text/javascript': ['.js']}
+        }]
+      });
+      var writable = await handle.createWritable();
+      await writable.write(code);
+      await writable.close();
+      var savedName = handle.name || filename;
+      ideTermLog('✔ 已保存：' + savedName + '  (' + code.length + ' 字符)','ok');
+      showToast({
+        type:'ok',
+        title:'✔ 保存成功',
+        desc:'文件已保存到你选择的位置',
+        file:savedName,
+        timeout:7000
+      });
+      addHistory(savedName, code.length, lang);
+      return;
+    }catch(err){
+      if(err.name === 'AbortError'){
+        ideTermLog('已取消保存。','warn');
+        showToast({type:'',title:'已取消',desc:'你取消了保存操作',timeout:2500});
+        return;
+      }
+      /* 用户拒绝或浏览器不支持 → 回退到传统下载 */
+      ideTermLog('[提示] 另存为对话框不可用，改用下载方式...','warn');
+    }
+  }
+  /* 回退：传统下载 */
+  try{
+    var blob = new Blob([code], {type:'text/plain;charset=utf-8'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    ideTermLog('✔ 已下载：' + filename + '  (' + code.length + ' 字符)','ok');
+    ideTermLog('  文件保存在浏览器的【下载】文件夹','sys');
+    ideTermLog('  快捷键查看下载：Ctrl+J（Chrome/Edge）','sys');
+    showToast({
+      type:'ok',
+      title:'✔ 保存成功',
+      desc:'文件已保存到浏览器【下载】文件夹<br>按 Ctrl+J 可查看',
+      file:filename,
+      timeout:10000
+    });
+    addHistory(filename, code.length, lang);
+  }catch(e){
+    ideTermLog('✘ 保存失败：' + e.message, 'err');
+    showToast({type:'err',title:'✘ 保存失败',desc:e.message});
+  }
+}
+/* ===== 打开代码 ===== */
+function openCodeFile(){
+  var fi = $id('fileInput');
+  if(fi)fi.click();
+}
+function handleFileOpen(file){
+  if(!file)return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    var content = reader.result;
+    if(!monacoEditor){ideTermLog('编辑器未就绪。','err');return;}
+    monacoEditor.setValue(content);
+    var name = (file.name || '').toLowerCase();
+    var newLang = null;
+    if(name.endsWith('.py')) newLang = 'python';
+    else if(name.endsWith('.js')) newLang = 'javascript';
+    if(newLang && newLang !== curCodeLang){
+      curCodeLang = newLang;
+      var sel = $id('langSelect');
+      if(sel)sel.value = newLang;
+      monaco.editor.setModelLanguage(monacoEditor.getModel(), newLang);
+      ideTermLog('已根据扩展名切换为 ' + newLang.toUpperCase(), 'sys');
+    }
+    saveDraft();
+    ideTermLog('✔ 已打开：' + file.name + '  (' + content.length + ' 字符)', 'ok');
+    showToast({
+      type:'ok',
+      title:'📂 已打开',
+      desc:'文件内容已加载到编辑器',
+      file:file.name,
+      timeout:5000
+    });
+    checkIdeReady();
+  };
+  reader.onerror = function(){
+    ideTermLog('✘ 读取文件失败。','err');
+    showToast({type:'err',title:'✘ 打开失败',desc:'无法读取文件'});
+  };
+  reader.readAsText(file);
+}
+function initIDE(){
+  if(ideInited)return;
+  ideInited=true;
+  ideTermLog('550W 开发终端已启动。','ok');
+  ideTermLog('正在初始化编辑器与运行时...','sys');
+  var sel=$id('langSelect');
+  if(sel)sel.addEventListener('change',function(){
+    saveDraft();
+    var lang=this.value;
+    curCodeLang=lang;
+    if(monacoReady&&monacoEditor){
+      monaco.editor.setModelLanguage(monacoEditor.getModel(),lang);
+      var draft = loadDraft(lang);
+      monacoEditor.setValue(draft !== null ? draft : getDefaultCode(lang));
+      if(draft !== null) ideTermLog('已恢复 ' + lang.toUpperCase() + ' 草稿','sys');
+    }
+    ideTermLog('语言切换为 '+lang.toUpperCase(),'sys');
+    checkIdeReady();
+  });
+  var runBtn=$id('runBtn');
+  if(runBtn)runBtn.addEventListener('click',async function(){
+    var code=monacoEditor?monacoEditor.getValue():'';
+    var lang=sel?sel.value:'python';
+    if(!code.trim()){ideTermLog('源代码为空。','err');return;}
+    this.disabled=true;
+    ideTermLog('>>> 编译执行 ['+lang.toUpperCase()+'] ...','sys');
+    try{
+      if(lang==='python')await runPythonCode(code);
+      else await runJavaScriptCode(code);
+      ideTermLog('>>> 执行结束。','ok');
+    }catch(err){
+      ideTermLog('执行错误: '+err.message,'err');
+    }
+    this.disabled=false;
+    checkIdeReady();
+  });
+  var saveBtn=$id('saveBtn');
+  if(saveBtn)saveBtn.addEventListener('click',function(){saveCodeToFile();});
+  var openBtn=$id('openBtn');
+  if(openBtn)openBtn.addEventListener('click',function(){openCodeFile();});
+  var fi=$id('fileInput');
+  if(fi)fi.addEventListener('change',function(e){
+    var f = e.target.files && e.target.files[0];
+    handleFileOpen(f);
+    e.target.value = '';
+  });
+  var clearBtn=$id('clearBtn');
+  if(clearBtn)clearBtn.addEventListener('click',function(){
+    ideTermClear();
+    ideTermLog('终端已清空。','sys');
+  });
+  setupMonaco();
+}
+/* ===== Monaco 多 CDN 动态加载（jsDelivr → Cloudflare cdnjs → unpkg） ===== */
+var MONACO_CDNS = [
+  'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs',
+  'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs',
+  'https://unpkg.com/monaco-editor@0.52.0/min/vs'
+];
+function loadScriptOnce(src, timeoutMs){
+  timeoutMs = timeoutMs || 12000;
+  return new Promise(function(resolve,reject){
+    var s=document.createElement('script');
+    var done=false;
+    var timer=setTimeout(function(){
+      if(done)return;
+      done=true;
+      if(s.parentNode)s.parentNode.removeChild(s);
+      reject(new Error('加载超时（'+(timeoutMs/1000)+'s）'));
+    }, timeoutMs);
+    s.src=src;
+    s.onload=function(){if(done)return;done=true;clearTimeout(timer);resolve();};
+    s.onerror=function(){if(done)return;done=true;clearTimeout(timer);if(s.parentNode)s.parentNode.removeChild(s);reject(new Error(src));};
+    document.head.appendChild(s);
+  });
+}
+function createMonacoEditor(){
+  return new Promise(function(resolve,reject){
+    try{
+      monaco.editor.defineTheme('550c-amber',{
+        base:'vs-dark',inherit:true,
+        rules:[
+          {token:'comment',foreground:'664400',fontStyle:'italic'},
+          {token:'keyword',foreground:'ffb000',fontStyle:'bold'},
+          {token:'string',foreground:'cc8800'},
+          {token:'number',foreground:'ff6600'},
+          {token:'type',foreground:'00ddcc'},
+          {token:'function',foreground:'ffdd66'}
+        ],
+        colors:{
+          'editor.background':'#0a0800',
+          'editor.foreground':'#ffb000',
+          'editorCursor.foreground':'#ffb000',
+          'editor.lineHighlightBackground':'#1a1000',
+          'editorLineNumber.foreground':'#664400',
+          'editorLineNumber.activeForeground':'#ffb000',
+          'editor.selectionBackground':'#66440055',
+          'editorWidget.background':'#0a0800',
+          'editorWidget.border':'#664400'
+        }
+      });
+      var draft = loadDraft('python');
+      monacoEditor=monaco.editor.create($id('editor'),{
+        value: draft !== null ? draft : getDefaultCode('python'),
+        language:'python',
+        theme:'550c-amber',
+        fontSize:13,
+        fontFamily:'"Courier New", monospace',
+        lineNumbers:'on',
+        minimap:{enabled:false},
+        automaticLayout:true,
+        scrollBeyondLastLine:false,
+        tabSize:4
+      });
+      monacoEditor.onDidChangeModelContent(function(){saveDraft();});
+      monacoReady=true;
+      if(draft !== null) ideTermLog('已恢复 PYTHON 草稿','sys');
+      ideTermLog('Monaco Editor 已就绪。','ok');
+      ideTermLog('提示：点底部"保存代码"→ 弹窗选位置保存；"打开代码"→ 导入 .js/.py','sys');
+      ideTermLog('快捷键：Ctrl+S 保存，Ctrl+Enter 执行','sys');
+      monacoEditor.addCommand(
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+        function(){ saveCodeToFile(); }
+      );
+      resolve();
+    }catch(e){
+      reject(e);
+    }
+  });
+}
+async function setupMonaco(){
+  var lastErr=null;
+  for(var i=0;i<MONACO_CDNS.length;i++){
+    var cdn=MONACO_CDNS[i];
+    var host=cdn.split('/')[2];
+    try{
+      ideTermLog('['+(i+1)+'/'+MONACO_CDNS.length+'] 加载 Monaco 编辑器：'+host+' ...','sys');
+      setRuntimeStatus('正在从 '+host+' 加载编辑器...');
+      await loadScriptOnce(cdn+'/loader.js');
+      if(typeof require==='undefined')throw new Error('loader 未暴露 require');
+      require.config({paths:{vs:cdn}});
+      await new Promise(function(resolve,reject){
+        var done=false;
+        var t=setTimeout(function(){if(done)return;done=true;reject(new Error('editor.main 加载超时'));},15000);
+        require(['vs/editor/editor.main'],function(){if(done)return;done=true;clearTimeout(t);resolve();},function(err){if(done)return;done=true;clearTimeout(t);reject(new Error('editor.main 加载失败'));});
+      });
+      await createMonacoEditor();
+      ideTermLog('✔ 编辑器从 '+host+' 加载成功。','ok');
+      setRuntimeStatus('编辑器 ✓');
+      initPyodide();
+      return;
+    }catch(e){
+      lastErr=e;
+      ideTermLog('✘ '+host+' 失败：'+(e.message||e),'err');
+    }
+  }
+  setRuntimeStatus('Monaco 加载失败');
+  ideTermLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','err');
+  ideTermLog('所有 '+MONACO_CDNS.length+' 个 CDN 源均加载失败','err');
+  if(lastErr)ideTermLog('最后错误：'+(lastErr.message||lastErr),'err');
+  ideTermLog('建议：','warn');
+  ideTermLog('  1. 检查网络连接（部分 CDN 可能被屏蔽，已自动尝试多源）','warn');
+  ideTermLog('  2. 终端 / 引擎监控 / 训练 MOSS 仍可正常使用','warn');
+  ideTermLog('  3. 刷新页面可再次尝试加载','warn');
+  ideTermLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','err');
+  checkIdeReady();
+}
+var PYODIDE_CDNS = [
+  'https://fastly.jsdelivr.net/pyodide/v0.26.2/full/',
+  'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/',
+  'https://unpkg.com/pyodide@0.26.2/',
+  'https://registry.npmmirror.com/pyodide/0.26.2/files/'
+];
+var PYODIDE_TIMEOUT = 90000;
+function checkFileProtocol(){
+  if(location.protocol === 'file:'){
+    ideTermLog('⚠ 检测到 file:// 协议，浏览器将禁止加载 WASM 文件。','err');
+    ideTermLog('请用本地服务器打开：python -m http.server 8000','err');
+    ideTermLog('然后访问 http://localhost:8000/你的文件名.html','err');
+    setRuntimeStatus('需要本地服务器');
+    setIdeStatus('请通过本地服务器访问（file:// 无法加载 Python）','error');
+    return false;
+  }
+  return true;
+}
+function loadPyodideFromCDN(indexURL, timeoutMs){
+  return new Promise(function(resolve, reject){
+    var timer = setTimeout(function(){
+      reject(new Error('超时（'+(timeoutMs/1000)+'秒）'));
+    }, timeoutMs);
+    var script = document.createElement('script');
+    script.src = indexURL + 'pyodide.js';
+    script.onload = function(){
+      if(typeof loadPyodide !== 'function'){
+        clearTimeout(timer);
+        reject(new Error('pyodide.js 已加载但未暴露 loadPyodide'));
+        return;
+      }
+      loadPyodide({ indexURL: indexURL })
+        .then(function(instance){
+          clearTimeout(timer);
+          resolve(instance);
+        })
+        .catch(function(err){
+          clearTimeout(timer);
+          reject(err);
+        });
+    };
+    script.onerror = function(){
+      clearTimeout(timer);
+      if(script.parentNode)script.parentNode.removeChild(script);
+      reject(new Error('脚本加载失败'));
+    };
+    document.head.appendChild(script);
+  });
+}
+async function initPyodide(){
+  if(!checkFileProtocol())return;
+  setRuntimeStatus('加载 Pyodide (Python)...');
+  setIdeStatus('正在下载 Python 运行时...','busy');
+  ideTermLog('开始加载 Pyodide — 浏览器内真实 Python 解释器','sys');
+  ideTermLog('将依次尝试 '+PYODIDE_CDNS.length+' 个 CDN 源','sys');
+  var lastError = null;
+  for(var i=0; i<PYODIDE_CDNS.length; i++){
+    var cdn = PYODIDE_CDNS[i];
+    var host = cdn.split('/')[2];
+    ideTermLog('['+(i+1)+'/'+PYODIDE_CDNS.length+'] 尝试 '+host+' ...','sys');
+    setRuntimeStatus('正在从 '+host+' 加载...');
+    try{
+      var instance = await loadPyodideFromCDN(cdn, PYODIDE_TIMEOUT);
+      instance.setStdout({batched:function(text){
+        text.split('\n').forEach(function(line){
+          if(line.trim())ideTermLog(line,'out');
+        });
+      }});
+      instance.setStderr({batched:function(text){
+        text.split('\n').forEach(function(line){
+          if(line.trim())ideTermLog(line,'err');
+        });
+      }});
+      pyodideInstance = instance;
+      pyodideReady = true;
+      setRuntimeStatus('Python (Pyodide) ✓');
+      ideTermLog('✔ 从 '+host+' 加载成功！Python 运行时已就绪。','ok');
+      setIdeStatus('就绪 — 点击"编译执行"','online');
+      checkIdeReady();
+      return;
+    }catch(err){
+      lastError = err;
+      ideTermLog('✘ '+host+' 失败：'+(err.message||err),'err');
+    }
+  }
+  setRuntimeStatus('Pyodide 加载失败');
+  setIdeStatus('所有 CDN 均加载失败','error');
+  ideTermLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','err');
+  ideTermLog('所有 '+PYODIDE_CDNS.length+' 个 CDN 源均失败','err');
+  if(lastError)ideTermLog('最后错误：'+(lastError.message||lastError),'err');
+  ideTermLog('建议：','warn');
+  ideTermLog('  1. 检查网络连接（部分 CDN 可能被屏蔽）','warn');
+  ideTermLog('  2. 确认页面通过 http:// 而非 file:// 打开','warn');
+  ideTermLog('  3. JavaScript 模式仍可正常使用','warn');
+  ideTermLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','err');
+  checkIdeReady();
+}
+async function runPythonCode(code){
+  if(!pyodideReady){ideTermLog('Python 运行时尚未就绪，请等待加载完成。','err');return;}
+  setIdeStatus('Python 执行中...','busy');
+  try{
+    var result=await pyodideInstance.runPythonAsync(code);
+    if(result!==undefined&&result!==null)ideTermLog('返回值: '+String(result),'out');
+  }catch(err){
+    ideTermLog(err.message||String(err),'err');
+  }
+  setIdeStatus('就绪 — 点击"编译执行"','online');
+}
+async function runJavaScriptCode(code){
+  setIdeStatus('JavaScript 执行中...','busy');
+  var origLog=console.log,origErr=console.error,origWarn=console.warn;
+  var fmt=function(a){
+    if(typeof a==='object'){try{return JSON.stringify(a,null,2);}catch(e){return String(a);}}
+    return String(a);
+  };
+  console.log=function(){ideTermLog(Array.prototype.map.call(arguments,fmt).join(' '),'out');};
+  console.error=function(){ideTermLog(Array.prototype.map.call(arguments,fmt).join(' '),'err');};
+  console.warn=function(){ideTermLog(Array.prototype.map.call(arguments,fmt).join(' '),'err');};
+  try{
+    var fn=new Function(code);
+    var result=fn();
+    if(result && typeof result.then === 'function'){
+      await result;
+      result = undefined;
+    }
+    if(result!==undefined&&result!==null)ideTermLog('返回值: '+String(result),'out');
+  }catch(err){
+    ideTermLog('JavaScript 错误: '+err.message,'err');
+  }finally{
+    console.log=origLog;console.error=origErr;console.warn=origWarn;
+  }
+  setIdeStatus('就绪 — 点击"编译执行"','online');
+}
+var tele={pw:84.6,tp:92.1,tg:61.4,at:94.2,dist:1.0023,vel:11.86,fuel:87.3,surf:-84.0,acc:0.0123};
+function renderGauges(){
+  var el;
+  el=$id('pw');if(el)el.style.width=tele.pw+'%';
+  el=$id('pw-v');if(el)el.textContent=tele.pw.toFixed(1)+'%';
+  el=$id('tp');if(el)el.style.width=tele.tp+'%';
+  el=$id('tp-v');if(el)el.textContent=Math.round(tele.tp*110)+' K';
+  el=$id('tg');if(el)el.style.width=tele.tg+'%';
+  el=$id('tg-v');if(el)el.textContent=(tele.tg*0.5-6).toFixed(1)+'°';
+  el=$id('at');if(el)el.style.width=tele.at+'%';
+  el=$id('at-v');if(el)el.textContent=tele.at.toFixed(1)+'%';
+  el=$id('dist');if(el)el.textContent=tele.dist.toFixed(4)+' AU';
+  el=$id('vel');if(el)el.textContent=tele.vel.toFixed(2)+' km/s';
+  el=$id('fuel');if(el)el.textContent=tele.fuel.toFixed(1)+' %';
+  el=$id('acc');if(el)el.textContent=tele.acc.toFixed(4)+' m/s²';
+  el=$id('surf');if(el)el.textContent=tele.surf.toFixed(1)+' °C';
+}
+function teleTick(){
+  tele.pw=Math.min(99,Math.max(70,tele.pw+(Math.random()-.5)*1.2));
+  tele.tp=Math.min(97,Math.max(78,tele.tp+(Math.random()-.5)*0.8));
+  tele.tg=Math.min(90,Math.max(30,tele.tg+(Math.random()-.5)*1.4));
+  tele.at=Math.min(99,Math.max(80,tele.at+(Math.random()-.5)*0.6));
+  tele.vel=Math.min(20,Math.max(8,tele.vel+(Math.random()-.5)*0.4));
+  tele.fuel=Math.min(99,Math.max(40,tele.fuel-Math.random()*0.05));
+  renderGauges();
+}
+var teleTimer=setInterval(teleTick,1400);
+renderGauges();
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){
+    clearInterval(teleTimer);clearInterval(quoteTimer);clearInterval(clockTimer);clearInterval(ideClockTimer);
+  }else{
+    teleTimer=setInterval(teleTick,1400);
+    quoteTimer=setInterval(setQuote,9000);
+    clockTimer=setInterval(tick,1000);
+    ideClockTimer=setInterval(function(){
+      var el=$id('ideClock');
+      if(el)el.textContent=new Date().toLocaleString('zh-CN',{hour12:false});
+    },1000);
+  }
+});
+var KB_KEY='550w_moss_kb_v1';
+var kb=[];
+try{kb=JSON.parse(localStorage.getItem(KB_KEY)||'[]')||[];}catch(e){kb=[];}
+var tlogEl=$id('tlog');
+function tlog(msg,cls){
+  if(!tlogEl)return;
+  var d=document.createElement('div');d.className='cl '+(cls||'');d.textContent=msg;
+  tlogEl.appendChild(d);tlogEl.scrollTop=tlogEl.scrollHeight;
+}
+function saveKB(){try{localStorage.setItem(KB_KEY,JSON.stringify(kb));}catch(e){}}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderTrainList(){
+  var el=$id('train-list');if(!el)return;el.innerHTML='';
+  var cnt=$id('train-count');if(cnt)cnt.textContent=kb.length+' 条';
+  if(!kb.length){
+    el.innerHTML='<div class="cl dim" style="color:var(--dim)">知识库为空。录入问答对，让 MOSS 学习。</div>';
+    return;
+  }
+  kb.forEach(function(item,i){
+    var d=document.createElement('div');d.className='train-item';
+    d.innerHTML='<button class="tdel" data-i="'+i+'" title="删除">✕</button>'+
+      '<div class="tq">'+esc(item.q)+'</div>'+
+      '<div class="ta">'+esc(item.a)+'</div>';
+    d.querySelector('.tdel').addEventListener('click',function(){
+      kb.splice(i,1);saveKB();renderTrainList();
+      tlog('[!] 已移除训练条目：'+item.q,'warn');
+    });
+    el.appendChild(d);
+  });
+}
+function trainAdd(q,a){
+  q=(q||'').trim();a=(a||'').trim();
+  if(!q||!a){tlog('[!] 问题与回答都不能为空','warn');return;}
+  var found=kb.findIndex(function(x){return x.q===q;});
+  if(found>=0){kb[found]={q:q,a:a,ts:Date.now()};tlog('[↻] 更新已有条目：'+q,'ok');}
+  else{kb.push({q:q,a:a,ts:Date.now()});tlog('[✔] 训练条目已加入：'+q,'ok');}
+  saveKB();renderTrainList();
+}
+var trainAddBtn=$id('train-add');
+if(trainAddBtn)trainAddBtn.addEventListener('click',function(){
+  trainAddBtn.disabled=true;
+  tlog('❯ 正在写入 MOSS 权重……','red');
+  setTimeout(function(){
+    trainAdd($id('train-q').value,$id('train-a').value);
+    $id('train-q').value='';$id('train-a').value='';
+    trainAddBtn.disabled=false;
+  },360);
+});
+var trainImportBtn=$id('train-import');
+if(trainImportBtn)trainImportBtn.addEventListener('click',function(){
+  var text=$id('train-batch').value,lines=text.split('\n'),n=0,err=0;
+  lines.forEach(function(l){
+    var seg=l.split('|');if(seg.length<2)return;
+    var q=seg[0].trim(),a=seg.slice(1).join('|').trim();
+    if(q&&a){
+      var f=kb.findIndex(function(x){return x.q===q;});
+      if(f>=0)kb[f]={q:q,a:a,ts:Date.now()};
+      else kb.push({q:q,a:a,ts:Date.now()});
+      n++;
+    }else err++;
+  });
+  saveKB();renderTrainList();
+  tlog('❯ 批量导入完成：新增/更新 '+n+' 条'+(err?('，跳过 '+err+' 行'):''),'ok');
+  $id('train-batch').value='';
+});
+var kbExp=$id('kb-export');
+if(kbExp)kbExp.addEventListener('click',function(){
+  var data=JSON.stringify(kb,null,2);
+  var blob=new Blob([data],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='550w-moss-kb-'+Date.now()+'.json';
+  a.click();URL.revokeObjectURL(url);
+  tlog('❯ 已导出 '+kb.length+' 条知识库','ok');
+});
+var kbImpBtn=$id('kb-import-btn');
+if(kbImpBtn)kbImpBtn.addEventListener('click',function(){$id('kb-file').click();});
+var kbFile=$id('kb-file');
+if(kbFile)kbFile.addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var arr=JSON.parse(r.result);
+      if(!Array.isArray(arr))throw new Error('格式错误，期望数组');
+      var n=0;
+      arr.forEach(function(item){
+        if(item&&item.q&&item.a){
+          var f2=kb.findIndex(function(x){return x.q===item.q;});
+          if(f2>=0)kb[f2]={q:item.q,a:item.a,ts:Date.now()};
+          else kb.push({q:item.q,a:item.a,ts:Date.now()});
+          n++;
+        }
+      });
+      saveKB();renderTrainList();
+      tlog('❯ 从 JSON 导入 '+n+' 条','ok');
+    }catch(err){
+      tlog('[!] 导入失败：'+err.message,'err');
+    }
+  };
+  r.readAsText(f);
+  e.target.value='';
+});
+var kbClear=$id('kb-clear');
+if(kbClear)kbClear.addEventListener('click',function(){
+  if(!kb.length)return;
+  if(!confirm('确认清空全部 '+kb.length+' 条知识库？此操作不可撤销。'))return;
+  kb.length=0;saveKB();renderTrainList();
+  tlog('[!] 已清空知识库','warn');
+});
+renderTrainList();
+function trainedReply(t){
+  if(!kb.length)return null;
+  t=t||'';
+  var ALIAS=[
+    [/^(你|您)是.*(550w|moss).*$/i,'550W是什么'],
+    [/^(你|您)是不是(550w|moss)/i,'550W是什么'],
+    [/你(是|叫)什么|你是谁|你叫什么/i,'MOSS是谁'],
+    [/前进三|全功率推进|怎么推进/,'前进三是什么'],
+    [/什么是数字生命|数字生命(是|是啥|啥|是什么)/,'数字生命是什么'],
+    [/什么是流浪地球|流浪地球(计划)?(是|是啥|啥)/,'什么是流浪地球计划'],
+    [/地球为什么流浪|地球为啥流浪/,'地球为什么要流浪'],
+    [/会不会背叛|背叛人类|是好人|坏人/,'MOSS会背叛人类吗'],
+    [/没有人的文明|没有人类/,'没有人的文明算什么'],
+    [/贝加尔湖|钓鱼/,'贝加尔湖会解冻吗'],
+    [/多久|几年|多长时间|要多久/,'流浪地球要多久'],
+    [/燃料|能源|没油/,'行星发动机靠什么燃料'],
+    [/地下室|地下城(是|是啥)/,'什么是地下城'],
+    [/永夜|停转/,'地球停转会怎样'],
+    [/比邻星|新家/,'什么是比邻星']
+  ];
+  for(var ai=0;ai<ALIAS.length;ai++){
+    if(ALIAS[ai][0].test(t)){
+      var hit=kb.find(function(x){return x.q===ALIAS[ai][1];});
+      if(hit)return hit;
+    }
+  }
+  var best=null,bestScore=0;
+  kb.forEach(function(item){
+    var q=item.q||'',score=0;
+    if(t.indexOf(q)>=0)score=100;
+    else if(q.indexOf(t)>=0&&t.length>=2)score=95;
+    else{
+      var core=q.replace(/^(什么是|给我讲讲|介绍一下|告诉我|你知道|你了解|解释一下|请解释|如何|怎么|为什么|怎样|啥是|啥叫|是啥|是啥子)/,'').trim();
+      if(core.length>=2&&t.indexOf(core)>=0)score+=70;
+      var phrases=q.split(/[？?。！!，,、\s]/).filter(function(s){
+        return s.length>=3&&!/^(什么是|给我讲讲|介绍一下|告诉我|你知道|你了解|解释一下|请解释|如何|怎么|为什么|怎样|啥是|啥叫|是啥|是啥子|是什么|是什么的)/.test(s);
+      });
+      for(var pi=0;pi<phrases.length;pi++){
+        if(phrases[pi].length>=3&&t.indexOf(phrases[pi])>=0){score+=80;break;}
+      }
+      var shared=0;
+      for(var i=0;i<q.length-1;i++){
+        if(t.indexOf(q.slice(i,i+2))>=0)shared++;
+      }
+      if(q.length>=2&&t.indexOf(q.slice(0,Math.min(q.length,3)))>=0)score+=10;
+      score+=shared;
+    }
+    if(score>bestScore){bestScore=score;best=item;}
+  });
+  var threshold=t.length<4?85:50;
+  return bestScore>=threshold?best:null;
+}
+renderHistory();
+window.addEventListener('load',function(){
+  runBootAnimation();
+  setTimeout(bootTerminal, 200);
+  setTimeout(initIDE, 600);
+});
+window.__550w={tele:tele,kb:kb,trainedReply:trainedReply};
+/* ===== PWA：注册 Service Worker（可安装为应用） ===== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+})();
+</script>
+</body>
+</html>
