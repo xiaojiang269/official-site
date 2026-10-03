@@ -5,6 +5,10 @@
   "main": "main.js",
   "author": "xiaojiang269",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiaojiang269/official-site.git"
+  },
   "build": {
     "appId": "com.xiaojiang.550w",
     "productName": "550W 综合指挥系统",
