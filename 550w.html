@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>550W 综合指挥系统 · 流浪地球</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23020814'/%3E%3Cpath d='M20 46 L32 14 L44 46 M26 34 H38' stroke='%23ff4d3b' stroke-width='4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0c10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="550W">
+<link rel="apple-touch-icon" href="assets/550w-icon-192.png">
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Orbitron:wght@500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
 <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/editor/editor.main.min.css">
 <style>
@@ -1797,6 +1804,12 @@ window.addEventListener('load',function(){
   setTimeout(initIDE, 600);
 });
 window.__550w={tele:tele,kb:kb,trainedReply:trainedReply};
+/* ===== PWA：注册 Service Worker（可安装为应用） ===== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
 })();
 </script>
 </body>
