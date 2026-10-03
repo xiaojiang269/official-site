@@ -333,6 +333,22 @@
             height: 18px;
             fill: #fff;
         }
+        .btn-enter-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-enter.ghost {
+            background: transparent;
+            border: 2px solid #ff6b35;
+            color: #ff6b35;
+            padding: 14px 36px;
+            box-shadow: none;
+        }
+        .btn-enter.ghost:hover {
+            background: rgba(255, 107, 53, 0.12);
+            color: #ff6b35;
+        }
         .products-grid {
             max-width: 1200px;
             margin: 0 auto;
@@ -577,24 +593,32 @@
                             <path d="M16 9l1 1.5 1.5-2"/>
                         </svg>
                     </div>
-                    <div class="product-name">550W 综合指挥系统 · 部署教程</div>
+                    <div class="product-name">550W 综合指挥系统 · 桌面版</div>
                     <p class="product-desc-card">
-                        从零开始把 550W 综合指挥系统部署到本地电脑：只需浏览器 + 文本编辑器，复制一段 HTML 保存为文件即可运行。教程覆盖保存步骤、双击打开、启用 Python 本地服务器、运行春节十二响与常见问题排查。
+                        550W 综合指挥系统现已提供 Windows 桌面版：下载安装包一键安装，桌面图标双击即开，独立窗口运行（含终端对话、代码编程、引擎监控、训练 MOSS）。也支持在线直接体验与本地单文件部署。
                     </p>
                     <div class="product-features">
-                        <div class="feature-tag">单文件部署</div>
+                        <div class="feature-tag">桌面版下载</div>
                         <div class="feature-tag">在线体验</div>
-                        <div class="feature-tag">Python 可选</div>
+                        <div class="feature-tag">单文件部署</div>
+                        <div class="feature-tag">Python 编程</div>
                         <div class="feature-tag">春节十二响</div>
-                        <div class="feature-tag">故障排查</div>
                     </div>
                 </div>
-                <a href="deploy.html" class="btn-enter" target="_blank">
-                    查看教程
-                    <svg viewBox="0 0 24 24">
-                        <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
-                    </svg>
-                </a>
+                <div class="btn-enter-row">
+                    <a href="550W-Setup-1.0.0.exe" class="btn-enter" target="_blank">
+                        下载桌面版
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                    </a>
+                    <a href="deploy.html" class="btn-enter ghost" target="_blank">
+                        查看部署教程
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                        </svg>
+                    </a>
+                </div>
             </div>
         </div>
     </section>
