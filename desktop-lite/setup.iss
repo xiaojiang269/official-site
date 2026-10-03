@@ -19,9 +19,6 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
-[Languages]
-Name: "chinesesimp"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
-
 [Files]
 Source: "dist\550W\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
