@@ -374,7 +374,7 @@ button:disabled{opacity:.35;cursor:default}
 /* ============ 登录界面 ============ */
 #login{position:fixed;inset:0;z-index:10050;background:linear-gradient(160deg,#0b1e33 0%,#1a3a5e 40%,#2b4d72 100%);color:#fff;display:none;align-items:center;justify-content:center;flex-direction:column;overflow:hidden}
 #login.on{display:flex}
-#login::before{content:'';position:absolute;inset:0;background:radial-gradient(600px 500px at 50% 28%,rgba(255,255,255,.08),transparent 60%)}
+#login::before{content:'';position:absolute;inset:0;background:radial-gradient(600px 500px at 50% 28%,rgba(255,255,255,.08),transparent 60%);pointer-events:none}
 .lg-clock{font-size:78px;font-weight:700;font-variant-numeric:tabular-nums;text-shadow:0 4px 30px rgba(0,0,0,.4);line-height:1}
 .lg-date{font-size:19px;margin-top:8px;opacity:.85}
 .lg-avatar{width:84px;height:84px;border-radius:50%;margin-top:34px;background:linear-gradient(135deg,#2ab1ff,#1f5fff);display:grid;place-items:center;font-size:32px;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.25)}
