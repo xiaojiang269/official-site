@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HybridOS · 融合桌面系统</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300b4ff'/%3E%3Cstop offset='1' stop-color='%237b6cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='2' y='2' width='20' height='20' rx='5' fill='url(%23g)'/%3E%3Cpath d='M8 17 V7 l8 10' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* ===== 基础重置 ===== */
+:root{
+  --menubar-h:44px;
+  --taskbar-h:52px;
+  --glass:rgba(255,255,255,.62);
+  --glass-border:rgba(255,255,255,.55);
+  --ink:#1d1d1f;
+  --muted:#6e6e73;
+  --win-blue:#0078d4;
+  --mac-red:#ff5f57; --mac-yellow:#febc2e; --mac-green:#28c840;
+  --panel-shadow:0 18px 50px rgba(0,0,0,.28),0 4px 12px rgba(0,0,0,.18);
+  --dock-shadow:0 10px 34px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  color:var(--ink);-webkit-font-smoothing:antialiased;user-select:none;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,textarea{font-family:inherit}
+
+/* ===== 桌面壁纸 ===== */
+#desktop{position:fixed;inset:0;z-index:0;
+  background:linear-gradient(150deg,#7c6cff 0%,#4aa3ff 35%,#33c8c2 62%,#9b6cff 88%);
+  background-size:180% 180%;
+  animation:wallFlow 36s ease-in-out infinite alternate;
+}
+@keyframes wallFlow{0%{background-position:0% 20%}100%{background-position:100% 80%}}
+#desktop::before,#desktop::after{content:"";position:absolute;inset:0;border-radius:0}
+#desktop::before{background:radial-gradient(70% 55% at 18% 20%,rgba(255,255,255,.28),transparent 60%)}
+#desktop::after{background:radial-gradient(60% 50% at 82% 82%,rgba(255,255,255,.20),transparent 62%)}
+/* 柔和噪点质感 */
+#desktop .grain{position:absolute;inset:0;opacity:.5;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")}
+
+/* ===== 桌面图标 ===== */
+#icons{position:fixed;left:22px;top:calc(var(--menubar-h) + 18px);z-index:5;display:flex;flex-direction:column;gap:22px}
+.dicon{width:96px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
+  padding:9px 4px 7px;border-radius:10px}
+.dicon:hover{background:rgba(255,255,255,.28)}
+.dicon.sel{background:rgba(255,255,255,.38);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5)}
+.dicon .cap{width:56px;height:56px;display:grid;place-items:center;border-radius:14px;
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,.22));background:#fff}
+.dicon .cap svg{width:34px;height:34px}
+.dicon label{font-size:12px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);text-align:center;
+  line-height:1.25;max-width:92px;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* ===== 顶部菜单栏 (macOS) ===== */
+#menubar{position:fixed;top:0;left:0;right:0;height:var(--menubar-h);z-index:60;
+  background:rgba(255,255,255,.60);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+  display:flex;align-items:center;padding:0 14px;gap:2px;color:var(--ink)}
+#menubar .apple{width:28px;height:28px;display:grid;place-items:center;margin-right:6px}
+#menubar .apple svg{width:16px;height:16px}
+.menu{position:relative;padding:6px 10px;border-radius:7px;font-size:13px;font-weight:500;line-height:1}
+.menu:hover{background:rgba(0,0,0,.06)}
+.menu .arrow{font-size:9px;margin-left:1px;vertical-align:1px}
+.menu-drop{position:absolute;top:calc(100% + 6px);left:0;min-width:200px;background:rgba(250,250,250,.92);
+  backdrop-filter:blur(30px);border:1px solid rgba(0,0,0,.08);border-radius:10px;box-shadow:var(--panel-shadow);
+  padding:6px;display:none;z-index:70}
+.menu.open .menu-drop{display:block}
+.menu-drop .mit{padding:7px 12px;border-radius:6px;font-size:13px;display:flex;justify-content:space-between;gap:20px}
+.menu-drop .mit:hover{background:var(--win-blue);color:#fff}
+.menu-drop .mit.dim{color:var(--muted)}
+.menu-drop .sep{height:1px;background:rgba(0,0,0,.08);margin:5px 8px}
+.mb-right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13px;font-weight:500}
+.mb-right svg{width:17px;height:17px;color:#333}
+.mb-right .item{display:flex;align-items:center;gap:5px;padding:5px 7px;border-radius:7px}
+.mb-right .item:hover{background:rgba(0,0,0,.06)}
+#mb-clock{font-variant-numeric:tabular-nums;font-size:13px;font-weight:600}
+
+/* ===== 窗口 ===== */
+#windows{position:fixed;inset:calc(var(--menubar-h)) 0 var(--taskbar-h) 0;z-index:30;pointer-events:none}
+.window{position:absolute;pointer-events:auto;min-width:300px;min-height:180px;
+  background:rgba(252,252,253,.94);backdrop-filter:blur(30px) saturate(150%);-webkit-backdrop-filter:blur(30px) saturate(150%);
+  border-radius:12px;box-shadow:var(--panel-shadow);border:1px solid rgba(255,255,255,.6);
+  display:flex;flex-direction:column;overflow:hidden;transition:opacity .2s,transform .2s}
+.window.inactive{box-shadow:0 10px 30px rgba(0,0,0,.20),0 2px 8px rgba(0,0,0,.12)}
+.window.mini{opacity:0;transform:scale(.92) translateY(30px);pointer-events:none}
+.window.maxi{border-radius:0;inset:calc(var(--menubar-h)) 0 var(--taskbar-h) 0 !important;width:auto !important;height:auto !important}
+.titlebar{height:42px;display:flex;align-items:center;padding:0 12px;flex:0 0 auto;cursor:default;touch-action:none;
+  background:linear-gradient(#fff,#f6f6f8);border-bottom:1px solid rgba(0,0,0,.07);position:relative}
+.tlights{display:flex;gap:8px;align-items:center;position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:2}
+.tlights button{width:12px;height:12px;border-radius:50%;border:none;position:relative;transition:transform .12s}
+.tlights button:hover{transform:scale(1.15)}
+.tlights .cl{background:var(--mac-red);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.15)}
+.tlights .mn{background:var(--mac-yellow);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.12)}
+.tlights .mx{background:var(--mac-green);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.15)}
+.tlights button::after{content:"";position:absolute;inset:0;opacity:0}
+.tlights .cl::after{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 3l6 6M9 3l-6 6' stroke='%23622' stroke-width='1.4'/%3E%3C/svg%3E") center/9px no-repeat}
+.tlights .mn::after{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6h8' stroke='%23825c00' stroke-width='1.6'/%3E%3C/svg%3E") center/10px no-repeat}
+.tlights .mx::after{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 3h6v6H3z' fill='none' stroke='%23055' stroke-width='1.2'/%3E%3C/svg%3E") center/9px no-repeat}
+.tlights button:hover::after{opacity:1}
+.wname{flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--muted)}
+.winmenu{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;gap:2px;z-index:2}
+.winmenu button{width:34px;height:26px;border-radius:6px;display:grid;place-items:center;color:#444}
+.winmenu button:hover{background:rgba(0,0,0,.07)}
+.winmenu svg{width:15px;height:15px}
+.wbody{flex:1;overflow:auto;position:relative}
+
+/* 通用可移动窗口 header */
+.app-header{height:52px;display:flex;align-items:center;gap:10px;padding:0 18px;
+  background:rgba(0,120,212,.07);border-bottom:1px solid rgba(0,120,212,.14)}
+.app-header .ah-ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(135deg,var(--win-blue),#6a5bff)}
+.app-header .ah-ic svg{width:18px;height:18px}
+.app-header h2{font-size:16px;font-weight:600}
+.app-header .ah-sub{font-size:12px;color:var(--muted)}
+
+/* ===== 访达文件 ===== */
+.finder-toolbar{padding:8px 16px;display:flex;gap:10px;align-items:center;border-bottom:1px solid rgba(0,0,0,.06)}
+.finder-toolbar .nav{display:flex;gap:4px}
+.finder-toolbar .nav button{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;color:#555}
+.finder-toolbar .nav button:hover{background:rgba(0,0,0,.06)}
+.finder-toolbar .crumb{flex:1;font-size:13px;color:var(--muted)}
+.finder-toolbar .crumb b{color:var(--ink);font-weight:600}
+.finder-grid{padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:18px}
+.fitem{display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px 4px;border-radius:10px;cursor:pointer}
+.fitem:hover{background:rgba(0,120,212,.08)}
+.fitem.sel{background:rgba(0,120,212,.16)}
+.fitem .fico{width:52px;height:52px;display:grid;place-items:center;border-radius:11px;background:#fff;
+  box-shadow:0 4px 10px rgba(0,0,0,.12);border:1px solid rgba(0,0,0,.05)}
+.fitem .fico svg{width:28px;height:28px}
+.fitem span{font-size:12px;color:#333;text-align:center}
+
+/* ===== 设置 ===== */
+.settings{display:flex;height:100%}
+.set-side{width:200px;background:#f5f6f8;border-right:1px solid rgba(0,0,0,.06);padding:14px 8px;flex:0 0 auto}
+.set-side .prof{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:10px;border-radius:8px}
+.set-side .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c6cff,#4aa3ff);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:15px}
+.set-side .prof b{font-size:13px;display:block}
+.set-side .prof span{font-size:11px;color:var(--muted)}
+.set-side .scat{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;font-size:13px;color:#333;cursor:pointer}
+.set-side .scat svg{width:17px;height:17px;color:#555}
+.set-side .scat:hover{background:rgba(0,0,0,.05)}
+.set-side .scat.on{background:rgba(0,120,212,.12);color:var(--win-blue)}
+.set-side .scat.on svg{color:var(--win-blue)}
+.set-main{flex:1;padding:26px 34px;overflow:auto}
+.set-main h3{font-size:20px;font-weight:650;margin-bottom:20px}
+.set-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.set-row .s-t{font-size:14px;font-weight:500}
+.set-row .s-d{font-size:12px;color:var(--muted);margin-top:2px}
+.toggle{width:46px;height:26px;border-radius:13px;background:#e0e2e6;position:relative;transition:.2s;flex:0 0 auto}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s}
+.toggle.on{background:var(--win-blue)}
+.toggle.on::after{left:23px}
+.seg{display:flex;background:rgba(0,0,0,.06);border-radius:8px;padding:3px;gap:3px}
+.seg button{padding:5px 14px;border-radius:6px;font-size:13px;color:#444}
+.seg button.on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);color:var(--win-blue);font-weight:600}
+.wall-card{height:110px;border-radius:12px;border:2px solid transparent;background:linear-gradient(140deg,#7c6cff,#4aa3ff,#33c8c2);
+  display:flex;align-items:flex-end;padding:10px;color:#fff;font-weight:600;cursor:pointer;transition:.15s}
+.wall-card.on{border-color:var(--win-blue)}
+
+/* ===== 计算器 ===== */
+.calc{padding:16px;display:flex;flex-direction:column;height:100%;background:#1e1e1e}
+.calc .disp{font-size:46px;font-weight:200;color:#fff;text-align:right;padding:8px 10px 16px;min-height:78px;
+  display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.calc .disp .expr{font-size:16px;color:#8a8a8e;min-height:20px}
+.calc .pad{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.calc button{border-radius:14px;font-size:22px;font-weight:400;color:#fff;background:#2c2c2e;transition:.12s}
+.calc button:hover{background:#3a3a3c}
+.calc button:active{background:#48484a}
+.calc .fn{background:#636366}
+.calc .fn:hover{background:#7a7a7d}
+.calc .op{background:#ff9f0a}
+.calc .op:hover{background:#ffb033}
+.calc .zero{grid-column:span 2}
+
+/* ===== 终端 ===== */
+.term{height:100%;background:rgba(30,30,30,.97);color:#e6e6e6;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  font-size:13px;padding:14px 16px;overflow:auto;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+.term .in{color:#0fc60f}
+.term .path{color:#4aa3ff}
+.term .cmdline{display:flex;align-items:center}
+.term input{background:none;border:none;color:#fff;flex:1;outline:none;font-family:inherit;font-size:13px}
+.term .prompt{color:#6ee7ff}
+
+/* ===== 浏览器 ===== */
+.browser{padding:20px 26px;overflow:auto;height:100%}
+.browser h1{font-size:26px;font-weight:700;margin-bottom:6px}
+.browser .tag{display:inline-block;background:linear-gradient(120deg,var(--win-blue),#6a5bff);color:#fff;font-size:11px;
+  padding:3px 10px;border-radius:20px;margin-bottom:18px;font-weight:600}
+.browser .blend{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+.blend-card{border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:18px;background:#fff}
+.blend-card h4{display:flex;align-items:center;gap:8px;font-size:15px;margin-bottom:8px}
+.blend-card h4 svg{width:18px;height:18px}
+.blend-card p{font-size:13px;color:#444;line-height:1.7}
+.browser .linkrow{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+.browser .linkrow button{background:var(--win-blue);color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600}
+.browser .linkrow button.ghost{background:#fff;color:var(--win-blue);border:1px solid var(--win-blue)}
+.browser .linkrow button.ghost:hover{background:#f2f8ff}
+.browser .browser{height:100%;padding:0;overflow:hidden}
+/* 浏览器工具栏 */
+.browser-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid rgba(0,0,0,.07);background:rgba(255,255,255,.7)}
+.browser-bar .bnav{display:flex;gap:2px}
+.browser-bar .bnav button{width:32px;height:30px;border-radius:7px;display:grid;place-items:center;color:#555}
+.browser-bar .bnav button:hover:not(:disabled){background:rgba(0,0,0,.06)}
+.browser-bar .bnav button:disabled{opacity:.32;cursor:default}
+.browser-bar .bnav svg{width:16px;height:16px}
+.browser-bar .baddr{flex:1;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.05);border-radius:9px;padding:6px 12px}
+.browser-bar .baddr .lock{width:13px;height:13px;color:#7ba}
+.browser-bar .baddr input{border:none;outline:none;background:none;flex:1;font-size:13px;color:#333}
+.bcontent{overflow:auto;height:calc(100% - 49px)}
+.bcontent .browser{padding:20px 26px;height:auto;overflow:visible}
+/* 浏览器标签栏 */
+.b-tabs{display:flex;align-items:center;gap:6px;padding:7px 10px 0;background:rgba(240,241,244,.75);border-bottom:1px solid rgba(0,0,0,.06)}
+.b-tab{display:flex;align-items:center;gap:8px;max-width:180px;min-width:80px;padding:7px 10px;border-radius:8px 8px 0 0;font-size:12px;color:#555;cursor:pointer;border:1px solid transparent;border-bottom:none}
+.b-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.b-tab:hover{background:rgba(255,255,255,.6)}
+.b-tab.on{background:#fff;color:#111;border-color:rgba(0,0,0,.06);font-weight:600}
+.bt-close{color:#999;font-size:14px;line-height:1;padding:1px 4px;border-radius:4px}
+.bt-close:hover{background:rgba(0,0,0,.08);color:#333}
+.bt-new{color:#777;font-size:15px;width:28px;height:28px;border-radius:7px;display:grid;place-items:center;margin-bottom:6px}
+.bt-new:hover{background:rgba(0,0,0,.06)}
+/* 主页搜索框 */
+.b-searchbox{max-width:640px;margin:60px auto 0;text-align:center}
+.b-sb-logo{width:64px;height:64px;margin:0 auto 18px;border-radius:16px;background:linear-gradient(135deg,#2cc1ff,#7b4cff);display:grid;place-items:center;color:#fff}
+.b-sb-logo svg{width:34px;height:34px}
+.b-searchbox input{width:100%;font-size:16px;padding:13px 20px;border-radius:26px;border:1px solid rgba(0,0,0,.08);outline:none;box-shadow:0 4px 18px rgba(0,0,0,.08);background:#fff}
+.b-searchbox input:focus{border-color:var(--win-blue)}
+.b-sb-sug{margin-top:12px;font-size:13px;color:var(--muted)}
+.b-sb-sug a{color:var(--win-blue);cursor:pointer;margin:0 6px}
+.b-sb-hint{margin-top:14px;font-size:12px;color:var(--muted)}
+.b-quick{display:flex;gap:12px;justify-content:center;margin-top:34px;flex-wrap:wrap}
+.bq-btn{width:76px;padding:12px 6px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#444}
+.bq-btn:hover{background:rgba(0,0,0,.05)}
+.bq-btn svg{width:30px;height:30px}
+/* 加载 */
+.b-loading{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:90px;color:var(--muted);font-size:14px}
+.spin{width:34px;height:34px;border:3px solid rgba(0,120,212,.2);border-top-color:var(--win-blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* 阅读模式 */
+.rd .rd-bar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);padding:8px 14px;background:rgba(0,0,0,.03);border-radius:8px;margin-bottom:14px;flex-wrap:wrap}
+.rd .rd-bar b{color:#333}
+.rd .rd-open{margin-left:auto;background:#fff;color:var(--win-blue);border:1px solid var(--win-blue);padding:5px 12px;border-radius:7px;font-size:12px;white-space:nowrap}
+.rd h1,.rd h2,.rd h3{font-weight:700;line-height:1.4;margin:16px 0 8px;color:var(--ink)}
+.rd h1{font-size:24px}.rd h2{font-size:20px}.rd h3{font-size:17px}
+.rd p{font-size:14.5px;line-height:1.9;color:#333;margin:8px 0;word-break:break-word}
+.rd a.rd-link{color:var(--win-blue);cursor:pointer;text-decoration:underline;word-break:break-all}
+.rd li{font-size:14px;line-height:1.8;color:#333;margin-left:20px}
+/* GitHub 频道 */
+.gh{padding:20px}
+.gh-head{display:flex;gap:16px;align-items:flex-start}
+.gh-logo{width:44px;height:44px}
+.gh-ava{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:22px;font-weight:700;flex:none}
+.gh-sub{color:var(--muted);font-size:13px;margin:4px 0 8px;line-height:1.5}
+.gh-meta{color:var(--muted);font-size:12.5px;display:flex;gap:14px;flex-wrap:wrap}
+.gh-bar{height:6px;border-radius:3px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:14px}
+.gh-bar span{display:block;height:100%;background:linear-gradient(90deg,#2cc1ff,#7b4cff)}
+/* 天气频道 */
+.wt h2{margin-bottom:2px}
+.wt-sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+.wt-cities{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.wt-cities button{padding:7px 18px;border-radius:16px;border:1px solid rgba(0,0,0,.1);background:#fff;cursor:pointer;font-size:13px;color:#333}
+.wt-cities button:hover{border-color:var(--win-blue);color:var(--win-blue)}
+.wt-ph{color:var(--muted);font-size:13px;padding:30px 0;text-align:center}
+.wt-card{background:#fff;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.06);padding:24px;text-align:center;max-width:360px;margin:0 auto}
+.wt-city{font-size:16px;font-weight:600}
+.wt-temp{font-size:44px;font-weight:700;margin:8px 0 2px}
+.wt-desc{color:#555;font-size:14px;margin-bottom:14px}
+.wt-row{display:flex;gap:14px;justify-content:center;color:var(--muted);font-size:12px;flex-wrap:wrap}
+.wt-fail{color:#b22222;font-size:13px}
+/* 通用禁用按钮 */
+button:disabled{opacity:.35;cursor:default}
+
+/* ===== 备忘录 ===== */
+.notes{padding:0;display:flex;flex-direction:column;height:100%}
+.nt-tool{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);background:#f7f8fa}
+.nt-tool button{padding:6px 14px;border-radius:7px;font-size:12.5px;background:#fff;border:1px solid rgba(0,0,0,.1);cursor:pointer;color:#333}
+.nt-tool button:hover{border-color:var(--win-blue);color:var(--win-blue)}
+.nt-tool #nt-new{background:var(--win-blue);color:#fff;border-color:var(--win-blue)}
+.nt-tool #nt-new:hover{opacity:.88;color:#fff}
+.notes-body{flex:1;display:flex;min-height:0}
+.note-list{width:190px;border-right:1px solid rgba(0,0,0,.06);background:#f7f8fa;padding:12px;overflow:auto}
+.note-list .ni{padding:11px 12px;border-radius:8px;cursor:pointer;margin-bottom:4px}
+.note-list .ni.on{background:#e8ecf1}
+.note-list .ni b{display:block;font-size:13px}
+.note-list .ni span{font-size:11px;color:var(--muted);display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.note-body{flex:1;padding:24px 28px;overflow:auto}
+.note-body input{width:100%;border:none;outline:none;font-size:19px;font-weight:600;margin-bottom:12px;background:none}
+.note-body textarea{width:100%;height:calc(100% - 50px);border:none;outline:none;resize:none;font-size:14px;line-height:1.8;background:none}
+/* 文件预览 */
+.fv{height:100%;display:flex;flex-direction:column}
+.fv-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.06);background:#f7f8fa}
+.fv-bar b{font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fv-bar span{font-size:11px;color:var(--muted)}
+.fv-text{flex:1;padding:20px 26px;font-size:13.5px;line-height:1.85;color:#333;white-space:pre-wrap;overflow:auto}
+.fv-img-wrap{align-items:center;justify-content:center;gap:14px;padding:20px}
+.fv-img{width:180px;height:180px;border-radius:16px;display:grid;place-items:center}
+.fv-name{font-size:14px;font-weight:600;color:#333}
+.fv-tip{font-size:12px;color:var(--muted)}
+/* 系统更新 · 鸿蒙风格 */
+.upd{height:100%;background:linear-gradient(160deg,#101421,#1b2a41 55%,#0e1728);color:#e8ecf2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;overflow:hidden;text-align:center;padding:24px}
+.upd-ring{position:relative;width:150px;height:150px;display:grid;place-items:center;flex:none}
+.upd-ring .r1,.upd-ring .r2{position:absolute;color:rgba(64,176,255,.5)}
+.upd-ring .r1{inset:0;animation:spin 14s linear infinite}
+.upd-ring .r2{inset:12px;color:rgba(64,176,255,.3);animation:spin 9s linear infinite reverse}
+.upd-ring .core{width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,#2ab1ff,#1f5fff);display:grid;place-items:center}
+.upd-ring .core svg{width:44px;height:44px}
+.upd h3{font-size:17px;margin:2px 0 2px;font-weight:600}
+.upd .ver{font-size:12px;color:#8fb4d9}
+.upd-sub{font-size:12px;color:#7fa3c9;margin-top:2px}
+.upd-btn{margin-top:14px;padding:10px 32px;border-radius:22px;background:linear-gradient(135deg,#2ab1ff,#1f5fff);color:#fff;font-size:14px;border:none;cursor:pointer;box-shadow:0 6px 18px rgba(31,95,255,.35)}
+.upd-btn:hover{filter:brightness(1.1)}
+.upd-src{margin-top:14px;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.upd-src input{flex:1;min-width:0;padding:7px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);font-size:12.5px;outline:none}
+.upd-src input:focus{border-color:#2ab1ff}
+.upd-mini{padding:6px 12px;border-radius:12px;border:none;background:#2ab1ff;color:#fff;font-size:12px;cursor:pointer}
+.upd-log{width:340px;max-width:88%;margin-top:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;font-size:12.5px;line-height:1.9;color:#cfe4f7;text-align:left;max-height:170px;overflow:auto}
+.upd-log b{color:#fff;display:block;margin-bottom:6px;font-size:13px}
+.upd-bar{width:280px;max-width:80%;height:7px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:14px}
+.upd-bar i{display:block;height:100%;background:linear-gradient(90deg,#2ab1ff,#1f5fff);border-radius:4px;width:0;transition:width .15s}
+.upd-pct{font-size:13px;color:#9fc3e6;margin-top:8px;font-variant-numeric:tabular-nums}
+.upd-check{display:flex;align-items:center;gap:10px;margin-top:14px;color:#9fc3e6;font-size:13px}
+.upd-check .spin{width:20px;height:20px;border-width:2px}
+/* 全屏安装 */
+#install-overlay{position:fixed;inset:0;z-index:9999;background:#0a0f1a;color:#e8ecf2;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#install-overlay.on{display:flex}
+.io-ring{width:110px;height:110px;position:relative;display:grid;place-items:center}
+.io-ring svg{position:absolute;inset:0;color:rgba(64,176,255,.6);animation:spin 1.6s linear infinite}
+.io-logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#2ab1ff,#1f5fff);display:grid;place-items:center;box-shadow:0 0 34px rgba(42,177,255,.45)}
+.io-logo svg{width:34px;height:34px}
+.io-t{font-size:15px;font-weight:500}
+.io-pct{font-size:12px;color:#8fb4d9;font-variant-numeric:tabular-nums}
+.io-bar{width:240px;height:6px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}
+.io-bar i{display:block;height:100%;background:linear-gradient(90deg,#2ab1ff,#1f5fff);width:0;transition:width .12s}
+/* ============ 系统安装引导（与系统结合） ============ */
+#boot{position:fixed;inset:0;z-index:10000;background:radial-gradient(1200px 700px at 30% 10%,#12263f 0%,#0d1a2e 45%,#07101f 100%);color:#e8ecf2;display:none;align-items:center;justify-content:center;overflow:hidden}
+#boot.on{display:flex}
+#boot::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(600px 400px at 78% 82%,rgba(42,177,255,.12),transparent 60%),radial-gradient(500px 400px at 15% 88%,rgba(31,95,255,.12),transparent 60%)}
+.bt-card{position:relative;width:min(860px,92vw);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.10);border-radius:22px;padding:36px 44px 38px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.bt-steps{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.bt-step{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#7fa3c9}
+.bt-step .bt-dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;border:1.5px solid rgba(255,255,255,.22)}
+.bt-step.on{color:#fff}.bt-step.on .bt-dot{background:linear-gradient(135deg,#2ab1ff,#1f5fff);border-color:transparent}
+.bt-step.done{color:#9fd6ff}.bt-step.done .bt-dot{background:rgba(42,177,255,.25);border-color:rgba(42,177,255,.4)}
+.bt-bar{flex:1;height:2px;background:rgba(255,255,255,.14);margin:0 6px}
+.bt-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2ab1ff,#1f5fff);transition:width .5s}
+.bt-body{min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.bt-logo{width:84px;height:84px;border-radius:24px;background:linear-gradient(135deg,#2ab1ff,#1f5fff);display:grid;place-items:center;margin-bottom:18px;box-shadow:0 14px 40px rgba(31,95,255,.4)}
+.bt-logo svg{width:46px;height:46px}
+.bt-logo.ok{background:linear-gradient(135deg,#34c759,#2ab1ff)}
+.bt-body h1{font-size:23px;font-weight:600}
+.bt-sub{color:#8fb4d9;font-size:13px;margin-top:8px;line-height:1.7}
+.bt-btn{margin-top:24px;padding:12px 40px;border-radius:24px;background:linear-gradient(135deg,#2ab1ff,#1f5fff);color:#fff;font-size:15px;border:none;cursor:pointer;box-shadow:0 8px 26px rgba(31,95,255,.35)}
+.bt-btn:hover{filter:brightness(1.12)}
+.bt-btn.ghost{background:rgba(255,255,255,.08);box-shadow:none;color:#cfe4f7}
+.bt-opts{display:flex;gap:14px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.bt-opt{width:176px;padding:16px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);cursor:pointer}
+.bt-opt:hover{border-color:rgba(42,177,255,.5);background:rgba(42,177,255,.08)}
+.bt-opt.sel{border-color:#2ab1ff;background:rgba(42,177,255,.14);box-shadow:0 0 0 1px #2ab1ff}
+.bt-opt b{font-size:14px;display:block;margin-bottom:6px}
+.bt-opt span{font-size:11.5px;color:#7fa3c9;line-height:1.6;display:block}
+.bt-ring{position:relative;width:150px;height:150px;display:grid;place-items:center;margin-bottom:12px}
+.bt-ring .bt-bg{position:absolute;inset:0;transform:rotate(-90deg)}
+.bt-ring .bt-bg circle{fill:none;stroke:rgba(255,255,255,.12);stroke-width:8}
+.bt-ring .bt-fg{position:absolute;inset:0;transform:rotate(-90deg)}
+.bt-ring .bt-fg circle{fill:none;stroke:url(#bt-ringg);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .2s}
+.bt-pct{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums}
+.bt-pct em{font-style:normal;font-size:17px;color:#7fa3c9}
+.bt-stage{font-size:15px;margin-top:4px}
+.bt-flist{width:min(420px,80%);margin-top:18px;text-align:left;font-size:12.5px;color:#7fa3c9;line-height:1.9}
+.bt-flist span.on{color:#9fd6ff}
+.bt-flist .ok{color:#5ee6a0;margin-right:8px}
+/* ============ 登录界面 ============ */
+#login{position:fixed;inset:0;z-index:10050;background:linear-gradient(160deg,#0b1e33 0%,#1a3a5e 40%,#2b4d72 100%);color:#fff;display:none;align-items:center;justify-content:center;flex-direction:column;overflow:hidden}
+#login.on{display:flex}
+#login::before{content:'';position:absolute;inset:0;background:radial-gradient(600px 500px at 50% 28%,rgba(255,255,255,.08),transparent 60%)}
+.lg-clock{font-size:78px;font-weight:700;font-variant-numeric:tabular-nums;text-shadow:0 4px 30px rgba(0,0,0,.4);line-height:1}
+.lg-date{font-size:19px;margin-top:8px;opacity:.85}
+.lg-avatar{width:84px;height:84px;border-radius:50%;margin-top:34px;background:linear-gradient(135deg,#2ab1ff,#1f5fff);display:grid;place-items:center;font-size:32px;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.25)}
+.lg-user{font-size:17px;margin-top:12px;opacity:.92}
+.lg-box{margin-top:16px;position:relative;display:flex;gap:8px;align-items:center}
+#lg-uname,#lg-pass,#rg-uname,#rg-pass,#rg-pass2{width:168px;padding:11px 16px;border-radius:24px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;font-size:14px;outline:none;text-align:center}
+#lg-uname{width:150px}
+#lg-pass{width:180px;padding-right:48px}
+#lg-pass::placeholder,#lg-uname::placeholder,#rg-uname::placeholder,#rg-pass::placeholder,#rg-pass2::placeholder{color:rgba(255,255,255,.6)}
+.lg-links{margin-top:14px;font-size:12.5px;display:flex;gap:14px;align-items:center}
+#lg-reg,#rg-back{color:#9fd6ff;cursor:pointer;text-decoration:underline}
+#lg-reg:hover,#rg-back:hover{color:#fff}
+.lg-title{font-size:20px;font-weight:600;margin-bottom:14px}
+.lg-reg-box{display:flex;flex-direction:column;gap:9px;align-items:center}
+.lg-btn{margin-top:6px;padding:10px 30px;border-radius:24px;background:linear-gradient(135deg,#2ab1ff,#1f5fff);color:#fff;font-size:14px;border:none;cursor:pointer;box-shadow:0 6px 20px rgba(31,95,255,.35)}
+.lg-enter{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:#fff;color:#1f5fff;border:none;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.lg-enter svg{width:18px;height:18px}
+.lg-tip{font-size:12.5px;color:#ff6b6b;margin-top:10px;height:16px;opacity:0;transition:opacity .4s}
+.lg-pow{position:absolute;bottom:28px;color:rgba(255,255,255,.55);font-size:12px;letter-spacing:.6px}
+#lg-view-login,#lg-view-reg{display:flex;flex-direction:column;align-items:center;width:100%;max-width:360px}
+
+
+/* ===== 底部任务栏 (Windows + macOS Dock 融合) ===== */
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:var(--taskbar-h);z-index:60;display:flex;align-items:center;
+  background:rgba(255,255,255,.60);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);
+  border-top:1px solid rgba(255,255,255,.5);padding:0 8px;gap:4px}
+#tb-start{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;transition:.15s}
+#tb-start:hover{background:rgba(0,0,0,.06)}
+#tb-start svg{width:22px;height:22px}
+#tb-search{width:200px;height:34px;border-radius:18px;background:rgba(0,0,0,.06);display:flex;align-items:center;gap:8px;
+  padding:0 14px;font-size:13px;color:var(--muted)}
+#tb-search svg{width:15px;height:15px}
+#dock{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 8px}
+.dockic{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;position:relative;transition:transform .16s ease,margin .16s;
+  background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.20)}
+.dockic:hover{transform:translateY(-8px) scale(1.22);z-index:5}
+.dockic svg{width:26px;height:26px}
+.dockic .dot{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:rgba(0,0,0,.5)}
+.dockic .ttip{position:absolute;bottom:56px;left:50%;transform:translateX(-50%) scale(.9);opacity:0;pointer-events:none;
+  background:rgba(30,30,30,.85);color:#fff;font-size:12px;padding:5px 11px;border-radius:7px;white-space:nowrap;transition:.15s}
+.dockic:hover .ttip{opacity:1;transform:translateX(-50%) scale(1)}
+#tb-right{margin-left:auto;display:flex;align-items:center;gap:4px;padding-right:6px}
+#tb-right .tray{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#333}
+#tb-right .tray:hover{background:rgba(0,0,0,.06)}
+#tb-right svg{width:17px;height:17px}
+#tb-clock{text-align:center;padding:2px 10px;font-size:12px;font-weight:500;border-radius:9px;line-height:1.35}
+#tb-clock:hover{background:rgba(0,0,0,.06)}
+#tb-clock b{display:block;font-size:13px}
+
+/* ===== 开始菜单 (Windows) ===== */
+#startmenu{position:fixed;left:8px;bottom:calc(var(--taskbar-h) + 8px);width:560px;max-height:min(78vh,660px);z-index:80;
+  background:rgba(250,250,252,.9);backdrop-filter:blur(34px) saturate(180%);border:1px solid rgba(255,255,255,.6);
+  border-radius:16px;box-shadow:var(--panel-shadow);padding:22px;display:none;overflow:hidden}
+#startmenu.open{display:block;animation:pop .22s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+.sm-search{display:flex;align-items:center;gap:9px;background:rgba(0,0,0,.06);border-radius:10px;padding:10px 14px;margin-bottom:16px}
+.sm-search svg{width:16px;height:16px;color:#666}
+.sm-search input{border:none;outline:none;background:none;font-size:14px;flex:1;color:#222}
+.sm-search input::placeholder{color:#9a9aa0}
+.sm-title{font-size:12px;color:var(--muted);margin:12px 2px 8px;font-weight:600;letter-spacing:.3px}
+.sm-pins{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.sm-app{display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 4px 9px;border-radius:12px;cursor:pointer}
+.sm-app:hover{background:rgba(0,120,212,.1)}
+.sm-app .aic{width:42px;height:42px;border-radius:11px;background:#fff;display:grid;place-items:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.14)}
+.sm-app .aic svg{width:24px;height:24px}
+.sm-app span{font-size:11px;color:#333}
+.sm-bottom{margin-top:16px;display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid rgba(0,0,0,.07)}
+.sm-power{display:flex;align-items:center;gap:8px;color:#333;font-size:13px;font-weight:500;padding:8px 14px;border-radius:9px}
+.sm-power:hover{background:rgba(0,0,0,.05)}
+.sm-power svg{width:16px;height:16px}
+.sm-user{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500}
+.sm-user .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#7c6cff,#4aa3ff);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:13px}
+
+/* ===== 控制中心 (macOS) ===== */
+#cc{position:fixed;right:10px;top:calc(var(--menubar-h) + 10px);width:300px;z-index:80;
+  background:rgba(250,250,252,.85);backdrop-filter:blur(34px) saturate(180%);border:1px solid rgba(255,255,255,.6);
+  border-radius:18px;box-shadow:var(--panel-shadow);padding:16px;display:none}
+#cc.open{display:block;animation:pop .2s ease}
+.cc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cc-big{grid-column:1/-1;background:rgba(0,0,0,.04);border-radius:12px;padding:13px;display:flex;align-items:center;gap:12px}
+.cc-tile{background:rgba(0,0,0,.04);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.cc-tile svg{width:18px;height:18px;color:#444}
+.cc-tile span{font-size:11px;color:var(--muted)}
+.cc-tile .toggle{transform:scale(.8);transform-origin:left}
+.cc-big .toggle{transform:scale(.9);transform-origin:left}
+.cc-sliders{margin-top:12px;display:flex;flex-direction:column;gap:10px;padding:12px 4px 4px;border-top:1px solid rgba(0,0,0,.06)}
+.cc-sliders .sl-row{display:flex;align-items:center;gap:10px}
+.cc-sliders svg{width:15px;height:15px;color:#555}
+input[type=range]{-webkit-appearance:none;flex:1;height:5px;border-radius:3px;background:linear-gradient(to right,var(--win-blue) 60%,rgba(0,0,0,.12) 60%)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+
+/* ===== toast ===== */
+#toast{position:fixed;bottom:calc(var(--taskbar-h) + 18px);left:50%;transform:translateX(-50%);z-index:120;
+  background:rgba(40,40,42,.9);color:#fff;font-size:13px;padding:10px 20px;border-radius:10px;box-shadow:var(--panel-shadow);
+  opacity:0;transition:.25s;pointer-events:none}
+#toast.show{opacity:1}
+#toast .t-ic{display:inline-grid;width:20px;height:20px;margin-right:8px;vertical-align:-5px;color:#4dd}
+#toast .t-ic svg{width:18px;height:18px}
+
+/* ===== 欢迎横幅 ===== */
+#welcome{position:fixed;left:50%;top:20%;transform:translate(-50%,-20%);z-index:10;color:#fff;text-align:center;
+  text-shadow:0 2px 14px rgba(0,0,0,.35);pointer-events:none;transition:opacity 1s}
+#welcome h1{font-size:clamp(28px,5vw,52px);font-weight:700;letter-spacing:.5px}
+#welcome p{margin-top:8px;font-size:clamp(14px,1.6vw,18px);opacity:.92}
+#welcome.hide{opacity:0}
+
+/* ===== 应用商店 ===== */
+.store-h{display:flex;align-items:center;gap:14px;padding:20px 26px;border-bottom:1px solid rgba(0,0,0,.06);background:linear-gradient(120deg,rgba(255,95,158,.08),rgba(123,76,255,.08))}
+.store-logo{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#ff5f9e,#7b4cff);color:#fff}
+.store-logo svg{width:26px;height:26px}
+.store-title{font-size:20px;font-weight:700}
+.store-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.store-search{margin-left:auto;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.05);border-radius:9px;padding:8px 12px;width:220px}
+.store-search svg{width:15px;height:15px;color:#666}
+.store-search input{border:none;outline:none;background:none;font-size:13px;flex:1}
+.store-grid{padding:20px 26px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.store-card{display:flex;align-items:center;gap:12px;border:1px solid rgba(0,0,0,.07);border-radius:13px;padding:13px;cursor:pointer;transition:.12s;background:#fff}
+.store-card:hover{border-color:rgba(0,120,212,.4);box-shadow:0 4px 14px rgba(0,0,0,.07)}
+.sc-ic{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.sc-ic svg{width:30px;height:30px}
+.sc-info{flex:1;min-width:0}
+.sc-info b{font-size:14px;display:block}
+.sc-info span{font-size:11px;color:var(--muted)}
+.sc-info p{font-size:12px;color:#666;margin:4px 0;line-height:1.5}
+.sc-rate{color:#f5a623;font-size:11px}
+.sc-rate em{color:var(--muted);font-style:normal;margin-left:4px}
+.sc-btn{flex:0 0 auto;background:var(--win-blue);color:#fff;font-size:13px;font-weight:600;padding:6px 15px;border-radius:8px}
+.sc-btn:hover{filter:brightness(1.06)}
+.sc-btn.installed{background:#e8ecf1;color:#333}
+.sc-btn:disabled{background:#cbd5e1;cursor:default}
+
+/* ===== 音乐 ===== */
+.music{height:100%;padding:18px 22px;display:flex;flex-direction:column;background:linear-gradient(160deg,#fff,#f7f3fa)}
+.m-hero{display:flex;align-items:center;gap:16px}
+.m-cover{width:92px;height:92px;border-radius:16px;display:grid;place-items:center;color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.m-cover svg{width:46px;height:46px}
+.m-now .m-now-t{font-size:20px;font-weight:700;display:block}
+.m-now .m-now-a{font-size:13px;color:var(--muted)}
+.m-controls{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:16px}
+.m-controls button{color:#444;display:grid;place-items:center;border-radius:50%}
+.m-controls button svg{width:20px;height:20px}
+.m-controls .m-big{width:52px;height:52px;background:var(--win-blue);color:#fff}
+.m-big svg{width:22px;height:22px}
+.m-prog{display:flex;align-items:center;gap:10px;margin:14px 0;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.m-prog input{flex:1}
+.m-list{flex:1;overflow:auto;border-top:1px solid rgba(0,0,0,.06);padding-top:8px}
+.m-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;cursor:pointer}
+.m-item:hover{background:rgba(0,0,0,.04)}
+.m-item.on{background:rgba(0,120,212,.10);color:var(--win-blue)}
+.m-item .mi-n{width:20px;color:var(--muted);font-size:12px}
+.m-item b{font-size:13px;display:block}
+.m-item div span{font-size:11px;color:var(--muted)}
+.m-item em{margin-left:auto;font-style:normal;font-size:11px;color:var(--muted)}
+
+/* ===== 时钟 ===== */
+.clock{padding:22px;text-align:center}
+.ck-local span:first-child{font-size:54px;font-weight:200;font-variant-numeric:tabular-nums;display:block}
+.ck-local span:last-child{font-size:14px;color:var(--muted)}
+.ck-zones{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:22px 0}
+.ck-zone{background:rgba(0,0,0,.04);border-radius:12px;padding:12px}
+.ck-zone span{font-size:12px;color:var(--muted);display:block}
+.ck-zone b{font-size:18px;font-variant-numeric:tabular-nums}
+.ck-stop{background:rgba(0,120,212,.06);border-radius:14px;padding:16px}
+.ck-stop-title{font-size:12px;color:var(--muted)}
+.ck-stop-time{font-size:30px;font-weight:300;font-variant-numeric:tabular-nums;margin:6px 0}
+.ck-stop-btns{display:flex;gap:10px;justify-content:center}
+.ck-stop-btns button{background:var(--win-blue);color:#fff;padding:7px 18px;border-radius:8px;font-size:13px}
+.ck-stop-btns button#ck-reset{background:#e8ecf1;color:#333}
+
+/* ===== 照片 ===== */
+.photos{height:100%;overflow:auto;padding:18px 22px}
+.ph-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.ph-head b{font-size:18px}
+.ph-head span{font-size:12px;color:var(--muted)}
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.ph-tile{aspect-ratio:1;border-radius:12px;cursor:pointer;display:flex;align-items:flex-end;padding:8px;color:#fff;font-size:12px;text-shadow:0 1px 4px rgba(0,0,0,.35);transition:.12s;background-size:cover}
+.ph-tile:hover{transform:scale(1.03)}
+.ph-lightbox{position:absolute;inset:0;background:rgba(20,20,25,.72);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5}
+.ph-lb-img{width:70%;height:60%;border-radius:14px;background-size:cover}
+.ph-lb-cap{margin-top:14px;color:#fff;font-size:15px}
+.ph-close{position:absolute;top:14px;right:16px;color:#fff;font-size:24px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15)}
+.ph-nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-size:30px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12)}
+.ph-prev{left:12px}.ph-next{right:12px}
+
+/* ===== 画板 ===== */
+.paint{height:100%;display:flex;flex-direction:column;background:#fbfbfc}
+.paint-bar{display:flex;align-items:center;gap:14px;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.07)}
+.pb-colors{display:flex;gap:7px}
+.pb-c{width:22px;height:22px;border-radius:50%;cursor:pointer}
+.pb-c.on{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--win-blue)}
+.paint-bar input{width:120px}
+.pb-actions{margin-left:auto;display:flex;gap:8px}
+.pb-actions button{background:#e8ecf1;color:#333;padding:6px 14px;border-radius:8px;font-size:13px}
+.pb-actions button:first-child{color:#c0392b}
+#pb-canvas{flex:1;width:100%;cursor:crosshair;touch-action:none;background:#fff}
+
+/* ===== 文本编辑 ===== */
+.textedit{height:100%;display:flex;flex-direction:column}
+.te-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(0,0,0,.07)}
+.te-bar input{flex:1;border:none;outline:none;font-size:14px;background:none}
+.te-bar button{background:var(--win-blue);color:#fff;padding:6px 16px;border-radius:8px;font-size:13px}
+.te-status{padding:7px 16px;font-size:12px;color:var(--muted);border-top:1px solid rgba(0,0,0,.05)}
+.textedit textarea{flex:1;border:none;outline:none;resize:none;padding:18px 20px;font-size:14px;line-height:1.8;font-family:inherit}
+
+/* ===== 天气 ===== */
+.weather{height:100%;padding:24px;text-align:center;background:linear-gradient(160deg,#e8f4ff,#f6fbff)}
+.w-city{font-size:13px;color:var(--muted)}
+.w-now{display:flex;align-items:center;justify-content:center;gap:14px;margin:12px 0 6px}
+.w-now span{font-size:62px;font-weight:200;font-variant-numeric:tabular-nums}
+.w-ic{width:56px;height:56px;display:grid;place-items:center}
+.w-ic svg{width:44px;height:44px}
+.w-desc{font-size:14px;color:#333}
+.w-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0}
+.w-day{background:#fff;border-radius:11px;padding:10px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.w-day span{font-size:11px;color:var(--muted);display:block}
+.w-day b{font-size:14px}
+.w-note{font-size:11px;color:var(--muted)}
+
+@media (max-width:700px){
+  #menubar .menu.mhide{display:none}
+  #tb-search{width:0;padding:0;overflow:hidden}
+  #startmenu{width:calc(100vw - 16px);left:8px}
+  #dock{gap:3px}
+  .dockic{width:38px;height:38px}
+  #icons{gap:14px;left:12px}
+  .dicon{width:80px}
+  .settings{flex-direction:column}
+  .set-side{width:100%;flex-direction:row;overflow:auto;padding:8px}
+  .set-side .prof{display:none}
+  .notes{flex-direction:column}
+  .notes-body{flex-direction:column}
+  .note-list{width:100%;flex-direction:row;border-right:none;border-bottom:1px solid rgba(0,0,0,.06)}
+  .browser .blend{grid-template-columns:1fr}
+  .calc .disp{font-size:34px}
+}
+</style>
+</head>
+<body>
+<!-- 壁纸 -->
+<div id="desktop"><div class="grain"></div></div>
+
+<!-- 桌面图标 -->
+<div id="icons"></div>
+
+<!-- 欢迎横幅 -->
+<div id="welcome"><h1>欢迎来到 HybridOS</h1><p>macOS 的优雅，Windows 的顺手 —— 一个系统两种灵魂</p></div>
+
+<!-- 顶部菜单栏 -->
+<div id="menubar">
+  <div class="apple" title="系统菜单">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.6c0-2.9 2.37-4.3 2.48-4.38-1.35-1.98-3.45-2.25-4.2-2.28-1.79-.18-3.49 1.05-4.4 1.05-.9 0-2.3-1.02-3.78-.99-1.94.03-3.74 1.13-4.74 2.87-2.03 3.51-.52 8.7 1.46 11.56.96 1.4 2.11 2.96 3.62 2.9 1.45-.06 2-.94 3.75-.94 1.76 0 2.25.94 3.78.91 1.56-.03 2.55-1.42 3.5-2.83 1.1-1.61 1.56-3.17 1.58-3.25-.03-.01-3.04-1.17-3.07-4.62zM14.6 4.3c.8-.97 1.34-2.32 1.19-3.66-1.15.05-2.54.77-3.36 1.74-.74.86-1.38 2.24-1.21 3.56 1.28.1 2.58-.66 3.38-1.64z"/></svg>
+  </div>
+  <div class="menu mhide" data-menu="file">文件<span class="arrow">▾</span>
+    <div class="menu-drop">
+      <div class="mit">新建访达窗口</div>
+      <div class="mit">新建文件夹</div>
+      <div class="sep"></div>
+      <div class="mit">打开…</div>
+      <div class="sep"></div>
+      <div class="mit">关闭窗口</div>
+    </div>
+  </div>
+  <div class="menu mhide" data-menu="edit">编辑<span class="arrow">▾</span>
+    <div class="menu-drop">
+      <div class="mit">撤销<span>⌘Z</span></div>
+      <div class="mit">重做<span>⇧⌘Z</span></div>
+      <div class="sep"></div>
+      <div class="mit">剪切<span>⌘X</span></div>
+      <div class="mit">拷贝<span>⌘C</span></div>
+      <div class="mit">粘贴<span>⌘V</span></div>
+    </div>
+  </div>
+  <div class="menu" data-menu="view">显示<span class="arrow">▾</span>
+    <div class="menu-drop">
+      <div class="mit">显示/隐藏 Dock</div>
+      <div class="mit">显示/隐藏桌面图标</div>
+      <div class="sep"></div>
+      <div class="mit dim">进入全屏</div>
+    </div>
+  </div>
+  <div class="menu mhide" data-menu="go">前往<span class="arrow">▾</span>
+    <div class="menu-drop">
+      <div class="mit">个人文件夹</div>
+      <div class="mit">应用程序</div>
+      <div class="mit">最近使用</div>
+    </div>
+  </div>
+  <div class="menu" data-menu="help">帮助<span class="arrow">▾</span>
+    <div class="menu-drop">
+      <div class="mit">HybridOS 使用说明</div>
+      <div class="sep"></div>
+      <div class="mit">关于本机</div>
+    </div>
+  </div>
+  <div class="mb-right">
+    <div class="item" id="mb-search" title="搜索">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg>
+    </div>
+    <div class="item" id="mb-wifi" title="Wi-Fi">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 18.5a2 2 0 100 4 2 2 0 000-4zM7.4 14.3a6.5 6.5 0 019.2 0l-1.9 1.9a3.7 3.7 0 00-5.4 0l-1.9-1.9zM2.8 9.7a11.8 11.8 0 0118.4 0l-1.9 1.9a9 9 0 00-14.6 0L2.8 9.7z"/></svg>
+    </div>
+    <div class="item" id="mb-battery" title="电量">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 10.5v3" stroke-linecap="round"/><rect x="5" y="10" width="8" height="4" rx="1" fill="#34c759"/></svg>
+    </div>
+    <div class="item" id="mb-cc" title="控制中心">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12a7 7 0 1114 0H5z" fill="currentColor" fill-opacity=".25"/><circle cx="12" cy="9" r="1.3" fill="currentColor"/></svg>
+    </div>
+    <div class="item" id="mb-clock"><span id="mb-time"></span>　<span id="mb-date"></span></div>
+  </div>
+</div>
+
+<!-- 控制中心 -->
+<div id="cc">
+  <div class="cc-grid">
+    <div class="cc-big">飞行模式<span style="margin-left:auto;font-size:11px;color:var(--muted)">关闭</span></div>
+    <div class="cc-tile">Wi-Fi <div class="toggle on" data-cc="wifi"></div></div>
+    <div class="cc-tile">蓝牙 <div class="toggle" data-cc="bt"></div></div>
+    <div class="cc-tile">专注模式 <div class="toggle" data-cc="focus"></div></div>
+    <div class="cc-tile">深色模式 <div class="toggle" data-cc="dark"></div></div>
+  </div>
+  <div class="cc-sliders">
+    <div class="sl-row"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg><input type="range" min="0" max="100" value="60" id="vol"></div>
+    <div class="sl-row"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 16.2V4.8A7.2 7.2 0 0119.2 12 7.2 7.2 0 0112 19.2z"/></svg><input type="range" min="0" max="100" value="80" id="bright"></div>
+  </div>
+</div>
+
+<!-- 窗口层 -->
+<div id="windows"></div>
+
+<!-- 系统安装引导 -->
+<div id="boot">
+  <div class="bt-card">
+    <div class="bt-steps" id="bt-steps"></div>
+    <div class="bt-body" id="bt-body"></div>
+  </div>
+  <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="bt-ringg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2ab1ff"/><stop offset="1" stop-color="#1f5fff"/></linearGradient></defs></svg>
+</div>
+
+<!-- 登录界面 -->
+<div id="login">
+  <div class="lg-clock" id="lg-clock">12:00</div>
+  <div class="lg-date" id="lg-date"></div>
+  <div id="lg-view-login">
+    <div class="lg-avatar" id="lg-avatar">H</div>
+    <div class="lg-user" id="lg-user">登录系统</div>
+    <div class="lg-box">
+      <input id="lg-uname" placeholder="用户名" autocomplete="off">
+      <input id="lg-pass" type="password" placeholder="密码" autocomplete="off">
+      <button class="lg-enter" id="lg-enter" title="登录"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <div class="lg-links"><span id="lg-reg">注册新账户</span></div>
+  </div>
+  <div id="lg-view-reg" style="display:none">
+    <div class="lg-title">注册新账户</div>
+    <div class="lg-reg-box">
+      <input id="rg-uname" placeholder="用户名" autocomplete="off">
+      <input id="rg-pass" type="password" placeholder="密码" autocomplete="off">
+      <input id="rg-pass2" type="password" placeholder="确认密码" autocomplete="off">
+    </div>
+    <div class="lg-links"><button class="lg-btn" id="rg-do">注册</button><span id="rg-back">返回登录</span></div>
+  </div>
+  <div class="lg-tip" id="lg-tip"></div>
+  <div class="lg-pow">HybridOS · 注册新账户或登录系统</div>
+</div>
+
+<!-- 全屏系统安装 -->
+<div id="install-overlay">
+  <div class="io-ring"><svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="4" stroke-dasharray="70 260" stroke-linecap="round"/></svg>
+    <div class="io-logo"><svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="io-upg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#cfe8ff"/></linearGradient></defs><circle cx="12" cy="12" r="9.2" fill="none" stroke="#fff" stroke-width="1.9"/><path d="M7.6 9.2A5.4 5.4 0 0117.5 9" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><path d="M18 5.4v3.8h-3.8" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.4 14.8a5.4 5.4 0 01-10-.2" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><path d="M6 18.6v-3.8h3.8" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </div>
+  <div class="io-t">正在安装系统更新…</div>
+  <div class="io-bar"><i></i></div>
+  <div class="io-pct">0%</div>
+</div>
+
+<!-- 底部任务栏 -->
+<div id="taskbar">
+  <button id="tb-start" title="开始">
+    <svg viewBox="0 0 24 24"><defs><linearGradient id="wlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2cc1ff"/><stop offset="1" stop-color="#7b4cff"/></linearGradient></defs><path fill="url(#wlg)" d="M3 3h8.5v8.5H3V3zm9.5 0H21v8.5h-8.5V3zM3 12.5h8.5V21H3v-8.5zm9.5 0H21V21h-8.5v-8.5z"/></svg>
+  </button>
+  <div id="tb-search" title="搜索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg><span>搜索</span></div>
+  <div id="dock"></div>
+  <div id="tb-right">
+    <div class="tray" id="tray-wifi" title="网络">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm-3.4-4.3a5.5 5.5 0 016.8 0l-1.6 1.6a3 3 0 00-3.6 0L8.6 15.7zM5 11.5a10 10 0 0114 0l-1.6 1.6a7.5 7.5 0 00-10.8 0L5 11.5z"/></svg>
+    </div>
+    <div class="tray" id="tray-vol" title="音量">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
+    </div>
+    <div class="tray" id="tray-batt" title="电量">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 10.5v3" stroke-linecap="round"/><rect x="5" y="10" width="8" height="4" rx="1" fill="#34c759"/></svg>
+    </div>
+    <div class="tray" id="tray-notify" title="通知中心">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a6 6 0 00-6 6v3.5l-1.5 2.5a1 1 0 00.8 1.6h13.4a1 1 0 00.8-1.6L18 12.5V9a6 6 0 00-6-6zm-1.5 15a2.5 2.5 0 003 0H10.5z"/></svg>
+    </div>
+    <div id="tb-clock"><b id="tc-time"></b><span id="tc-date"></span></div>
+  </div>
+</div>
+
+<!-- 开始菜单 -->
+<div id="startmenu">
+  <div class="sm-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg><input id="sm-q" placeholder="在应用中搜索"></div>
+  <div class="sm-title">已固定</div>
+  <div class="sm-pins" id="sm-pins"></div>
+  <div class="sm-title">推荐</div>
+  <div class="sm-pins" id="sm-rec"></div>
+  <div class="sm-bottom">
+    <div class="sm-user"><div class="avatar">U</div><span>本地用户</span></div>
+    <button class="sm-power" id="sm-power">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a1 1 0 10-2 0v9a1 1 0 102 0V3zM6.3 6.3a8 8 0 1011.4 0 1 1 0 00-1.4 1.4 6 6 0 11-8.6 0 1 1 0 00-1.4-1.4z"/></svg>
+      关机
+    </button>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast"><span class="t-ic"></span><span id="toast-txt"></span></div>
+
+<script>
+/* ============ 图标库 (内联 SVG) ============ */
+const IC = {
+  finder:'<svg viewBox="0 0 24 24"><defs><linearGradient id="fg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5ac8fa"/><stop offset="1" stop-color="#0a84ff"/></linearGradient></defs><rect x="2.5" y="4" width="19" height="16" rx="3.5" fill="url(#fg)"/><rect x="2.5" y="9" width="19" height="5" fill="#fff" opacity=".9"/><path d="M6.5 16h3M12 13.5V16m2-2.5V16" stroke="#0a84ff" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  settings:'<svg viewBox="0 0 24 24"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c9ca1"/><stop offset="1" stop-color="#5c5c61"/></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="4" fill="url(#sg)"/><circle cx="12" cy="12" r="3.4" fill="#fff"/><path d="M12 7v-1.5M12 18.5V17M17 12h1.5M5.5 12H7" stroke="#5c5c61" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  term:'<svg viewBox="0 0 24 24"><defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2c2c2e"/><stop offset="1" stop-color="#111"/></linearGradient></defs><rect x="2.5" y="4" width="19" height="16" rx="3.5" fill="url(#tg)"/><path d="M7 9l4 3-4 3M13 15h4" stroke="#33ff66" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  calc:'<svg viewBox="0 0 24 24"><defs><linearGradient id="cgg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd60a"/><stop offset="1" stop-color="#ff9500"/></linearGradient></defs><rect x="4" y="2" width="16" height="20" rx="3.5" fill="url(#cgg)"/><rect x="6.5" y="5" width="11" height="4" rx="1.5" fill="#fff" opacity=".95"/><g fill="#fff"><circle cx="9" cy="13" r="1.3"/><circle cx="12" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/><circle cx="9" cy="17" r="1.3"/><circle cx="12" cy="17" r="1.3"/><circle cx="15" cy="17" r="1.3"/><path d="M6.7 8l1-2.4h4.6l1 2.4H6.7z" fill="none" stroke="#c47f00" stroke-width="0"/></g></svg>',
+  browser:'<svg viewBox="0 0 24 24"><defs><linearGradient id="brg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2cc1ff"/><stop offset="1" stop-color="#7b4cff"/></linearGradient></defs><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z" fill="url(#brg)"/><path d="M7 12c0-3 4-4 5-9m0 0c1 5 5 6 5 9M12 3c2.5 3 5 4 5 9" stroke="#fff" stroke-width="1.3" stroke-linecap="round" fill="none"/><path d="M12 3c-2.5 3-5 4-5 9 0 3.5 2 6 5 9 3-3 5-5.5 5-9" stroke="#fff" stroke-width="1.3" fill="none"/></svg>',
+  notes:'<svg viewBox="0 0 24 24"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd60a"/><stop offset="1" stop-color="#ff9f0a"/></linearGradient></defs><rect x="4" y="3" width="16" height="18" rx="3" fill="#fff" stroke="#e5c25b" stroke-width="1"/><rect x="6.5" y="6" width="11" height="2" rx="1" fill="#ffd60a" opacity=".8"/><rect x="6.5" y="10" width="11" height="2" rx="1" fill="#ffd60a" opacity=".5"/><rect x="6.5" y="14" width="7" height="2" rx="1" fill="#ffd60a" opacity=".3"/></svg>',
+  update:'<svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="upg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4cc2ff"/><stop offset="1" stop-color="#1f5fff"/></linearGradient></defs><circle cx="12" cy="12" r="9.2" fill="url(#upg)"/><path d="M7.6 9.2A5.4 5.4 0 0117.5 9" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><path d="M18 5.4v3.8h-3.8" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.4 14.8a5.4 5.4 0 01-10-.2" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><path d="M6 18.6v-3.8h3.8" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><defs><linearGradient id="trg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9e9ec"/><stop offset="1" stop-color="#c4c4c9"/></linearGradient></defs><path d="M5 7h14l-1 13a2 2 0 01-2 1.8H8a2 2 0 01-2-1.8L5 7z" fill="url(#trg)"/><path d="M4 4.5h16" stroke="#b8b8bf" stroke-width="1.8" stroke-linecap="round"/><path d="M9 2.5h6v2H9z" fill="#e9e9ec"/><path d="M10 11v6M14 11v6" stroke="#9a9aa0" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  file:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5A2.5 2.5 0 016.5 3h6l3.5 3.5H18a2.5 2.5 0 012.5 2.5v9.5A2.5 2.5 0 0118 21H6.5A2.5 2.5 0 014 18.5V5.5z" fill="#fff" stroke="#d0d0d5" stroke-width="1.2"/><path d="M12.5 3l3.5 3.5H18a2.5 2.5 0 012.5 2.5" fill="#ffe08a" stroke="#e5c25b" stroke-width="1"/></svg>',
+  folder:'<svg viewBox="0 0 24 24"><defs><linearGradient id="fldg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6c95c"/><stop offset="1" stop-color="#e3a82e"/></linearGradient></defs><path d="M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6z" fill="url(#fldg)"/></svg>',
+  img:'<svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="14" rx="2" fill="#fff" stroke="#d0d0d5" stroke-width="1.2"/><circle cx="9" cy="10" r="1.6" fill="#7c6cff"/><path d="M4 17l5-4 4 3 3-3 4 4" stroke="#4aa3ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  doc:'<svg viewBox="0 0 24 24" fill="none"><path d="M6 3.5h7l4 4v13a0 0 0 010 0H6a0 0 0 010 0V3.5z" fill="#fff" stroke="#c8c8d0" stroke-width="1.2"/><path d="M13 3.5l4 4h-4V3.5z" fill="#e6e6eb" stroke="#c8c8d0" stroke-width="1"/><path d="M8.5 12h7M8.5 15h7M8.5 9h2" stroke="#b0b0b8" stroke-width="1.3" stroke-linecap="round"/></svg>',
+  store:'<svg viewBox="0 0 24 24"><defs><linearGradient id="stg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5f9e"/><stop offset="1" stop-color="#7b4cff"/></linearGradient></defs><path d="M4 3.5l1.5 15a2 2 0 002 1.9h9a2 2 0 002-1.9L20 3.5H4z" fill="url(#stg)"/><path d="M9 9a3 3 0 006 0" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M8.5 3.5l2 3M13 3.5l2 3" stroke="#ff8fd0" stroke-width="1.5"/></svg>',
+  music:'<svg viewBox="0 0 24 24"><defs><linearGradient id="mug" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8a65"/><stop offset="1" stop-color="#ff4081"/></linearGradient></defs><circle cx="12" cy="12" r="9.5" fill="url(#mug)"/><path d="M10 16V8.5l6-1.4V14.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="8.5" cy="16" r="1.6" fill="#fff"/><circle cx="14.5" cy="14.5" r="1.6" fill="#fff"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><defs><linearGradient id="clg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#42a5f5"/><stop offset="1" stop-color="#1e88e5"/></linearGradient></defs><circle cx="12" cy="12" r="9.5" fill="url(#clg)"/><path d="M12 6.5V12l3.6 2.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="1" fill="#fff"/></svg>',
+  photos:'<svg viewBox="0 0 24 24"><defs><linearGradient id="phg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd54f"/><stop offset="1" stop-color="#ff9f0a"/></linearGradient></defs><circle cx="12" cy="12" r="9.5" fill="url(#phg)"/><circle cx="12" cy="11" r="4.2" fill="#6d4c00" opacity=".35"/><g fill="#fff"><circle cx="12" cy="11" r="2.6"/><path d="M12 3l.8 2.6-2.3-1.4L12 3zM12 19l-.8-2.6 2.3 1.4L12 19zM3 11l2.6.8-1.4-2.3L3 11zM21 11l-2.6.8 1.4-2.3L21 11z"/></g></svg>',
+  paint:'<svg viewBox="0 0 24 24"><defs><linearGradient id="pag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7043"/><stop offset="1" stop-color="#7b4cff"/></linearGradient></defs><path d="M12 3C7 3 3 6.8 3 11.5c0 3.4 2.2 6 4.5 6 1.2 0 2.2-.9 2.2-2 0-2.6 3.4-2.6 3.4-5.5 0-1.4 1.4-2 2.7-1.6 2 .6 3.9 2 4.9 4 .5-1.3.8-2.6.8-3.9C21 6.8 16.7 3 12 3z" fill="url(#pag)"/><circle cx="7.5" cy="8.5" r="1" fill="#fff"/><circle cx="12" cy="6.5" r="1" fill="#fff"/><circle cx="16" cy="8" r="1" fill="#fff"/><circle cx="8.5" cy="13" r="1" fill="#fff"/></svg>',
+  textedit:'<svg viewBox="0 0 24 24"><defs><linearGradient id="teg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#90caf9"/><stop offset="1" stop-color="#42a5f5"/></linearGradient></defs><rect x="4" y="3" width="16" height="18" rx="3" fill="#fff" stroke="#b8d6f5" stroke-width="1.2"/><path d="M4 4a1 1 0 011-1h2v18H5a1 1 0 01-1-1V4z" fill="url(#teg)"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4.5" stroke="#7bb3e8" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  weather:'<svg viewBox="0 0 24 24"><defs><linearGradient id="weg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd54f"/><stop offset="1" stop-color="#ffb300"/></linearGradient></defs><circle cx="12" cy="10" r="4.5" fill="url(#weg)"/><g stroke="#ffb300" stroke-width="1.6" stroke-linecap="round"><path d="M12 3V2M4.5 4.5l.8.8M3 10H2M4.5 15.5l-.8.8M19.5 4.5l-.8.8M21 10h-1M19.5 15.5l-.8-.8"/></g><path d="M8 17h9a2.5 2.5 0 010 5H8a3.5 3.5 0 010-7 4 4 0 013-1.5 4 4 0 014 4" fill="#90caf9"/><path d="M14.5 13.5a3.5 3.5 0 00-3-1.7" fill="none" stroke="#90caf9" stroke-width="1"/></svg>',
+};
+
+/* ============ 应用定义 ============ */
+const APPS = {
+  finder:{name:'访达',ic:IC.finder,def:{w:520,h:400,x:120,y:80}},
+  settings:{name:'系统设置',ic:IC.settings,def:{w:640,h:460,x:180,y:70}},
+  term:{name:'终端',ic:IC.term,def:{w:560,h:360,x:200,y:110}},
+  calc:{name:'计算器',ic:IC.calc,def:{w:300,h:440,x:360,y:90}},
+  browser:{name:'浏览器',ic:IC.browser,def:{w:660,h:460,x:140,y:80}},
+  notes:{name:'备忘录',ic:IC.notes,def:{w:480,h:380,x:260,y:80}},
+  store:{name:'应用商店',ic:IC.store,def:{w:760,h:520,x:140,y:70}},
+  fileview:{name:'文件预览',ic:IC.doc,def:{w:500,h:400,x:240,y:90}},
+  update:{name:'系统更新',ic:IC.update,def:{w:560,h:430,x:200,y:70}},
+};
+
+/* 商店里可下载安装的应用（默认未安装，下载后可打开） */
+const STORE_APPS = [
+  {id:'music',  name:'音乐',        ic:IC.music,   cat:'娱乐',  size:'46 MB', rating:4.8, desc:'在线播放与本地曲库播放器',
+   def:{w:560,h:400,x:180,y:90}},
+  {id:'clock',  name:'时钟',        ic:IC.clock,   cat:'工具',  size:'28 MB', rating:4.6, desc:'世界时钟、秒表与计时器',
+   def:{w:420,h:340,x:240,y:110}},
+  {id:'photos', name:'照片',        ic:IC.photos,  cat:'娱乐',  size:'72 MB', rating:4.9, desc:'浏览与管理你的照片图库',
+   def:{w:620,h:440,x:150,y:80}},
+  {id:'paint',  name:'画板',        ic:IC.paint,   cat:'创作',  size:'38 MB', rating:4.7, desc:'自由绘画，支持多种画笔',
+   def:{w:560,h:440,x:190,y:80}},
+  {id:'textedit',name:'文本编辑',   ic:IC.textedit,cat:'工具',  size:'12 MB', rating:4.5, desc:'轻量文本编辑器，可保存',
+   def:{w:520,h:400,x:200,y:90}},
+  {id:'weather',name:'天气',        ic:IC.weather, cat:'工具',  size:'20 MB', rating:4.4, desc:'实时天气与逐时预报',
+   def:{w:440,h:360,x:230,y:100}},
+];
+const installedApps = new Set(['finder','settings','browser','notes','term','calc','store']);
+const downloaded = {}; // id -> true 已下载
+function isInstalled(id){ return installedApps.has(id); }
+
+/* ============ 状态 ============ */
+const wins = {};        // id -> 窗口元素
+const winOrder = [];    // z 顺序
+let zTop = 30;
+let activeId = null;
+let drag = null;
+let maximizedId = null;
+
+const $ = s=>document.querySelector(s);
+const $$ = s=>document.querySelectorAll(s);
+
+/* ============ 桌面图标 ============ */
+const desktopApps = ['finder','settings','term','calc','browser','notes','store','update'];
+function buildDesktopIcons(){
+  const box = $('#icons');
+  desktopApps.forEach(a=>{
+    box.insertAdjacentHTML('beforeend',
+      `<div class="dicon" data-app="${a}" ondblclick="openApp('${a}')">
+         <div class="cap">${APPS[a].ic}</div><label>${APPS[a].name}</label>
+      </div>`);
+  });
+  box.insertAdjacentHTML('beforeend',
+    `<div class="dicon" data-trash ondblclick="toast('废纸篓已清空（演示）')">
+       <div class="cap">${IC.trash}</div><label>废纸篓</label>
+    </div>`);
+  box.insertAdjacentHTML('beforeend',
+    `<div class="dicon" data-boot ondblclick="showBoot(true)">
+       <div class="cap">${IC.update}</div><label>系统安装程序</label>
+    </div>`);
+  box.querySelectorAll('.dicon').forEach(el=>{
+    el.addEventListener('click',e=>{
+      box.querySelectorAll('.dicon').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+    });
+  });
+  box.addEventListener('click',e=>{
+    if(e.target===box){ box.querySelectorAll('.dicon').forEach(x=>x.classList.remove('sel')); }
+  });
+}
+/* 给 Dock / 桌面 / 开始菜单 追加一个应用图标 */
+function addAppIcon(id){
+  if(!APPS[id]) return;
+  const dock=$('#dock');
+  const el=document.createElement('div');
+  el.className='dockic'; el.dataset.app=id; el.title=APPS[id].name;
+  el.innerHTML=`${APPS[id].ic}<div class="ttip">${APPS[id].name}</div><div class="dot"></div>`;
+  el.addEventListener('click',()=>{
+    if(wins[id] && wins[id].classList.contains('mini')){ restore(id); }
+    else if(wins[id]){ bringToFront(id); }
+    else openApp(id);
+  });
+  dock.appendChild(el);
+  // 桌面
+  const box=$('#icons');
+  const di=document.createElement('div');
+  di.className='dicon'; di.dataset.app=id;
+  di.innerHTML=`<div class="cap">${APPS[id].ic}</div><label>${APPS[id].name}</label>`;
+  di.addEventListener('dblclick',()=>openApp(id));
+  box.insertBefore(di, box.querySelector('[data-trash]'));
+  // 开始菜单
+  const pins=$('#sm-pins');
+  pins.insertAdjacentHTML('beforeend',
+    `<div class="sm-app" data-app="${id}"><div class="aic">${APPS[id].ic}</div><span>${APPS[id].name}</span></div>`);
+  const sa=pins.lastElementChild;
+  sa.addEventListener('click',()=>startClick(id));
+}
+function installApp(id){
+  const meta=STORE_APPS.find(a=>a.id===id); if(!meta) return;
+  APPS[id]=meta;
+  installedApps.add(id);
+  downloaded[id]=true;
+  addAppIcon(id);
+  renderStore($('.window[data-id=store] .wbody'));
+}
+
+/* ============ Dock ============ */
+function buildDock(){
+  const dock = $('#dock');
+  const pinned = ['finder','settings','browser','notes','term','calc','store'];
+  pinned.forEach(a=>{
+    const el=document.createElement('div');
+    el.className='dockic'; el.dataset.app=a; el.title=APPS[a].name;
+    el.innerHTML=`${APPS[a].ic}<div class="ttip">${APPS[a].name}</div><div class="dot"></div>`;
+    el.addEventListener('click',()=>{
+      if(wins[a] && wins[a].classList.contains('mini')){ restore(a); }
+      else if(wins[a]){ bringToFront(a); }
+      else openApp(a);
+    });
+    dock.appendChild(el);
+  });
+}
+
+/* ============ 开始菜单 ============ */
+function buildStartMenu(){
+  const pins=$('#sm-pins'), rec=$('#sm-rec');
+  pins.innerHTML='';
+  desktopApps.forEach(a=>{
+    pins.insertAdjacentHTML('beforeend',
+      `<div class="sm-app" data-app="${a}"><div class="aic">${APPS[a].ic}</div><span>${APPS[a].name}</span></div>`);
+  });
+  rec.innerHTML='';
+  ['finder','browser','settings','calc'].forEach(a=>{
+    rec.insertAdjacentHTML('beforeend',
+      `<div class="sm-app" data-app="${a}"><div class="aic">${APPS[a].ic}</div><span>${APPS[a].name}</span></div>`);
+  });
+  pins.querySelectorAll('.sm-app').forEach(el=>{
+    el.addEventListener('click',()=>{ startClick(el.dataset.app); });
+  });
+  rec.querySelectorAll('.sm-app').forEach(el=>{
+    el.addEventListener('click',()=>{ startClick(el.dataset.app); });
+  });
+}
+
+/* ============ 窗口管理 ============ */
+function openApp(id){
+  const app = APPS[id];
+  if(wins[id] && !wins[id].classList.contains('mini')){
+    bringToFront(id); return;
+  }
+  if(wins[id] && wins[id].classList.contains('mini')){ restore(id); return; }
+  const host = $('#windows');
+  const d = app.def;
+  const W = document.createElement('div');
+  W.className='window'; W.dataset.id=id;
+  W.style.cssText=`left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px;z-index:${++zTop}`;
+  W.innerHTML=`<div class="titlebar">
+      <div class="tlights">
+        <button class="cl" onclick="closeWin('${id}')"></button>
+        <button class="mn" onclick="minWin('${id}')"></button>
+        <button class="mx" onclick="maxWin('${id}')"></button>
+      </div>
+      <div class="wname">${app.name}</div>
+      <div class="winmenu">
+        <button onclick="minWin('${id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
+        <button onclick="maxWin('${id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+        <button onclick="closeWin('${id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+    </div>
+    <div class="wbody"></div>`;
+  host.appendChild(W);
+  wins[id]=W;
+  renderApp(id,W.querySelector('.wbody'));
+  winOrder.push(id);
+  bindDrag(W,id);
+  W.addEventListener('mousedown',()=>bringToFront(id));
+  bringToFront(id);
+}
+
+function bringToFront(id){
+  const W=wins[id]; if(!W) return;
+  winOrder.forEach(o=>{ wins[o].style.zIndex=++zTop; });
+  W.style.zIndex=++zTop;
+  winOrder.forEach(o=>wins[o].classList.add('inactive'));
+  W.classList.remove('inactive');
+  activeId=id;
+  updateDockDots();
+}
+function closeWin(id){
+  const W=wins[id]; if(!W) return;
+  W.remove(); delete wins[id];
+  const i=winOrder.indexOf(id); if(i>-1)winOrder.splice(i,1);
+  if(activeId===id){ activeId=winOrder.length?winOrder[winOrder.length-1]:null; }
+  if(maximizedId===id) maximizedId=null;
+  updateDockDots();
+}
+function minWin(id){
+  const W=wins[id]; W.classList.add('mini');
+  if(maximizedId===id) maximizedId=null;
+  if(activeId===id){ activeId=winOrder.find(o=>o!==id&&!wins[o].classList.contains('mini'))||null; }
+  updateDockDots();
+}
+function restore(id){
+  const W=wins[id]; W.classList.remove('mini'); bringToFront(id);
+}
+function maxWin(id){
+  const W=wins[id];
+  if(W.classList.contains('maxi')){ W.classList.remove('maxi'); maximizedId=null;
+    const d=APPS[id].def; W.style.left=d.x+'px';W.style.top=d.y+'px';W.style.width=d.w+'px';W.style.height=d.h+'px';
+  } else {
+    W.classList.add('maxi'); maximizedId=id;
+    W.style.left='0';W.style.top='0';
+  }
+  bringToFront(id);
+}
+function updateDockDots(){
+  document.querySelectorAll('.dockic .dot').forEach((d,i)=>{
+    d.style.display = wins[Object.keys(wins)[i]]? 'block':'none';
+  });
+  document.querySelectorAll('.dockic').forEach(el=>{
+    const a=el.dataset.app;
+    el.querySelector('.dot').style.display = wins[a] && !wins[a].classList.contains('mini') ? 'block':'none';
+  });
+}
+
+/* ============ 拖拽 ============ */
+function bindDrag(W,id){
+  const bar = W.querySelector('.titlebar');
+  bar.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button')) return;
+    if(W.classList.contains('maxi')) return;
+    const rect=W.getBoundingClientRect();
+    drag={W,ox:e.clientX-rect.left,oy:e.clientY-rect.top};
+    e.preventDefault();
+  });
+}
+document.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  const host=$('#windows').getBoundingClientRect();
+  let nx=e.clientX-drag.ox, ny=e.clientY-drag.oy;
+  nx=Math.max(-drag.W.offsetWidth+60,Math.min(nx,host.width-40));
+  ny=Math.max(0,Math.min(ny,host.height-30));
+  drag.W.style.left=nx+'px'; drag.W.style.top=ny+'px';
+});
+document.addEventListener('pointerup',()=>{ drag=null; });
+
+/* ============ 应用渲染 ============ */
+function renderApp(id,body){
+  if(id==='finder') renderFinder(body);
+  else if(id==='settings') renderSettings(body);
+  else if(id==='term') renderTerm(body);
+  else if(id==='calc') renderCalc(body);
+  else if(id==='browser') renderBrowser(body);
+  else if(id==='notes') renderNotes(body);
+  else if(id==='store') renderStore(body);
+  else if(id==='music') renderMusic(body);
+  else if(id==='clock') renderClock(body);
+  else if(id==='photos') renderPhotos(body);
+  else if(id==='paint') renderPaint(body);
+  else if(id==='textedit') renderTextedit(body);
+  else if(id==='weather') renderWeather(body);
+  else if(id==='fileview') renderFileview(body);
+  else if(id==='update') renderUpdate(body);
+}
+
+/* 访达 —— 可导航的文件浏览器 */
+const FILE_TREE = {
+  '个人文件夹': {type:'dir', children:{
+    '文稿': {type:'dir', children:{
+      '工作': {type:'dir', children:{
+        '项目A': {type:'dir', children:{
+          '需求文档.md': {type:'doc', content:'# 项目A · 需求文档\n\n## 目标\n做一个能在网页里运行的桌面系统。\n\n## 核心功能\n- 可拖拽、最小化的窗口\n- 应用商店与可下载应用\n- 内置浏览器与终端\n\n## 验收\n所有按钮都能点击并有反馈。'},
+          '原型图.png': {type:'doc', img:1},
+        }},
+        '项目B': {type:'dir', children:{
+          '周报.txt': {type:'doc', content:'本周进展：\n· 完成桌面布局\n· 修复窗口拖拽\n· 备忘录支持新增\n\n下周计划：\n· 打磨动画\n· 增加更多应用'},
+        }},
+      }},
+      '读书笔记.md': {type:'doc', content:'# 读书笔记\n\n《把时间当作朋友》摘录：\n- 时间不可管理，能管理的是自己。\n- 越早开始，越好。\n- 行动，是改变的唯一途径。'},
+      '写作.txt': {type:'doc', content:'今天写点什么。\n\n窗外阳光很好，风很轻。\n想记录下此刻的心境。'},
+    }},
+    '下载': {type:'dir', children:{
+      '安装包.dmg': {type:'doc', content:'HybridOS 安装包（示意）\n\n类型：磁盘映像\n大小：约 1.2 GB\n版本：v3.1\n\n这是一个演示文件，仅供模拟展示。'},
+      'hybridos壁纸.jpg': {type:'doc', img:1},
+      '演示文稿.pptx': {type:'doc', content:'HybridOS 演示文稿\n\n· 第1页：欢迎\n· 第2页：系统特性\n· 第3页：应用展示\n· 第4页：致谢'},
+    }},
+    '图片': {type:'dir', children:{
+      'macos.png': {type:'doc', img:1},
+      'windows.png': {type:'doc', img:1},
+      '全家福.jpg': {type:'doc', img:1},
+    }},
+    '桌面': {type:'dir', children:{
+      '项目清单.md': {type:'doc', content:'# 项目清单\n\n- [x] 桌面布局\n- [x] 窗口管理\n- [x] 应用商店\n- [ ] 更多应用\n- [ ] 动效打磨'},
+      '待办.txt': {type:'doc', content:'待办事项：\n□ 给系统换壁纸\n□ 安装天气应用\n□ 整理桌面图标\n□ 备份文件'},
+    }},
+    'HybridOS': {type:'dir', children:{
+      '使用说明.txt': {type:'doc', content:'HybridOS 使用说明\n\n1. 双击桌面图标打开应用\n2. 从应用商店下载更多应用\n3. 访达里浏览你的文件\n4. 顶栏和底栏是系统控制入口\n\n技巧：窗口可拖拽、可最小化、可最大化。'},
+      '版本历史.md': {type:'doc', content:'# 版本历史\n\n## v3.1\n- 新增应用商店\n- 浏览器支持多标签\n\n## v3.0\n- 访达改为可导航文件浏览器\n- 修复多项交互问题'},
+    }},
+  }}
+};
+const finderState = {path:['个人文件夹'], back:[], fwd:[]};
+function finderNodeAt(path){
+  let n = FILE_TREE;
+  for(const seg of path){
+    n = (n && n.type==='dir') ? n.children[seg] : (n ? n[seg] : null);
+    if(!n) return null;
+  }
+  return n.type==='dir' ? n : null;
+}
+function finderOpen(path){ finderState.path=path.slice(); finderState.fwd=[]; renderFinder($('.window[data-id=finder] .wbody')); }
+function finderBack(){ if(!finderState.back.length) return; finderState.fwd.push(finderState.path.slice()); finderState.path=finderState.back.pop(); renderFinder($('.window[data-id=finder] .wbody')); }
+function finderFwd(){ if(!finderState.fwd.length) return; finderState.back.push(finderState.path.slice()); finderState.path=finderState.fwd.pop(); renderFinder($('.window[data-id=finder] .wbody')); }
+function renderFinder(body){
+  const node = finderNodeAt(finderState.path);
+  const entries = node ? node.children : {};
+  const names = Object.keys(entries);
+  body.innerHTML=`
+    <div class="finder-toolbar">
+      <div class="nav">
+        <button id="f-back" ${finderState.back.length?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button id="f-fwd" ${finderState.fwd.length?'':'disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="crumb">${finderState.path.map((s,i)=>`<b class="cseg" data-i="${i}">${s}</b>${i<finderState.path.length-1?' <span style="color:#b9b9bf">/</span> ':''}`).join('')}</div>
+      <button style="color:var(--win-blue);font-size:13px" onclick="toast('视图已切换（演示）')">⌘ 视图</button>
+    </div>
+    <div class="finder-grid">${names.length?names.map(n=>{
+      const it=entries[n]; const isDir=it.type==='dir';
+      const icon = isDir ? IC.folder : (/\\.(png|jpg|jpeg|gif)$/i.test(n)?IC.img:IC.doc);
+      return `<div class="fitem" data-name="${n}" data-dir="${isDir}"><div class="fico">${icon}</div><span>${n}</span></div>`;
+    }).join(''):'<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:60px 0;font-size:14px">此文件夹为空</div>'}</div>`;
+  body.querySelectorAll('.fitem').forEach(el=>{
+    el.addEventListener('click',e=>{
+      body.querySelectorAll('.fitem').forEach(x=>x.classList.remove('sel'));
+      el.classList.add('sel');
+    });
+    el.addEventListener('dblclick',()=>{
+      const n=el.dataset.name;
+      if(el.dataset.dir==='true'){ finderState.back.push(finderState.path.slice()); finderState.path=finderState.path.concat(n); finderState.fwd=[]; renderFinder(body); }
+      else{ const it=entries[n]; openFilePreview({name:n, content:it.content||'', img:!!it.img}); }
+    });
+  });
+  body.querySelectorAll('.cseg').forEach(seg=>{
+    seg.addEventListener('click',()=>{
+      const i=+seg.dataset.i; finderState.path=finderState.path.slice(0,i+1); finderState.fwd=[]; renderFinder(body);
+    });
+  });
+  const bb=body.querySelector('#f-back'); if(bb) bb.addEventListener('click',finderBack);
+  const ff=body.querySelector('#f-fwd'); if(ff) ff.addEventListener('click',finderFwd);
+}
+let fileTarget=null;
+function openFilePreview(meta){
+  fileTarget=meta;
+  if(wins['fileview']){ renderApp('fileview', wins['fileview'].querySelector('.wbody')); bringToFront('fileview'); }
+  else openApp('fileview');
+}
+const FV_TINTS=[['#2cc1ff','#7b4cff'],['#34c759','#2cc1ff'],['#ff9f0a','#ff3b30'],['#a66bff','#ff2d92'],['#00c7be','#007aff']];
+function renderFileview(body){
+  const t=fileTarget||{name:'文件',content:'',img:0};
+  const hash=[...t.name].reduce((a,c)=>a+c.charCodeAt(0),0);
+  const tint=FV_TINTS[hash%FV_TINTS.length];
+  if(t.img){
+    body.innerHTML=`<div class="fv fv-img-wrap">
+      <div class="fv-img" style="background:linear-gradient(135deg,${tint[0]},${tint[1]})">
+        <svg viewBox="0 0 24 24" fill="rgba(255,255,255,.92)" style="width:64px;height:64px"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M5 17l4.5-5 3 3 3-3.5 4 5.5H5z"/></svg>
+      </div>
+      <div class="fv-name">${escHtml(t.name)}</div>
+      <div class="fv-tip">图片预览 · ${(t.name||'').split('.').pop().toUpperCase()}</div>
+    </div>`;
+  } else {
+    body.innerHTML=`<div class="fv">
+      <div class="fv-bar"><b>${escHtml(t.name)}</b><span>${(t.content||'').length} 字 · 文本文件</span></div>
+      <div class="fv-text">${escHtml(t.content||'（空文件）')}</div>
+    </div>`;
+  }
+}
+
+/* ============ 系统更新 · 鸿蒙风格 ============ */
+const updState={phase:'idle',progress:0,timer:null,remote:null,err:''};
+const UPD_VER='HybridOS 4.0.0 (Harmony 风格)';
+const UPD_NUM='4.0.0';
+function renderUpdate(body){
+  const s=updState;
+  const ring=()=>`<div class="upd-ring">
+      <svg class="r1" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="1.6" stroke-dasharray="60 220" stroke-linecap="round"/></svg>
+      <svg class="r2" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="1.4" stroke-dasharray="40 240" stroke-linecap="round"/></svg>
+      <div class="core">${IC.update}</div>
+    </div>`;
+  if(s.phase==='idle'){
+    body.innerHTML=`<div class="upd">
+      ${ring()}
+      <h3>系统更新</h3>
+      <div class="ver">当前版本 ${UPD_VER}</div>
+      <div class="upd-sub">检查并安装系统软件更新，更新在系统内完成、无需更换镜像文件</div>
+      <div class="upd-src">更新源<input id="upd-src-in" value="${updSrc()}" placeholder="https://你的更新地址/目录"><button class="upd-mini" id="upd-src-save">保存</button></div>
+      <button class="upd-btn" id="upd-check">检查更新</button>
+    </div>`;
+    body.querySelector('#upd-src-save').addEventListener('click',()=>{ try{ localStorage.setItem('hybridos_upd_src',body.querySelector('#upd-src-in').value.trim()); }catch(e){} toast('更新源已保存'); });
+    body.querySelector('#upd-check').addEventListener('click',()=>doCheckUpdate(body));
+  }
+  else if(s.phase==='checking'){
+    body.innerHTML=`<div class="upd">${ring()}<h3>系统更新</h3><div class="ver">当前版本 ${UPD_VER}</div>
+      <div class="upd-check"><div class="spin"></div><span>正在检查更新…</span></div></div>`;
+  }
+  else if(s.phase==='found'){
+    body.innerHTML=`<div class="upd">${ring()}<h3>发现新版本</h3>
+      <div class="ver">${s.remote.name||s.remote.version}</div>
+      <div class="upd-log"><b>更新内容</b><br>${(s.remote.note||'功能优化与问题修复').replace(/\n/g,'<br>')}</div>
+      <button class="upd-btn" id="upd-go">下载并安装</button></div>`;
+    body.querySelector('#upd-go').addEventListener('click',()=>doDownloadUpdate(body));
+  }
+  else if(s.phase==='downloading'){
+    body.innerHTML=`<div class="upd">${ring()}<h3>正在下载更新</h3>
+      <div class="upd-sub">正在从更新源下载新版本…<br>请勿关闭窗口</div>
+      <div class="upd-check"><div class="spin"></div><span>下载中…</span></div></div>`;
+  }
+  else if(s.phase==='ready'){
+    body.innerHTML=`<div class="upd">${ring()}<h3>更新已就绪</h3>
+      <div class="ver">${s.remote.version} · 校验完成</div>
+      <div class="upd-sub">重启后安装新版本，期间请保持电源连接</div>
+      <button class="upd-btn" id="upd-install">立即重启并安装</button></div>`;
+    body.querySelector('#upd-install').addEventListener('click',()=>startInstall());
+  }
+  else{ /* error */
+    body.innerHTML=`<div class="upd">${ring()}<h3>系统更新</h3>
+      <div class="ver">当前版本 ${UPD_VER}</div>
+      <div class="upd-sub">${s.err||'无法检查更新'}</div>
+      <button class="upd-btn" id="upd-check">重新检查</button></div>`;
+    body.querySelector('#upd-check').addEventListener('click',()=>doCheckUpdate(body));
+  }
+}
+function updSrc(){ try{ return localStorage.getItem('hybridos_upd_src')||''; }catch(e){ return ''; } }
+function cmpVer(a,b){
+  const pa=(a||'').replace(/^v/,'').split('.').map(Number);
+  const pb=(b||'').replace(/^v/,'').split('.').map(Number);
+  const n=Math.max(pa.length,pb.length);
+  for(let i=0;i<n;i++){ const x=pa[i]||0,y=pb[i]||0; if(x>y)return 1; if(x<y)return -1; }
+  return 0;
+}
+async function doCheckUpdate(body){
+  const src=updSrc();
+  if(!src){ updState.phase='error'; updState.err='请先设置更新源地址'; renderUpdate(body); return; }
+  updState.phase='checking'; renderUpdate(body);
+  try{
+    const ctl=new AbortController(); const tm=setTimeout(()=>ctl.abort(),9000);
+    const res=await fetch(src.replace(/\/+$/,'')+'/hybridos-update.json',{signal:ctl.signal});
+    clearTimeout(tm);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const m=await res.json();
+    if(cmpVer(m.version,UPD_NUM)<=0){ updState.phase='error'; updState.err='已是最新版本'; renderUpdate(body); }
+    else{ updState.remote=m; updState.phase='found'; renderUpdate(body); }
+  }catch(e){ updState.phase='error'; updState.err='更新源不可达（'+(e.name==='AbortError'?'超时':e.message)+'）'; renderUpdate(body); }
+}
+async function doDownloadUpdate(body){
+  const src=updSrc().replace(/\/+$/,'');
+  const htmlPath=(updState.remote&&updState.remote.html)||'/hybridos.html';
+  updState.phase='downloading'; renderUpdate(body);
+  try{
+    const res=await fetch(src+htmlPath);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const html=await res.text();
+    try{ localStorage.setItem('hybridos_upd_html',html); localStorage.setItem('hybridos_upd_ver',updState.remote.version); }catch(e){}
+    updState.phase='ready'; renderUpdate(body);
+  }catch(e){ updState.phase='error'; updState.err='下载失败（'+e.message+'）'; renderUpdate(body); }
+}
+function applyUpdate(){
+  try{
+    const html=localStorage.getItem('hybridos_upd_html');
+    const ver=localStorage.getItem('hybridos_upd_ver');
+    if(html && ver && cmpVer(ver,UPD_NUM)>0){
+      localStorage.removeItem('hybridos_upd_html'); localStorage.removeItem('hybridos_upd_ver');
+      location.replace(URL.createObjectURL(new Blob([html],{type:'text/html'})));
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function startInstall(){
+  const ov=document.getElementById('install-overlay');
+  ov.classList.add('on');
+  let p=0;
+  const bar=ov.querySelector('.io-bar i'), pct=ov.querySelector('.io-pct'), txt=ov.querySelector('.io-t');
+  const stages=['正在准备更新…','正在写入系统…','正在优化应用…','正在完成安装…'];
+  const iv=setInterval(()=>{
+    p+=Math.random()*6+1.5;
+    if(p>=100){
+      p=100; clearInterval(iv);
+      txt.textContent='更新完成，正在进入系统…';
+      setTimeout(()=>{
+        ov.classList.remove('on');
+        try{
+          const html=localStorage.getItem('hybridos_upd_html');
+          if(html){
+            localStorage.removeItem('hybridos_upd_html'); localStorage.removeItem('hybridos_upd_ver');
+            location.replace(URL.createObjectURL(new Blob([html],{type:'text/html'})));
+          } else {
+            toast('系统更新完成'); if(wins['update']) closeWin('update');
+          }
+        }catch(e){ toast('系统更新完成'); if(wins['update']) closeWin('update'); }
+      },1300);
+    }
+    bar.style.width=p+'%'; pct.textContent=Math.floor(p)+'%';
+    if(p<30) txt.textContent=stages[0];
+    else if(p<60) txt.textContent=stages[1];
+    else if(p<85) txt.textContent=stages[2];
+    else txt.textContent=stages[3];
+  },180);
+}
+
+/* 系统设置 */
+let setCat='system';
+function renderSettings(body){
+  const cats=[
+    {id:'system',n:'系统',ic:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M19.1 4.9l-1.4 1.4M7.7 16.3l-1.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'},
+    {id:'appear',n:'个性化',ic:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8 10l2.5 3L13 9l3 4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>'},
+    {id:'network',n:'网络',ic:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 18.5a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2zm-3.6-4.2a5.7 5.7 0 017.2 0l-1.6 1.6a3.7 3.7 0 00-4 0l-1.6-1.6zM4.6 9.7a10.5 10.5 0 0114.8 0l-1.7 1.7a8.3 8.3 0 00-11.4 0L4.6 9.7z"/></svg>'},
+    {id:'about',n:'关于',ic:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>'},
+  ];
+  body.innerHTML=`
+    <div class="settings">
+      <div class="set-side">
+        <div class="prof"><div class="avatar">U</div><div><b>本地用户</b><span>标准账户</span></div></div>
+        ${cats.map(c=>`<div class="scat ${c.id===setCat?'on':''}" data-cat="${c.id}">${c.ic}<span>${c.n}</span></div>`).join('')}
+      </div>
+      <div class="set-main" id="set-main"></div>
+    </div>`;
+  body.querySelectorAll('.scat').forEach(el=>{
+    el.addEventListener('click',()=>{
+      setCat=el.dataset.cat;
+      body.querySelectorAll('.scat').forEach(x=>x.classList.remove('on'));
+      el.classList.add('on');
+      renderSetMain(body.querySelector('#set-main'));
+    });
+  });
+  renderSetMain(body.querySelector('#set-main'));
+}
+function renderSetMain(main){
+  let html='';
+  if(setCat==='system'){
+    html=`<h3>系统</h3>
+      <div class="set-row"><div><div class="s-t">声音</div><div class="s-d">系统提示音与通知</div></div><div class="seg"><button class="on">开</button><button>关</button></div></div>
+      <div class="set-row"><div><div class="s-t">触控反馈</div><div class="s-d">指针与菜单的音效</div></div><div class="toggle on"></div></div>
+      <div class="set-row"><div><div class="s-t">输入法</div><div class="s-d">拼音 · 五笔 · 英文</div></div><button style="color:var(--win-blue);font-size:13px" onclick="toast('输入法设置（演示）')">管理 ›</button></div>
+      <div class="set-row"><div><div class="s-t">日期与时间</div><div class="s-d">自动设置 · 北京时间</div></div><button style="color:var(--win-blue);font-size:13px" onclick="toast('时间设置（演示）')">更改 ›</button></div>`;
+  } else if(setCat==='appear'){
+    html=`<h3>个性化</h3>
+      <div class="set-row"><div><div class="s-t">外观模式</div><div class="s-d">跟随系统 · 自动切换</div></div>
+        <div class="seg"><button class="on">浅色</button><button>深色</button><button>自动</button></div></div>
+      <div class="set-row"><div><div class="s-t">强调色</div><div class="s-d">按钮与选中状态的颜色</div></div>
+        <div style="display:flex;gap:7px" id="accent-row">
+          <button class="ac" data-c="#0078d4" style="width:24px;height:24px;border-radius:50%;background:#0078d4;border:2px solid #0078d4"></button>
+          <button class="ac" data-c="#7b4cff" style="width:24px;height:24px;border-radius:50%;background:#7b4cff;border:2px solid transparent"></button>
+          <button class="ac" data-c="#2b8a3e" style="width:24px;height:24px;border-radius:50%;background:#2b8a3e;border:2px solid transparent"></button>
+          <button class="ac" data-c="#c72d2d" style="width:24px;height:24px;border-radius:50%;background:#c72d2d;border:2px solid transparent"></button>
+        </div></div>
+      <div class="set-row" style="align-items:flex-start"><div><div class="s-t">壁纸</div><div class="s-d">点击切换</div></div>
+        <div style="display:flex;gap:8px">
+          <div class="wall-card on" data-wall="aurora">极光</div>
+          <div class="wall-card" data-wall="deep" style="background:linear-gradient(150deg,#0f2027,#203a43,#2c5364)">深海</div>
+          <div class="wall-card" data-wall="sunset" style="background:linear-gradient(150deg,#ff6b6b,#feca57,#48dbfb)">日落</div>
+        </div></div>`;
+  } else if(setCat==='network'){
+    html=`<h3>网络</h3>
+      <div class="set-row"><div><div class="s-t">Wi-Fi</div><div class="s-d">已连接 · HybridOS_5G</div></div><div class="toggle on"></div></div>
+      <div class="set-row"><div><div class="s-t">蓝牙</div><div class="s-d">未连接设备</div></div><div class="toggle"></div></div>
+      <div class="set-row"><div><div class="s-t">个人热点</div><div class="s-d">共享网络连接</div></div><div class="toggle"></div></div>`;
+  } else {
+    html=`<h3>关于 HybridOS</h3>
+      <div style="background:#f5f6f8;border-radius:14px;padding:24px;text-align:center">
+        <div style="width:64px;height:64px;margin:0 auto 14px;border-radius:18px;background:linear-gradient(135deg,#7c6cff,#4aa3ff);display:grid;place-items:center;color:#fff">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor"><path d="M4 8h2V6h12v14H6V10H4v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2zm5 4h6a1 1 0 100-2H9a1 1 0 100 2zm0 4h4a1 1 0 100-2H9a1 1 0 100 2z"/></svg>
+        </div>
+        <h2 style="font-size:18px">HybridOS</h2>
+        <p style="font-size:13px;color:var(--muted);margin-top:4px">版本 1.0.0 · 融合 macOS 与 Windows 的桌面系统</p>
+        <p style="font-size:12px;color:var(--muted);margin-top:2px">芯片：Hybrid M·X · 内存 16 GB · 存储 512 GB</p>
+      </div>
+      <div style="text-align:center;margin-top:16px;color:var(--muted);font-size:12px">© 2026 HybridOS · 演示用界面</div>`;
+  }
+  main.innerHTML = html;
+  // 强调色
+  main.querySelectorAll('#accent-row .ac').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.documentElement.style.setProperty('--win-blue',b.dataset.c);
+      main.querySelectorAll('#accent-row .ac').forEach(x=>x.style.border='2px solid transparent');
+      b.style.border='2px solid '+b.dataset.c;
+      toast('强调色已更新');
+    });
+  });
+  // 通用：切换 toggle
+  main.querySelectorAll('.toggle').forEach(t=>{
+    t.addEventListener('click',()=>{ t.classList.toggle('on'); });
+  });
+  main.querySelectorAll('.seg').forEach(s=>{
+    s.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click',()=>{ s.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); });
+    });
+  });
+  main.querySelectorAll('.wall-card').forEach(c=>{
+    c.addEventListener('click',()=>{
+      main.querySelectorAll('.wall-card').forEach(x=>x.classList.remove('on'));
+      c.classList.add('on');
+      changeWall(c.dataset.wall);
+    });
+  });
+}
+function changeWall(kind){
+  const d=$('#desktop');
+  d.style.background =
+    kind==='deep' ? 'linear-gradient(150deg,#0f2027,#203a43,#2c5364)' :
+    kind==='sunset' ? 'linear-gradient(150deg,#ff6b6b,#feca57,#48dbfb)' :
+    'linear-gradient(150deg,#7c6cff 0%,#4aa3ff 35%,#33c8c2 62%,#9b6cff 88%)';
+  d.style.backgroundSize='180% 180%';
+  toast('壁纸已切换');
+}
+
+/* 终端 */
+let termBuf=[];
+function renderTerm(body){
+  body.innerHTML=`<div class="term" id="term-w">欢迎使用 HybridOS 终端。输入 <span class="in">help</span> 查看可用命令。\n\n</div>`;
+  const w=$('#term-w');
+  const newLine=()=>{
+    const d=document.createElement('div'); d.className='cmdline';
+    d.innerHTML=`<span class="prompt">➜</span>&nbsp;<span class="path">~/HybridOS</span>&nbsp;<input autocomplete="off">`;
+    w.appendChild(d);
+    const inp=d.querySelector('input'); inp.focus();
+    inp.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){
+        const cmd=inp.value.trim(); inp.disabled=true;
+        w.append(' '+cmd+'\n');
+        exec(cmd, w);
+        if(wins.term) newLine();
+      }
+    });
+  };
+  window._termW=w;
+  setTimeout(newLine,30);
+  w.addEventListener('click',()=>{ const i=w.querySelector('input:not([disabled])'); if(i)i.focus(); });
+}
+function exec(cmd,w){
+  const out=(s)=>w.append(s+'\n');
+  const c=cmd.toLowerCase();
+  if(c==='help'){
+    out('可用命令：');
+    out('  help       查看帮助');
+    out('  about      关于本系统');
+    out('  date       显示时间');
+    out('  clear      清屏');
+    out('  whoami     当前用户');
+    out('  ls         列出文件');
+  } else if(c==='about') out('HybridOS 1.0.0 · 融合 macOS 与 Windows 的桌面演示系统');
+  else if(c==='date') out(new Date().toLocaleString('zh-CN'));
+  else if(c==='clear'){ w.innerHTML=''; }
+  else if(c==='whoami') out('user@hybridos');
+  else if(c==='ls') out('Desktop  Documents  Downloads  HybridOS  wallpaper.jpg');
+  else out(`zsh: command not found: ${c}`);
+}
+
+/* 计算器 */
+let calExpr='',calAcc='0',calOp=null,calFirst=null;
+function renderCalc(body){
+  body.innerHTML=`<div class="calc">
+      <div class="disp"><div class="expr" id="cal-expr"></div><div id="cal-disp">0</div></div>
+      <div class="pad">
+        <button class="fn" onclick="calCmd('ac')">AC</button>
+        <button class="fn" onclick="calCmd('±')">±</button>
+        <button class="fn" onclick="calCmd('%')">%</button>
+        <button class="op" onclick="calCmd('÷')">÷</button>
+        <button onclick="calCmd(7)">7</button><button onclick="calCmd(8)">8</button><button onclick="calCmd(9)">9</button>
+        <button class="op" onclick="calCmd('×')">×</button>
+        <button onclick="calCmd(4)">4</button><button onclick="calCmd(5)">5</button><button onclick="calCmd(6)">6</button>
+        <button class="op" onclick="calCmd('-')">−</button>
+        <button onclick="calCmd(1)">1</button><button onclick="calCmd(2)">2</button><button onclick="calCmd(3)">3</button>
+        <button class="op" onclick="calCmd('+')">+</button>
+        <button class="zero" onclick="calCmd(0)">0</button><button onclick="calCmd('.')">.</button>
+        <button class="op" onclick="calCmd('=')">=</button>
+      </div>
+    </div>`;
+}
+function calCmd(k){
+  const disp=$('#cal-disp'), expr=$('#cal-expr');
+  if(k==='ac'){ calExpr='';calAcc='0';calOp=null;calFirst=null;disp.textContent='0';expr.textContent='';return; }
+  if(k==='±'){ calAcc=String(-parseFloat(calAcc));disp.textContent=calAcc;return; }
+  if(k==='%'){ calAcc=String(parseFloat(calAcc)/100);disp.textContent=calAcc;return; }
+  if(['+','-','×','÷'].includes(k)){
+    if(calFirst!==null){
+      const b = calAcc==='' ? calFirst : parseFloat(calAcc);
+      calAcc=String(calc(calFirst,calOp,b)); calFirst=parseFloat(calAcc);
+    }
+    else calFirst=parseFloat(calAcc||'0');
+    calOp=k; calExpr=calFirst+' '+k+' '; expr.textContent=calExpr; disp.textContent=calFirst;
+    calAcc=''; return;
+  }
+  if(k==='='){
+    if(calOp&&calFirst!==null){
+      const b = calAcc==='' ? calFirst : parseFloat(calAcc);
+      calAcc=String(calc(calFirst,calOp,b)); expr.textContent=calExpr+calAcc+' =';
+    }
+    calOp=null;calFirst=null;disp.textContent=calAcc;return;
+  }
+  if(k==='.'){ if(!calAcc.includes('.'))calAcc+='.'; }
+  else { calAcc = calAcc==='0'? String(k) : calAcc+String(k); }
+  disp.textContent=calAcc;
+}
+function calc(a,op,b){
+  const n=()=>{const r=eval(`${a}${op==='×'?'*':op==='÷'?'/':op}${b}`);return Number.isFinite(r)?+r.toFixed(8):r;};
+  return n();
+}
+
+/* ============ 浏览器 —— 多标签、可真正访问互联网 ============ */
+const browserState={tabs:[{url:'hybridos://home',back:[],fwd:[]}],active:0};
+function curTab(){ return browserState.tabs[browserState.active]; }
+const BROWSER_PAGES = {
+  'hybridos://home': ()=>`
+    <div class="browser">
+      <div class="b-searchbox">
+        <div class="b-sb-logo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zM7 12c0-3 4-4 5-9 1 5 5 6 5 9 0 3.5-2 6-5 9-3-3-5-5.5-5-9z"/></svg></div>
+        <input id="b-search" placeholder="搜索互联网或输入网址，回车进入" spellcheck="false">
+        <div class="b-sb-sug">试试：<a data-u="https://www.bing.com/search?q=wikipedia">维基百科</a> · <a data-u="https://www.bing.com/search?q=linux+命令">Linux 命令</a> · <a data-u="https://example.com">示例站点</a></div>
+      </div>
+      <div class="b-quick">
+        <div class="bq-btn" data-u="https://www.bing.com/?mkt=zh-CN"><svg viewBox="0 0 24 24" fill="#0a84ff"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zM7 12c0-3 4-4 5-9 1 5 5 6 5 9 0 3.5-2 6-5 9-3-3-5-5.5-5-9z"/></svg><span>Bing 搜索</span></div>
+        <div class="bq-btn" data-u="https://github.com"><svg viewBox="0 0 24 24" fill="#333"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.1-3.1-.1-.3-.5-1.5.1-3.1 0 0 .9-.3 3 1.2a10.4 10.4 0 015.4 0c2.1-1.5 3-1.2 3-1.2.6 1.6.2 2.8.1 3.1.7.8 1.1 1.8 1.1 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6a11.5 11.5 0 007.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg><span>GitHub</span></div>
+        <div class="bq-btn" data-u="hybridos://weather"><svg viewBox="0 0 24 24" fill="#f7b500"><path d="M12 3a1 1 0 011 1v2a1 1 0 01-2 0V4a1 1 0 011-1zM4 12a1 1 0 011-1h2a1 1 0 010 2H5a1 1 0 01-1-1zm13 0a1 1 0 011-1h2a1 1 0 010 2h-2a1 1 0 01-1-1zm-5 5a1 1 0 011 1v2a1 1 0 01-2 0v-2a1 1 0 011-1zM5.6 5.6a1 1 0 011.4 0l1.4 1.4a1 1 0 01-1.4 1.4L5.6 7a1 1 0 010-1.4zm12.8 12.8a1 1 0 010 1.4l-1.4 1.4a1 1 0 01-1.4-1.4l1.4-1.4a1 1 0 011.4 0zM5.6 18.4a1 1 0 010-1.4l1.4-1.4a1 1 0 011.4 1.4l-1.4 1.4a1 1 0 01-1.4 0zM18.4 7a1 1 0 00-1.4-1.4L15.6 7a1 1 0 001.4 1.4L18.4 7z"/><circle cx="12" cy="12" r="4" fill="#f7b500"/></svg><span>天气</span></div>
+        <div class="bq-btn" data-u="https://www.bing.com/search?q=wikipedia"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#888" stroke-width="1.6" fill="#fff"/><path d="M7 16V8h3l2 4 2-4h3v8h-3v-4l-2 4-2-4v4H7z" fill="#666"/></svg><span>百科搜索</span></div>
+      </div>
+      <div class="b-sb-hint">GitHub 与天气可直接打开真实数据；其他网址经阅读代理抓取（受限站点请用「在系统外浏览器打开」）。</div>
+      <div class="linkrow" style="margin-top:18px">
+        <button class="ghost" onclick="browserGo('hybridos://docs')">使用说明 ›</button>
+        <button class="ghost" onclick="openApp('store')">应用商店 ›</button>
+      </div>
+    </div>`,
+  'hybridos://weather': ()=>`
+    <div class="browser wt">
+      <h2 style="font-size:19px;margin-bottom:4px">实时天气</h2>
+      <div class="wt-sub">数据来自 Open-Meteo（国内可达的真实接口）</div>
+      <div class="wt-cities">
+        <button data-city="huzhou">湖州</button><button data-city="hangzhou">杭州</button><button data-city="shanghai">上海</button><button data-city="beijing">北京</button>
+      </div>
+      <div id="wt-wrap"><div class="wt-ph">选择一个城市查看实时天气</div></div>
+    </div>`,
+  'hybridos://docs': ()=>`
+    <div class="browser">
+      <span class="tag">HybridOS 使用说明</span>
+      <h1>快速上手</h1>
+      <div style="margin-top:14px;font-size:14px;color:#444;line-height:1.9;max-width:560px">
+        <p><b style="color:var(--ink)">打开应用：</b>双击桌面图标，或单击底部 Dock / 开始菜单里的图标。</p>
+        <p><b style="color:var(--ink)">浏览文件：</b>在访达中双击文件夹进入，用左上角 ← → 返回、前进，点击路径可跳转。</p>
+        <p><b style="color:var(--ink)">下载应用：</b>打开「应用商店」，点击「获取」下载，完成后会出现在 Dock 与开始菜单。</p>
+        <p><b style="color:var(--ink)">浏览互联网：</b>浏览器地址栏输入网址即可通过阅读代理打开网页；输入关键词可搜索。</p>
+        <p><b style="color:var(--ink)">窗口操作：</b>按住标题栏拖动窗口；左上红/黄/绿分别关闭、最小化、最大化。</p>
+        <p><b style="color:var(--ink)">系统设置：</b>个性化里可切换壁纸与强调色；控制中心可开关 Wi-Fi、深色模式。</p>
+      </div>
+      <div class="linkrow" style="margin-top:16px"><button onclick="browserGo('hybridos://home')">← 返回首页</button></div>
+    </div>`,
+  'hybridos://about': ()=>`
+    <div class="browser">
+      <span class="tag">关于</span>
+      <h1>HybridOS 1.0.0</h1>
+      <div style="margin-top:16px;background:#f5f6f8;border-radius:14px;padding:22px;max-width:560px">
+        <p style="font-size:13px;color:#333;line-height:1.8">
+          这是一个把 macOS 与 Windows 视觉语言融合的桌面演示系统。<br>
+          芯片：Hybrid M·X &nbsp;·&nbsp; 内存 16 GB &nbsp;·&nbsp; 存储 512 GB<br>
+          系统版本：1.0.0（Build 2600）<br>
+          <span style="color:var(--muted)">© 2026 HybridOS · 演示用界面，仅供体验</span>
+        </p>
+      </div>
+      <div class="linkrow" style="margin-top:16px"><button onclick="browserGo('hybridos://home')">← 返回首页</button></div>
+    </div>`,
+};
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function isUrlLike(s){ if(/^(https?:\/\/|hybridos:\/\/)/i.test(s)) return true; return /^[\w-]+(\.[\w-]+)+(:\d+)?(\/[^\s]*)?$/.test(s); }
+function normalizeUrl(s){ return /^(https?:\/\/|hybridos:\/\/)/i.test(s) ? s : ('https://'+s); }
+function tabTitle(url){
+  if(url.startsWith('hybridos://home')) return '新标签页';
+  if(url.startsWith('hybridos://')) return 'HybridOS';
+  try{ const h=new URL(url); return h.hostname; }catch(e){ return url; }
+}
+function browserGo(url){
+  const t=curTab();
+  if(t.url!==url){ t.back.push(t.url); t.fwd=[]; }
+  t.url=url;
+  const body=document.querySelector('.window[data-id=browser] .wbody');
+  if(body) renderBrowser(body);
+}
+function browserBack(){ const t=curTab(); if(t.back.length){ t.fwd.push(t.url); t.url=t.back.pop(); const b=document.querySelector('.window[data-id=browser] .wbody'); if(b) renderBrowser(b); } }
+function browserFwd(){ const t=curTab(); if(t.fwd.length){ t.back.push(t.url); t.url=t.fwd.pop(); const b=document.querySelector('.window[data-id=browser] .wbody'); if(b) renderBrowser(b); } }
+function newTab(){ browserState.tabs.push({url:'hybridos://home',back:[],fwd:[]}); browserState.active=browserState.tabs.length-1; const b=document.querySelector('.window[data-id=browser] .wbody'); if(b) renderBrowser(b); }
+function closeTab(i){ browserState.tabs.splice(i,1); if(!browserState.tabs.length) browserState.tabs.push({url:'hybridos://home',back:[],fwd:[]}); if(browserState.active>=browserState.tabs.length) browserState.active=browserState.tabs.length-1; const b=document.querySelector('.window[data-id=browser] .wbody'); if(b) renderBrowser(b); }
+function selectTab(i){ browserState.active=i; const b=document.querySelector('.window[data-id=browser] .wbody'); if(b) renderBrowser(b); }
+function renderBrowser(body){
+  const t=curTab(), url=t.url;
+  const tabs=browserState.tabs;
+  body.innerHTML=`
+    <div class="b-tabs">
+      ${tabs.map((tb,i)=>`<div class="b-tab ${i===browserState.active?'on':''}" data-i="${i}">
+        <span>${escHtml(tabTitle(tb.url))}</span><button class="bt-close" onclick="event.stopPropagation();closeTab(${i})">×</button></div>`).join('')}
+      <button class="bt-new" onclick="newTab()">＋</button>
+    </div>
+    <div class="browser-bar">
+      <div class="bnav">
+        <button id="b-back" ${t.back.length?'':'disabled'} title="后退"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button id="b-fwd" ${t.fwd.length?'':'disabled'} title="前进"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button id="b-reload" title="重新加载"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12a8 8 0 10-2.34 5.66M20 5v6h-6"/></svg></button>
+        <button id="b-home" title="主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg></button>
+      </div>
+      <div class="baddr">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="lock"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
+        <input id="b-url" value="${escHtml(url)}" spellcheck="false" autocomplete="off">
+        <button id="b-ext" title="在系统外浏览器打开"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4h6v6M20 4L11 13"/><path d="M19 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1h5"/></svg></button>
+      </div>
+    </div>
+    <div class="bcontent"><div class="b-loading"><div class="spin"></div><div>正在加载 ${escHtml(url)}…</div></div></div>`;
+  body.querySelectorAll('.b-tab').forEach(el=>el.addEventListener('click',()=>selectTab(+el.dataset.i)));
+  body.querySelector('#b-back')?.addEventListener('click',browserBack);
+  body.querySelector('#b-fwd')?.addEventListener('click',browserFwd);
+  body.querySelector('#b-reload')?.addEventListener('click',()=>{ toast('正在重新加载…'); renderBrowser(body); });
+  body.querySelector('#b-home')?.addEventListener('click',()=>browserGo('hybridos://home'));
+  const addr=body.querySelector('#b-url');
+  if(addr){ addr.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const raw=addr.value.trim(); if(!raw)return; if(isUrlLike(raw)) browserGo(normalizeUrl(raw)); else browserGo('https://www.bing.com/search?q='+encodeURIComponent(raw)); } }); addr.addEventListener('focus',()=>addr.select()); }
+  const ext=body.querySelector('#b-ext');
+  if(ext) ext.addEventListener('click',()=>{ const u=curTab().url; const tgt=u.startsWith('http')?u:'https://www.bing.com'; window.open(tgt,'_blank'); });
+  loadContent(body,url);
+}
+async function loadContent(body,url){
+  const c=body.querySelector('.bcontent'); if(!c) return;
+  c.innerHTML=`<div class="b-loading"><div class="spin"></div><div>正在加载 ${escHtml(url)}…</div></div>`;
+  const bind=(root)=>{
+    root.querySelectorAll('.rd-link').forEach(a=>a.addEventListener('click',e=>{ e.preventDefault(); browserGo(a.dataset.u); }));
+    root.querySelectorAll('.rd-open').forEach(a=>a.addEventListener('click',()=>window.open(a.dataset.u,'_blank')));
+    root.querySelectorAll('[data-u]').forEach(a=>{ if(a.closest('.b-sb-sug')||a.closest('.bq-btn')) a.addEventListener('click',e=>{ e.preventDefault(); browserGo(a.dataset.u); }); });
+    root.querySelectorAll('[data-city]').forEach(b=>b.addEventListener('click',()=>loadWeather(root,b.dataset.city)));
+  };
+  if(url.startsWith('hybridos://')){
+    const page=(BROWSER_PAGES[url]||BROWSER_PAGES['hybridos://home'])();
+    c.innerHTML=page; bind(c); return;
+  }
+  const target=url.startsWith('http')?url:'https://'+url;
+  const gh=githubTarget(target);
+  if(gh){
+    try{ c.innerHTML=await renderGithub(gh); bind(c); }
+    catch(e){ c.innerHTML=errorPage(target,e.message); }
+    return;
+  }
+  try{
+    const text=await fetchAnyTarget(target);
+    c.innerHTML=renderReader(target,text); bind(c);
+  }catch(err){
+    c.innerHTML=errorPage(target,err.message);
+  }
+}
+function errorPage(target,msg){
+  const u=escHtml(target);
+  return `<div class="browser" style="text-align:center;padding-top:50px">
+    <h1 style="font-size:20px">无法加载此页面</h1>
+    <p style="color:var(--muted);margin:12px auto 18px;max-width:470px;line-height:1.7">无法获取 ${u}${msg?'（'+escHtml(msg)+'）':''}。该站可能限制跨域访问，或当前网络不可达。</p>
+    <div class="linkrow" style="justify-content:center">
+      <button onclick="window.open('${u}','_blank')">用系统浏览器打开</button>
+      <button class="ghost" onclick="browserGo('hybridos://home')">返回首页</button>
+      <button class="ghost" onclick="navigator.clipboard&&navigator.clipboard.writeText('${u}')&&toast('链接已复制')">复制链接</button>
+    </div>
+    <div style="margin:26px auto 0;font-size:12px;color:var(--muted);max-width:470px;line-height:1.7">
+      HTML 桌面受浏览器跨域安全限制，无法像原生浏览器一样加载所有网站。要正常上网，请点「在系统外浏览器打开」——它会用你的真实浏览器打开这个网址。
+    </div>
+  </div>`;
+}
+function fetchAnyTarget(target){
+  const urls=[
+    'https://r.jina.ai/'+target,
+    'https://api.allorigins.win/raw?url='+encodeURIComponent(target),
+    'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(target)
+  ];
+  return Promise.any(urls.map(u=>new Promise((res,rej)=>{
+    const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),8000);
+    fetch(u,{signal:ctrl.signal}).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+      .then(txt=>{ clearTimeout(timer); if(/^(error|failed|blocked|timeout|forbidden)/i.test(txt.trim().slice(0,60))) rej(new Error('被站点拦截')); else res(txt); })
+      .catch(e=>{ clearTimeout(timer); rej(e); });
+  })));
+}
+function githubTarget(u){
+  try{ const h=new URL(u); if(h.hostname!=='github.com'&&h.hostname!=='www.github.com') return null;
+    const p=h.pathname.split('/').filter(Boolean); if(p[0]&&/^[\w.-]+$/.test(p[0])) return {owner:p[0],repo:p[1]||null}; }catch(e){}
+  return null;
+}
+async function renderGithub(gh){
+  if(gh.repo){
+    const j=await (await fetch('https://api.github.com/repos/'+gh.owner+'/'+gh.repo)).json();
+    return githubRepoHtml(j,gh);
+  }
+  const j=await (await fetch('https://api.github.com/users/'+gh.owner)).json();
+  return githubUserHtml(j);
+}
+function githubRepoHtml(j,gh){
+  if(j.message&&!j.full_name) return `<div class="browser" style="padding:40px;color:var(--muted)">GitHub 接口：${escHtml(j.message)}<div class="linkrow" style="margin-top:14px"><button class="ghost" onclick="window.open('https://github.com/${escHtml(gh.owner)}${gh.repo?'/'+escHtml(gh.repo):''}','_blank')">在 GitHub 打开 ›</button></div></div>`;
+  const total=(j.stargazers_count||0)+(j.forks_count||0)+(j.open_issues_count||0)||1;
+  const langs=j.language?[{n:j.language,v:1}]:[];
+  return `<div class="browser gh">
+    <div class="gh-head">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="gh-logo"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.1-3.1-.1-.3-.5-1.5.1-3.1 0 0 .9-.3 3 1.2a10.4 10.4 0 015.4 0c2.1-1.5 3-1.2 3-1.2.6 1.6.2 2.8.1 3.1.7.8 1.1 1.8 1.1 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6a11.5 11.5 0 007.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+      <div><b>${escHtml(j.full_name||j.owner+'/'+j.name||gh.owner)}</b>
+        <div class="gh-sub">${escHtml(j.description||'')}</div>
+        <div class="gh-meta"><span>★ ${j.stargazers_count||0}</span><span>⑂ ${j.forks_count||0}</span><span>● 语言：${escHtml(j.language||'—')}</span></div></div>
+    </div>
+    <div class="gh-bar"><span style="width:${Math.max(8,(j.stargazers_count||0)/total*100).toFixed(1)}%"></span></div>
+    <div class="linkrow" style="margin-top:16px">
+      <button class="ghost" onclick="window.open('${escHtml(j.html_url||('https://github.com/'+gh.owner))}','_blank')">在 GitHub 打开</button>
+      <button onclick="browserGo('hybridos://home')">返回</button>
+    </div>
+  </div>`;
+}
+function githubUserHtml(j){
+  if(j.message&&!j.login) return `<div class="browser" style="padding:40px;color:var(--muted)">GitHub 接口：${escHtml(j.message)}<div class="linkrow" style="margin-top:14px"><button class="ghost" onclick="window.open('${escHtml(j.html_url||'https://github.com')}','_blank')">在 GitHub 打开 ›</button></div></div>`;
+  return `<div class="browser gh">
+    <div class="gh-head">
+      <div class="gh-ava" style="background:linear-gradient(135deg,${j.id%2?'#36f,#7b4cff':'#2cc1ff,#36f'})">${escHtml((j.login||'?')[0].toUpperCase())}</div>
+      <div><b>${escHtml(j.login)}</b>
+        <div class="gh-sub">${escHtml(j.name||j.bio||'')}</div>
+        <div class="gh-meta"><span>★ ${j.public_repos||0} 仓库</span><span>⑂ ${j.followers||0} 关注者</span><span>${j.company?escHtml(j.company):''}</span></div></div>
+    </div>
+    <div class="linkrow" style="margin-top:16px">
+      <button class="ghost" onclick="window.open('${escHtml(j.html_url)}','_blank')">在 GitHub 打开</button>
+      <button onclick="browserGo('hybridos://home')">返回</button>
+    </div>
+  </div>`;
+}
+const CITY_MAP={huzhou:['湖州',30.89,120.09],hangzhou:['杭州',30.27,120.15],shanghai:['上海',31.23,121.47],beijing:['北京',39.90,116.40]};
+const WCODE={0:'晴',1:'基本晴',2:'多云',3:'阴',45:'雾',48:'雾凇',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'中雨',65:'大雨',71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'阵雨',82:'强阵雨',95:'雷雨',96:'雷雨',99:'强雷雨'};
+async function loadWeather(root,city){
+  const wrap=root.querySelector('#wt-wrap'); if(!wrap) return;
+  const meta=CITY_MAP[city]; if(!meta) return;
+  const [name,lat,lon]=meta;
+  wrap.innerHTML=`<div class="b-loading" style="padding-top:24px"><div class="spin"></div><div>正在获取 ${name} 实时天气…</div></div>`;
+  try{
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=Asia%2FShanghai');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json(); const c=j.current;
+    const desc=WCODE[c.weather_code]||'未知天气';
+    wrap.innerHTML=`<div class="wt-card">
+      <div class="wt-city">${name}</div>
+      <div class="wt-temp">${Math.round(c.temperature_2m)}°C</div>
+      <div class="wt-desc">${desc} · 体感 ${Math.round(c.apparent_temperature)}°C</div>
+      <div class="wt-row"><span>湿度 ${c.relative_humidity_2m}%</span><span>风速 ${c.wind_speed_10m} km/h</span><span>更新 ${escHtml(c.time)}</span></div>
+    </div>`;
+  }catch(e){
+    wrap.innerHTML=`<div class="wt-card wt-fail">无法获取 ${name} 的天气（${escHtml(e.message)}）。请检查网络。</div>`;
+  }
+}
+function renderReader(url,md){
+  let html=escHtml(md);
+  html=html.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,(m,t,u)=>`<a class="rd-link" data-u="${u}">${t}</a>`);
+  html=html.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+  const out=[];
+  html.split('\n').forEach(ln=>{
+    const s=ln.trim(); if(!s) return;
+    const h=s.match(/^#{1,4}\s/);
+    if(h){ const lv=h[0].trim().length; out.push(`<h${Math.min(4,lv)}>${s.replace(/^#+\s/,'')}</h${Math.min(4,lv)}>`); }
+    else if(/^[-*]\s/.test(s)) out.push(`<li>${s.replace(/^[-*]\s/,'')}</li>`);
+    else out.push(`<p>${s}</p>`);
+  });
+  return `<div class="browser rd"><div class="rd-bar">阅读模式 · ${escHtml(url)}<button class="rd-open" data-u="${escHtml(url)}">在系统外浏览器打开</button></div>${out.join('')}</div>`;
+}
+
+/* 备忘录 */
+const LS_NOTES='hybridos_notes';
+const notesData=[
+  {t:'欢迎',c:'欢迎使用备忘录。\n\nHybridOS 让两个系统共存于一个桌面：\n· 顶部 macOS 菜单栏\n· 底部 Windows 任务栏 + macOS Dock\n· 可拖拽、可最小化的窗口'},
+  {t:'待办',c:'□ 完成演示系统\n□ 测试计算器\n□ 试玩终端 help\n□ 换一张壁纸'},
+  {t:'灵感',c:'把 macOS 的优雅和 Windows 的高效整合，是 HybridOS 的核心理念。'},
+];
+(function(){ try{ const s=localStorage&&localStorage.getItem(LS_NOTES); if(s){ const d=JSON.parse(s); if(Array.isArray(d)&&d.length){ notesData.length=0; d.forEach(x=>notesData.push({t:String(x.t||'未命名'),c:String(x.c||'')})); } } }catch(e){} })();
+function saveNotes(){ try{ if(localStorage) localStorage.setItem(LS_NOTES, JSON.stringify(notesData)); }catch(e){} }
+let noteIdx=0;
+function renderNotes(body){
+  if(noteIdx>=notesData.length) noteIdx=Math.max(0,notesData.length-1);
+  body.innerHTML=`
+    <div class="notes">
+      <div class="nt-tool">
+        <button id="nt-new" title="新建备忘录">＋ 新建</button>
+        <button id="nt-del" title="删除当前">删除</button>
+      </div>
+      <div class="notes-body">
+        <div class="note-list" id="note-list"></div>
+        <div class="note-body">
+          <input id="note-title" value="" placeholder="标题">
+          <textarea id="note-body" placeholder="开始输入…"></textarea>
+        </div>
+      </div>
+    </div>`;
+  const nl=$('#note-list');
+  notesData.forEach((n,i)=>{
+    const el=document.createElement('div');
+    el.className='ni'+(i===noteIdx?' on':'');
+    el.innerHTML=`<b>${escHtml(n.t||'未命名')}</b><span>${escHtml((n.c||'').split('\n')[0]||'（空）')}</span>`;
+    el.addEventListener('click',()=>{
+      noteIdx=i;
+      nl.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+      el.classList.add('on');
+      $('#note-title').value=notesData[i].t; $('#note-body').value=notesData[i].c;
+    });
+    nl.appendChild(el);
+  });
+  if(!notesData.length){ nl.innerHTML='<div style="padding:30px;color:var(--muted);font-size:13px">还没有备忘录，点「新建」创建一条</div>'; }
+  else{
+    $('#note-title').value=notesData[noteIdx].t; $('#note-body').value=notesData[noteIdx].c;
+  }
+  const title=$('#note-title'), area=$('#note-body');
+  area.addEventListener('input',e=>{
+    if(!notesData.length) return;
+    notesData[noteIdx].c=area.value; saveNotes();
+    nl.children[noteIdx].querySelector('span').textContent=area.value.split('\n')[0]||'（空）';
+  });
+  title.addEventListener('input',e=>{
+    if(!notesData.length) return;
+    notesData[noteIdx].t=title.value; saveNotes();
+    nl.children[noteIdx].querySelector('b').textContent=title.value||'未命名';
+  });
+  $('#nt-new').addEventListener('click',()=>{
+    notesData.push({t:'新备忘录',c:''}); noteIdx=notesData.length-1; saveNotes(); renderNotes(body);
+  });
+  $('#nt-del').addEventListener('click',()=>{
+    if(!notesData.length) return;
+    notesData.splice(noteIdx,1);
+    if(notesData.length) noteIdx=Math.min(noteIdx,notesData.length-1); else noteIdx=0;
+    saveNotes(); renderNotes(body);
+    if(notesData.length) toast('已删除，可点击「新建」重新记录');
+  });
+}
+
+/* ============ 应用商店 ============ */
+let storeQuery='';
+function renderStore(body){
+  body.innerHTML=`
+    <div class="store-h">
+      <div class="store-logo">${IC.store}</div>
+      <div><div class="store-title">应用商店</div><div class="store-sub">下载并安装新应用 · ${installedApps.size} 个已安装</div></div>
+      <div class="store-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></svg><input id="store-q" placeholder="搜索应用"></div>
+    </div>
+    <div class="store-grid">${STORE_APPS.map(a=>{
+      const on=downloaded[a.id];
+      return `<div class="store-card" data-id="${a.id}">
+        <div class="sc-ic" style="background:linear-gradient(135deg,#fff,#f0f0f3)">${a.ic}</div>
+        <div class="sc-info"><b>${a.name}</b><span>${a.cat} · ${a.size}</span><p>${a.desc}</p>
+          <div class="sc-rate">${'★'.repeat(Math.round(a.rating))}<em>${a.rating}</em></div>
+        </div>
+        <button class="sc-btn ${on?'installed':''}" data-id="${a.id}" onclick="storeAction('${a.id}',this)">${on?'已安装':'获取'}</button>
+      </div>`;
+    }).join('')}</div>`;
+  body.querySelectorAll('.store-card').forEach(c=>{
+    c.addEventListener('click',e=>{ if(e.target.closest('.sc-btn'))return; openApp(c.dataset.id); });
+  });
+  const q=body.querySelector('#store-q');
+  if(q){ q.value=storeQuery;
+    q.addEventListener('input',()=>{
+      storeQuery=q.value.toLowerCase();
+      body.querySelectorAll('.store-card').forEach(c=>{
+        const t=body.textContent; const name=STORE_APPS.find(a=>a.id===c.dataset.id).name.toLowerCase();
+        c.style.display = name.includes(storeQuery)?'':'none';
+      });
+    });
+  }
+}
+function storeAction(id,btn){
+  if(downloaded[id]){ openApp(id); return; }
+  btn.disabled=true; let p=0;
+  const iv=setInterval(()=>{
+    p+=Math.random()*20+7;
+    if(p>=100){ p=100; clearInterval(iv); btn.disabled=false; btn.classList.add('installed'); btn.textContent='已安装'; installApp(id); toast(`「${STORE_APPS.find(a=>a.id===id).name}」下载完成`); }
+    else btn.textContent=Math.floor(p)+'%';
+  },160);
+}
+
+/* ============ 音乐播放器 ============ */
+const MUSIC_LIB=[
+  {t:'极光',a:'HybridOS 原声',d:'3:42'},{t:'海边公路',a:'K.M. Studio',d:'4:05'},
+  {t:'夜航',a:'Orbit',d:'3:18'},{t:'城市灯火',a:'Loop Lab',d:'3:56'},
+  {t:'晨光',a:'Sunset Club',d:'4:21'},{t:'远行',a:'Northwind',d:'3:33'},
+];
+const musicState={i:0,playing:false,pos:0,iv:null};
+function renderMusic(body){
+  body.innerHTML=`
+    <div class="music">
+      <div class="m-hero">
+        <div class="m-cover" style="background:linear-gradient(140deg,#ff8a65,#ff4081,#7b4cff)">${IC.music}</div>
+        <div class="m-now"><span class="m-now-t" id="m-now-t">${MUSIC_LIB[0].t}</span><span class="m-now-a" id="m-now-a">${MUSIC_LIB[0].a}</span></div>
+      </div>
+      <div class="m-controls">
+        <button id="m-prev" title="上一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5v14h2V5h-2zm3 7l10 7V5L9 12z"/></svg></button>
+        <button id="m-play" class="m-big"><svg viewBox="0 0 24 24" fill="currentColor" id="m-play-ic"><path d="M8 5v14l11-7z"/></svg></button>
+        <button id="m-next" title="下一首"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5v14h2V5h-2zm-7 7l10-7v14L9 12z"/></svg></button>
+      </div>
+      <div class="m-prog">
+        <span id="m-t0">0:00</span>
+        <input type="range" id="m-seek" min="0" max="100" value="0">
+        <span id="m-t1">${MUSIC_LIB[0].d}</span>
+      </div>
+      <div class="m-list" id="m-list">${MUSIC_LIB.map((s,i)=>`<div class="m-item ${i===0?'on':''}" data-i="${i}"><span class="mi-n">${i+1}</span><div><b>${s.t}</b><span>${s.a}</span></div><em>${s.d}</em></div>`).join('')}</div>
+    </div>`;
+  const setTrack=(i,autoplay)=>{
+    musicState.i=i; if(musicState.iv){clearInterval(musicState.iv);musicState.iv=null;}
+    musicState.pos=0; document.querySelector('#m-now-t').textContent=MUSIC_LIB[i].t;
+    document.querySelector('#m-now-a').textContent=MUSIC_LIB[i].a;
+    document.querySelector('#m-t1').textContent=MUSIC_LIB[i].d;
+    document.querySelector('#m-seek').value=0; document.querySelector('#m-t0').textContent='0:00';
+    body.querySelectorAll('.m-item').forEach((x,ix)=>x.classList.toggle('on',ix===i));
+    if(autoplay) play();
+  };
+  const play=()=>{
+    if(musicState.playing) return;
+    musicState.playing=true;
+    document.querySelector('#m-play-ic').innerHTML='<path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/>';
+    musicState.iv=setInterval(()=>{
+      musicState.pos+=100/(parseFloat(MUSIC_LIB[musicState.i].d.split(':')[0])*60+parseFloat(MUSIC_LIB[musicState.i].d.split(':')[1]));
+      if(musicState.pos>=100){ musicState.pos=0; setTrack((musicState.i+1)%MUSIC_LIB.length,true); return; }
+      document.querySelector('#m-seek').value=musicState.pos;
+    },200);
+  };
+  const pause=()=>{ musicState.playing=false; if(musicState.iv){clearInterval(musicState.iv);musicState.iv=null;} document.querySelector('#m-play-ic').innerHTML='<path d="M8 5v14l11-7z"/>'; };
+  body.querySelector('#m-play').addEventListener('click',()=> musicState.playing?pause():play());
+  body.querySelector('#m-prev').addEventListener('click',()=> setTrack((musicState.i-1+MUSIC_LIB.length)%MUSIC_LIB.length,musicState.playing));
+  body.querySelector('#m-next').addEventListener('click',()=> setTrack((musicState.i+1)%MUSIC_LIB.length,musicState.playing));
+  body.querySelector('#m-seek').addEventListener('input',e=>{ musicState.pos=+e.target.value; });
+  body.querySelectorAll('.m-item').forEach(el=>el.addEventListener('click',()=> setTrack(+el.dataset.i,musicState.playing)));
+  window._musicPause=pause;
+}
+
+/* ============ 时钟 ============ */
+function renderClock(body){
+  const zones=[['本地','Asia/Shanghai'],['纽约','America/New_York'],['伦敦','Europe/London'],['东京','Asia/Tokyo'],['悉尼','Australia/Sydney']];
+  body.innerHTML=`
+    <div class="clock">
+      <div class="ck-local"><span id="ck-h">00:00:00</span><span id="ck-d"></span></div>
+      <div class="ck-zones">${zones.slice(1).map(z=>`<div class="ck-zone"><span>${z[0]}</span><b data-z="${z[1]}">--:--</b></div>`).join('')}</div>
+      <div class="ck-stop">
+        <div class="ck-stop-title">秒表</div>
+        <div class="ck-stop-time" id="ck-st">00:00.0</div>
+        <div class="ck-stop-btns">
+          <button id="ck-start">开始</button><button id="ck-reset">清零</button>
+        </div>
+      </div>
+    </div>`;
+  const tick=()=>{
+    const n=new Date();
+    document.querySelector('#ck-h').textContent=n.toLocaleTimeString('zh-CN',{hour12:false});
+    document.querySelector('#ck-d').textContent=n.toLocaleDateString('zh-CN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.querySelectorAll('.ck-zone b').forEach(b=>{
+      const t=new Date().toLocaleTimeString('en-GB',{timeZone:b.dataset.z,hour:'2-digit',minute:'2-digit'});
+      b.textContent=t;
+    });
+  };
+  window._ckiv=setInterval(tick,1000); tick();
+  let s={on:false,t:0,iv:null};
+  const st=document.querySelector('#ck-st');
+  const fmt=()=>{ const m=Math.floor(s.t/60000),x=Math.floor(s.t/100)%60,ds=Math.floor(s.t/10)%10; return `${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}.${ds}`; };
+  document.querySelector('#ck-start').addEventListener('click',()=>{
+    s.on=!s.on;
+    document.querySelector('#ck-start').textContent=s.on?'暂停':'开始';
+    if(s.on){ const base=Date.now()-s.t; s.iv=setInterval(()=>{s.t=Date.now()-base;st.textContent=fmt();},60); }
+    else if(s.iv){clearInterval(s.iv);s.iv=null;}
+  });
+  document.querySelector('#ck-reset').addEventListener('click',()=>{ s.on=false; if(s.iv){clearInterval(s.iv);s.iv=null;} s.t=0; st.textContent='00:00.0'; document.querySelector('#ck-start').textContent='开始'; });
+}
+
+/* ============ 照片 ============ */
+const PHOTOS=[
+  ['极光之夜','linear-gradient(140deg,#7c6cff,#4aa3ff)'],['深海','linear-gradient(140deg,#0f2027,#2c5364)'],
+  ['日落海岸','linear-gradient(140deg,#ff6b6b,#feca57,#48dbfb)'],['樱花','linear-gradient(140deg,#ff9a9e,#fecfef)'],
+  ['林间','linear-gradient(140deg,#11998e,#38ef7d)'],['雪山','linear-gradient(140deg,#89f7fe,#66a6ff)'],
+  ['星野','linear-gradient(140deg,#0f0c29,#302b63,#24243e)'],['沙漠','linear-gradient(140deg,#f5af19,#f12711)'],
+  ['湖光','linear-gradient(140deg,#43cea2,#185a9d)'],['花田','linear-gradient(140deg,#ffecd2,#fcb69f)'],
+  ['夜色都市','linear-gradient(140deg,#141e30,#243b55)'],['晨雾','linear-gradient(140deg,#cac531,#f3f9a7)'],
+];
+let photoIdx=0;
+function renderPhotos(body){
+  body.innerHTML=`
+    <div class="photos">
+      <div class="ph-head"><b>照片</b><span>${PHOTOS.length} 张</span></div>
+      <div class="ph-grid">${PHOTOS.map((p,i)=>`<div class="ph-tile" data-i="${i}" style="background:${p[1]}"><span>${p[0]}</span></div>`).join('')}</div>
+    </div>
+    <div class="ph-lightbox" id="ph-lb" style="display:none">
+      <div class="ph-lb-img" id="ph-lb-img"></div>
+      <div class="ph-lb-cap" id="ph-lb-cap"></div>
+      <button class="ph-close" onclick="document.querySelector('#ph-lb').style.display='none'">×</button>
+      <button class="ph-nav ph-prev" onclick="photosNav(-1)">‹</button>
+      <button class="ph-nav ph-next" onclick="photosNav(1)">›</button>
+    </div>`;
+  body.querySelectorAll('.ph-tile').forEach(t=>{
+    t.addEventListener('click',()=>{ photoIdx=+t.dataset.i; photosShow(body); });
+  });
+  body.querySelector('#ph-lb').addEventListener('click',e=>{ if(e.target.id==='ph-lb') e.currentTarget.style.display='none'; });
+}
+function photosShow(body){
+  const lb=body.querySelector('#ph-lb'); if(!lb) return;
+  lb.style.display='flex';
+  body.querySelector('#ph-lb-img').style.background=PHOTOS[photoIdx][1];
+  body.querySelector('#ph-lb-cap').textContent=PHOTOS[photoIdx][0];
+}
+function photosNav(d){ photoIdx=(photoIdx+d+PHOTOS.length)%PHOTOS.length; photosShow(document.querySelector('.window[data-id=photos] .wbody')); }
+
+/* ============ 画板 ============ */
+function renderPaint(body){
+  body.innerHTML=`
+    <div class="paint">
+      <div class="paint-bar">
+        <div class="pb-colors" id="pb-colors"></div>
+        <input type="range" id="pb-size" min="2" max="30" value="8" title="画笔大小">
+        <div class="pb-actions">
+          <button id="pb-clear">清空</button><button id="pb-save">保存</button>
+        </div>
+      </div>
+      <canvas id="pb-canvas" width="560" height="400"></canvas>
+    </div>`;
+  const cv=body.querySelector('#pb-canvas'), ctx=cv.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+  const colors=['#1d1d1f','#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#8e24aa','#ffffff'];
+  const colBox=body.querySelector('#pb-colors');
+  colors.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='pb-c'+(c==='#1d1d1f'?' on':'');
+    b.style.background=c; b.dataset.c=c;
+    if(c==='#ffffff'){ b.style.border='1px solid #ddd'; }
+    b.addEventListener('click',()=>{ colBox.querySelectorAll('.pb-c').forEach(x=>x.classList.remove('on')); b.classList.add('on'); curColor=c; });
+    colBox.appendChild(b);
+  });
+  let curColor='#1d1d1f', drawing=false, last=null;
+  const size=()=>+body.querySelector('#pb-size').value;
+  const pos=(e)=>{ const r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*(cv.width/r.width), y:(e.clientY-r.top)*(cv.height/r.height)}; };
+  cv.addEventListener('pointerdown',e=>{ drawing=true; last=pos(e); cv.setPointerCapture&&cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove',e=>{ if(!drawing)return; const p=pos(e); ctx.strokeStyle=curColor; ctx.lineWidth=size(); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; });
+  cv.addEventListener('pointerup',()=>{ drawing=false; });
+  body.querySelector('#pb-clear').addEventListener('click',()=>{ ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height); toast('画板已清空'); });
+  body.querySelector('#pb-save').addEventListener('click',()=>{ toast('已保存到 下载/我的画作.png（演示）'); });
+}
+
+/* ============ 文本编辑 ============ */
+function renderTextedit(body){
+  let saved=(localStorage&&localStorage.getItem('hybridos_te'))||'';
+  body.innerHTML=`
+    <div class="textedit">
+      <div class="te-bar">
+        <input id="te-name" value="未命名.txt" spellcheck="false">
+        <button id="te-save">保存</button>
+      </div>
+      <textarea id="te-body" placeholder="开始输入…" spellcheck="false">${saved.replace(/</g,'&lt;')}</textarea>
+      <div class="te-status" id="te-status">${saved?('已保存 · '+saved.length+' 字'):'0 字'}</div>
+    </div>`;
+  const area=body.querySelector('#te-body');
+  area.addEventListener('input',()=>{ body.querySelector('#te-status').textContent=area.value.length+' 字'; });
+  body.querySelector('#te-save').addEventListener('click',()=>{
+    const name=body.querySelector('#te-name').value||'未命名.txt';
+    if(localStorage){ localStorage.setItem('hybridos_te',area.value); }
+    toast(`已保存「${name}」`);
+  });
+}
+
+/* ============ 天气 ============ */
+const WEATHER_DEF={temp:22,cond:'多云',h:58,l:17,desc:'多云转晴，体感舒适'};
+function renderWeather(body){
+  body.innerHTML=`
+    <div class="weather">
+      <div class="w-city">温州 · 多云</div>
+      <div class="w-now"><span id="w-temp">--°</span><div class="w-ic">${IC.weather}</div></div>
+      <div class="w-desc" id="w-desc">正在获取实时天气…</div>
+      <div class="w-row" id="w-row"></div>
+      <div class="w-note">数据来源：Open-Meteo（实时）</div>
+    </div>`;
+  const fill=(temp,desc,rows)=>{
+    body.querySelector('#w-temp').textContent=temp+'°';
+    body.querySelector('#w-desc').textContent=desc;
+    body.querySelector('#w-row').innerHTML=rows;
+  };
+  // 尝试拉取真实天气（Open-Meteo 支持 CORS）
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=28.02&longitude=120.65&current=temperature_2m,relative_humidity_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&forecast_days=4&timezone=Asia%2FShanghai')
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(d=>{
+      const t=Math.round(d.current.temperature_2m);
+      const days=(d.daily||{}).time||[];
+      const rows=days.map((dd,i)=>`<div class="w-day"><span>${i===0?'今天':new Date(dd).toLocaleDateString('zh-CN',{weekday:'short'})}</span><b>${Math.round(d.daily.temperature_2m_max[i])}°/${Math.round(d.daily.temperature_2m_min[i])}°</b></div>`).join('');
+      fill(t,`${t}° · 湿度 ${d.current.relative_humidity_2m}% · 实时`,rows);
+    })
+    .catch(()=>{
+      const rows='<div class="w-day"><span>今天</span><b>22°/17°</b></div><div class="w-day"><span>周一</span><b>25°/19°</b></div><div class="w-day"><span>周二</span><b>24°/18°</b></div>';
+      fill(WEATHER_DEF.temp,WEATHER_DEF.desc,rows);
+    });
+}
+
+/* ============ 控制中心 / 菜单 ============ */
+function toggleMenu(name,force){
+  $$('.menu').forEach(m=>{ if(m.dataset.menu!==name) m.classList.remove('open'); });
+  const m=$(`[data-menu="${name}"]`);
+  if(m) m.classList.toggle('open',force);
+}
+$$('.menu').forEach(m=>{
+  m.addEventListener('click',e=>{
+    if(e.target.closest('.menu-drop')) return;
+    const open=m.classList.contains('open');
+    toggleMenu(m.dataset.menu,!open);
+  });
+  m.querySelectorAll('.mit').forEach(it=>{
+    it.addEventListener('click',e=>{
+      e.stopPropagation();
+      const t=it.textContent.trim().replace(/\s+[⌘⇧]?.*/,'');
+      toast(`「${t}」（演示功能）`);
+      toggleMenu(m.dataset.menu,false);
+    });
+  });
+});
+function closeStart(){ $('#startmenu').classList.remove('open'); }
+function closeCC(){ $('#cc').classList.remove('open'); }
+document.addEventListener('click',e=>{
+  const inSm=e.target.closest('#startmenu')||e.target.closest('#tb-start')||e.target.closest('#tb-search')||e.target.closest('#mb-search');
+  const inCc=e.target.closest('#cc')||e.target.closest('#mb-cc');
+  const inMenu=e.target.closest('.menu')||e.target.closest('.menu-drop');
+  if(!inSm) closeStart();
+  if(!inCc) closeCC();
+  if(!inMenu) toggleMenu(null,false);
+});
+
+/* 控制中心 */
+function toggleCC(force){
+  const cc=$('#cc');
+  cc.classList.toggle('open',force);
+  $('#startmenu').classList.remove('open');
+}
+$('#mb-cc').addEventListener('click',()=>toggleCC());
+document.querySelectorAll('#cc .toggle').forEach(t=>{
+  t.addEventListener('click',()=>{
+    t.classList.toggle('on');
+    if(t.dataset.cc==='dark'){
+      document.documentElement.style.filter = t.classList.contains('on')?'invert(1) hue-rotate(180deg) brightness(.92)':'';
+    }
+  });
+});
+document.querySelectorAll('#cc input[type=range]').forEach(r=>{
+  r.addEventListener('input',()=>{
+    const p=r.value;
+    r.style.background=`linear-gradient(to right,var(--win-blue) ${p}%,rgba(0,0,0,.12) ${p}%)`;
+  });
+});
+
+/* 开始菜单 */
+function toggleStart(force){
+  const sm=$('#startmenu');
+  const open=sm.classList.contains('open');
+  sm.classList.toggle('open',force);
+  $('#cc').classList.remove('open');
+  if(!open) $('#sm-q').value='';
+}
+$('#tb-start').addEventListener('click',()=>toggleStart());
+function startClick(id){
+  toggleStart(false);
+  openApp(id);
+}
+$('#sm-power').addEventListener('click',()=>{
+  toast('正在关机…（演示）');
+  toggleStart(false);
+  setTimeout(()=>{
+    document.body.style.transition='opacity 1s';document.body.style.opacity='0';
+    setTimeout(()=>{ document.body.style.opacity='1'; },1500);
+  },600);
+});
+$('#sm-q').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase();
+  document.querySelectorAll('#startmenu .sm-app').forEach(el=>{
+    const on=APPS[el.dataset.app].name.toLowerCase().includes(q);
+    el.style.display=on?'flex':'none';
+  });
+});
+
+/* ============ 时钟 ============ */
+function tick(){
+  const n=new Date();
+  const t=n.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  const d=n.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric',weekday:'short'});
+  $('#mb-time').textContent=t; $('#mb-date').textContent=d;
+  $('#tc-time').textContent=t; $('#tc-date').textContent=d.replace('星期','周');
+}
+setInterval(tick,1000);tick();
+
+/* ============ toast ============ */
+let toastTimer;
+function toast(msg){
+  const t=$('#toast');
+  $('#toast-txt').textContent=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+/* ============ 托盘 ============ */
+$('#tray-wifi').addEventListener('click',()=>toast('Wi-Fi：已连接 HybridOS_5G'));
+$('#tray-vol').addEventListener('click',()=>toast('音量：60%'));
+$('#tray-batt').addEventListener('click',()=>toast('电量：82%'));
+$('#tray-notify').addEventListener('click',()=>toast('暂无新通知'));
+$('#mb-search').addEventListener('click',()=>toggleStart(true));
+$('#tb-search').addEventListener('click',()=>toggleStart(true));
+
+/* ============ 初始化 ============ */
+/* 启动时应用在线下载的系统更新（不换镜像文件，系统内热更新） */
+applyUpdate();
+buildDesktopIcons();
+buildDock();
+buildStartMenu();
+setTimeout(()=>$('#welcome').classList.add('hide'),3500);
+
+/* 首次启动先运行系统安装引导，之后每次开机先登录再进桌面 */
+let _installed=false;
+try{ _installed=!!(localStorage&&localStorage.getItem('hybridos_installed')); }catch(e){}
+if(_installed){
+  setTimeout(()=>showLogin(),600);
+} else {
+  setTimeout(()=>showBoot(false),600);
+}
+
+/* ============ 系统安装引导（与系统结合） ============ */
+const btSteps=['欢迎','安装选项','正在安装','安装完成'];
+let btStep=0, btMode='标准安装';
+function showBoot(force){
+  const boot=document.getElementById('boot');
+  if(!boot) return;
+  if(force) btStep=0;
+  boot.classList.add('on');
+  renderBoot();
+}
+function hideBoot(){ const b=document.getElementById('boot'); if(b) b.classList.remove('on'); }
+function renderBoot(){
+  const boot=document.getElementById('boot');
+  const st=boot.querySelector('#bt-steps');
+  st.innerHTML=btSteps.map((s,i)=>{ const on=i===btStep, done=i<btStep;
+    return `<div class="bt-step ${on?'on':''} ${done?'done':''}"><div class="bt-dot">${done?'✓':i+1}</div>${s}</div>${i<btSteps.length-1?`<div class="bt-bar"><i style="width:${done||on?'100%':'0'}"></i></div>`:''}`;
+  }).join('');
+  const body=boot.querySelector('#bt-body');
+  if(btStep===0){
+    body.innerHTML=`<div class="bt-logo">${IC.update}</div><h1>安装 HybridOS</h1><div class="bt-sub">鸿蒙风格 · 融合 macOS 与 Windows 的双系统桌面<br>安装完成后将进入系统桌面</div><button class="bt-btn" id="bt-next">开始安装</button>`;
+    boot.querySelector('#bt-next').addEventListener('click',()=>{ btStep=1; renderBoot(); });
+  } else if(btStep===1){
+    body.innerHTML=`<h1>选择安装方式</h1><div class="bt-sub">根据需要选择安装类型</div>
+      <div class="bt-opts"><div class="bt-opt sel" data-m="标准安装"><b>标准安装</b><span>完整的系统功能与所有预装应用</span></div>
+      <div class="bt-opt" data-m="精简安装"><b>精简安装</b><span>仅保留核心功能，体积更小更流畅</span></div></div>
+      <div style="display:flex;gap:10px"><button class="bt-btn ghost" id="bt-back">上一步</button><button class="bt-btn" id="bt-next">继续</button></div>`;
+    body.querySelectorAll('.bt-opt').forEach(o=>o.addEventListener('click',()=>{ body.querySelectorAll('.bt-opt').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); btMode=o.dataset.m; }));
+    boot.querySelector('#bt-back').addEventListener('click',()=>{ btStep=0; renderBoot(); });
+    boot.querySelector('#bt-next').addEventListener('click',()=>{ btStep=2; renderBoot(); runBootInstall(); });
+  } else if(btStep===2){
+    body.innerHTML=`<div class="bt-ring"><svg class="bt-bg" viewBox="0 0 160 160"><circle cx="80" cy="80" r="70"/></svg><svg class="bt-fg" viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" stroke-dasharray="439.8" stroke-dashoffset="439.8"/></svg><div class="bt-pct" id="bt-pct">0<em>%</em></div></div>
+      <div class="bt-stage" id="bt-stage">正在准备安装…</div><div class="bt-flist" id="bt-flist"></div>`;
+  } else {
+    body.innerHTML=`<div class="bt-logo ok"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h1>安装成功</h1><div class="bt-sub">HybridOS 已安装完成<br>重启后将进入全新桌面</div><button class="bt-btn" id="bt-reboot">立即重启</button>`;
+    boot.querySelector('#bt-reboot').addEventListener('click',()=>enterDesktop());
+  }
+}
+function runBootInstall(){
+  const files=btMode==='标准安装'?['准备磁盘与文件','写入系统核心','安装系统应用','优化系统服务','配置网络与账户']:['准备磁盘与文件','写入系统核心','优化系统服务'];
+  const fl=document.getElementById('bt-flist');
+  files.forEach(f=>fl.insertAdjacentHTML('beforeend',`<div><span class="ok">✓</span><span>${f}</span></div>`));
+  const fg=document.querySelector('.bt-ring .bt-fg circle'), pct=document.getElementById('bt-pct'), stage=document.getElementById('bt-stage');
+  const C=439.8; fg.style.strokeDashoffset=C;
+  let p=0, doneIdx=0;
+  const iv=setInterval(()=>{
+    p+=Math.random()*4+1.2;
+    if(p>=100){ p=100; clearInterval(iv); stage.textContent='安装完成，正在进入系统…';
+      setTimeout(()=>{ btStep=3; renderBoot(); },800); return; }
+    fg.style.strokeDashoffset=C*(1-p/100);
+    pct.innerHTML=Math.floor(p)+'<em>%</em>';
+    const idx=Math.min(files.length-1, Math.floor(p/100*files.length));
+    if(idx>doneIdx){ doneIdx=idx; fl.children[idx].querySelector('span:last-child').classList.add('on'); }
+    stage.textContent=idx<files.length-1?files[idx]:'正在完成安装…';
+  },160);
+}
+function enterDesktop(){
+  hideBoot();
+  try{ if(localStorage) localStorage.setItem('hybridos_installed','1'); }catch(e){}
+  showLogin();
+}
+
+/* ============ 登录（开机验证 + 注册账户） ============ */
+let _lgTimer=null;
+function loadUsers(){
+  try{ return JSON.parse(localStorage.getItem('hybridos_users')||'{"admin":"admin123"}'); }
+  catch(e){ return {"admin":"admin123"}; }
+}
+function saveUsers(u){ try{ localStorage.setItem('hybridos_users',JSON.stringify(u)); }catch(e){} }
+function showLogin(){
+  const l=document.getElementById('login'); if(!l) return;
+  l.classList.add('on');
+  setLoginView('login');
+  tickClock();
+  if(_lgTimer) clearInterval(_lgTimer);
+  _lgTimer=setInterval(tickClock,1000);
+  document.getElementById('lg-uname').value='';
+  document.getElementById('lg-pass').value='';
+  const tip=document.getElementById('lg-tip'); tip.style.opacity='0'; tip.textContent='';
+  setTimeout(()=>document.getElementById('lg-uname').focus(),120);
+}
+function setLoginView(v){
+  document.getElementById('lg-view-login').style.display = v==='login'?'flex':'none';
+  document.getElementById('lg-view-reg').style.display = v==='reg'?'flex':'none';
+}
+function tickClock(){
+  const d=new Date();
+  document.getElementById('lg-clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  document.getElementById('lg-date').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日 星期'+'日一二三四五六'[d.getDay()];
+}
+function tipMsg(msg,ok){
+  const tip=document.getElementById('lg-tip');
+  tip.textContent=msg; tip.style.color=ok?'#5ee6a0':'#ff6b6b'; tip.style.opacity='1';
+  setTimeout(()=>{ tip.style.opacity='0'; },2200);
+}
+function tryLogin(){
+  const users=loadUsers();
+  const uname=document.getElementById('lg-uname').value.trim();
+  const pass=document.getElementById('lg-pass').value;
+  if(uname && users[uname] && users[uname]===pass){
+    loginSuccess(uname);
+  } else {
+    tipMsg('用户名或密码错误');
+    document.getElementById('lg-pass').value='';
+    document.getElementById('lg-pass').focus();
+  }
+}
+function loginSuccess(uname){
+  if(_lgTimer) clearInterval(_lgTimer);
+  document.getElementById('login').classList.remove('on');
+  document.getElementById('lg-avatar').textContent=(uname[0]||'H').toUpperCase();
+  toast('欢迎回来，'+uname);
+  setTimeout(()=>openApp('finder'),350);
+  setTimeout(()=>openApp('browser'),650);
+}
+function registerUser(){
+  const u=document.getElementById('rg-uname').value.trim();
+  const p=document.getElementById('rg-pass').value;
+  const p2=document.getElementById('rg-pass2').value;
+  if(!u||!p){ tipMsg('用户名和密码不能为空'); return; }
+  if(p.length<4){ tipMsg('密码至少 4 位'); return; }
+  if(p!==p2){ tipMsg('两次密码不一致'); return; }
+  const users=loadUsers();
+  if(users[u]){ tipMsg('用户名已存在'); return; }
+  users[u]=p; saveUsers(users);
+  document.getElementById('lg-uname').value=u;
+  setLoginView('login');
+  tipMsg('注册成功，请登录', true);
+  setTimeout(()=>document.getElementById('lg-pass').focus(),100);
+}
+document.getElementById('lg-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') tryLogin(); });
+document.getElementById('lg-uname').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('lg-pass').focus(); });
+document.getElementById('lg-enter').addEventListener('click',tryLogin);
+document.getElementById('lg-reg').addEventListener('click',()=>{ setLoginView('reg'); document.getElementById('rg-uname').focus(); });
+document.getElementById('rg-back').addEventListener('click',()=>{ setLoginView('login'); });
+document.getElementById('rg-do').addEventListener('click',registerUser);
+document.getElementById('rg-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('rg-pass2').focus(); });
+document.getElementById('rg-pass2').addEventListener('keydown',e=>{ if(e.key==='Enter') registerUser(); });
+</script>
+</body>
+</html>
