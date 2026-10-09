@@ -182,6 +182,15 @@ button{font-family:inherit;cursor:pointer}
 .frame .c.bl{bottom:-2px;left:-2px;border-right:0;border-top:0}
 .frame .c.br{bottom:-2px;right:-2px;border-left:0;border-top:0}
 .frame-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.28em;color:var(--cyan-dim);margin-bottom:8px;text-align:center}
+.cy-banner{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#8A5A1E,#C98A2E 45%,#A06A1F);color:#FFF3D6;font-size:clamp(11px,1.6vw,14px);font-weight:700;letter-spacing:.08em;padding:8px 14px;margin:0 0 14px;border-radius:4px;box-shadow:0 0 18px rgba(233,163,61,.35),inset 0 0 12px rgba(255,243,214,.12);position:relative;overflow:hidden;text-align:center}
+.cy-banner::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,243,214,.14),transparent);animation:nbSweep 3.2s linear infinite;pointer-events:none}
+.cy-banner svg{width:16px;height:16px;flex:none;filter:drop-shadow(0 0 5px rgba(255,243,214,.8))}
+body.chongyang .brand .t1{color:#F2C879}
+body.chongyang .btn-primary{background:linear-gradient(145deg,#E8A33D,#B0721F);color:#FFF3D6;box-shadow:0 0 12px rgba(232,163,61,.4)}
+body.chongyang .mode-opt.active{background:linear-gradient(145deg,#E8A33D,#B0721F);color:#FFF3D6}
+body.chongyang .status-dot{background:#E8A33D;box-shadow:0 0 8px #E8A33D}
+body.chongyang .lang-btn:hover{border-color:rgba(242,200,121,.6);color:#F2C879}
+
 #boot .frame .scan-bar{margin:0 auto 20px}
 
 /* ============ 登录 / 注册 ============ */
@@ -764,6 +773,11 @@ body.printing .cert-card{position:fixed;left:50%;top:40px;transform:translateX(-
     </div>
     <div class="frame">
       <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+      <div class="cy-banner" id="cyBannerLogin" style="display:none">
+        <svg viewBox="0 0 24 24" fill="#FFF3D6"><path d="M12 3a1.5 1.5 0 0 1 1.5 1.5c0 2.5 1.6 4.1 4.1 4.1A1.5 1.5 0 0 1 19 10a1.5 1.5 0 0 1-1.5 1.5c-2.5 0-4.1 1.6-4.1 4.1A1.5 1.5 0 0 1 12 17a1.5 1.5 0 0 1-1.5-1.5c0-2.5-1.6-4.1-4.1-4.1A1.5 1.5 0 0 1 5 10a1.5 1.5 0 0 1 1.5-1.5c2.5 0 4.1-1.6 4.1-4.1A1.5 1.5 0 0 1 12 3z"/></svg>
+        <span id="cyText">九九重阳 · 登高望远 · 敬老思亲</span>
+        <svg viewBox="0 0 24 24" fill="#FFF3D6"><path d="M12 3a1.5 1.5 0 0 1 1.5 1.5c0 2.5 1.6 4.1 4.1 4.1A1.5 1.5 0 0 1 19 10a1.5 1.5 0 0 1-1.5 1.5c-2.5 0-4.1 1.6-4.1 4.1A1.5 1.5 0 0 1 12 17a1.5 1.5 0 0 1-1.5-1.5c0-2.5-1.6-4.1-4.1-4.1A1.5 1.5 0 0 1 5 10a1.5 1.5 0 0 1 1.5-1.5c2.5 0 4.1-1.6 4.1-4.1A1.5 1.5 0 0 1 12 3z"/></svg>
+      </div>
       <div class="frame-kicker">IDENTIFICATION PROTOCOL v4.0 · 身份认证协议</div>
       <div class="scan-bar"><i></i></div>
       <div id="authWrap">
@@ -865,6 +879,12 @@ body.printing .cert-card{position:fixed;left:50%;top:40px;transform:translateX(-
     </div>
   </header>
 
+
+  <div class="cy-banner" id="cyBannerTop" style="display:none;margin:0 0 12px">
+    <svg viewBox="0 0 24 24" fill="#FFF3D6"><path d="M12 3a1.5 1.5 0 0 1 1.5 1.5c0 2.5 1.6 4.1 4.1 4.1A1.5 1.5 0 0 1 19 10a1.5 1.5 0 0 1-1.5 1.5c-2.5 0-4.1 1.6-4.1 4.1A1.5 1.5 0 0 1 12 17a1.5 1.5 0 0 1-1.5-1.5c0-2.5-1.6-4.1-4.1-4.1A1.5 1.5 0 0 1 5 10a1.5 1.5 0 0 1 1.5-1.5c2.5 0 4.1-1.6 4.1-4.1A1.5 1.5 0 0 1 12 3z"/></svg>
+    <span id="cyTextTop">九九重阳 · 登高望远 · 敬老思亲</span>
+    <svg viewBox="0 0 24 24" fill="#FFF3D6"><path d="M12 3a1.5 1.5 0 0 1 1.5 1.5c0 2.5 1.6 4.1 4.1 4.1A1.5 1.5 0 0 1 19 10a1.5 1.5 0 0 1-1.5 1.5c-2.5 0-4.1 1.6-4.1 4.1A1.5 1.5 0 0 1 12 17a1.5 1.5 0 0 1-1.5-1.5c0-2.5-1.6-4.1-4.1-4.1A1.5 1.5 0 0 1 5 10a1.5 1.5 0 0 1 1.5-1.5c2.5 0 4.1-1.6 4.1-4.1A1.5 1.5 0 0 1 12 3z"/></svg>
+  </div>
 
   <div class="broadcast-bar" id="broadcastBar" style="display:none">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10v4h4l6 5V5L7 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
@@ -2791,7 +2811,9 @@ const I18N={
 };
 function t(k){const pair=I18N[k];return pair?(LANG==='zh'?pair[0]:pair[1]):k;}
 function applyLang(){
-  document.getElementById('langBtn').textContent=LANG==='zh'?'中 / EN':'EN / 中';
+  document.getElementById('langBtn').textContent=LANG==='zh'?'中 / EN':'EN / 中';  const cyt=document.getElementById('cyText');if(cyt)cyt.textContent=LANG==='zh'?'九九重阳 · 登高望远 · 敬老思亲':'DOUBLE NINTH · ASCEND & HONOR ELDERS';
+  const cyt2=document.getElementById('cyTextTop');if(cyt2)cyt2.textContent=LANG==='zh'?'九九重阳 · 登高望远 · 敬老思亲':'DOUBLE NINTH · ASCEND & HONOR ELDERS';
+
   document.querySelectorAll('.nav-item').forEach(el=>{
     const v=el.getAttribute('data-view');
     const map={profile:'nav-profile',cert:'nav-cert',digital:'nav-digital',undercity:'nav-undercity',nationality:'nav-nationality',settings:'nav-settings',moss:'nav-moss',log:'nav-log',occupations:'nav-occupations',priv:'nav-priv',engine:'nav-engine',nav:'nav-nav',map:'nav-map',driverview:'nav-driverview',vehicles:'nav-vehicles',vehcard:'nav-vehcard',admin:'nav-admin',privileged:'nav-privileged',broadcast:'nav-broadcast',announce:'nav-announce',emergency:'nav-emergency'};
@@ -3067,6 +3089,20 @@ document.getElementById('langBtn').addEventListener('click',()=>{
   localStorage.setItem(LS_LANG,LANG);
   location.reload();
 });
+
+/* ===== 重阳节主题 · 2026-10-18 自动上线 ===== */
+function isChongyangDay(){
+  const d=new Date();
+  return d.getFullYear()===2026 && d.getMonth()===9 && d.getDate()===18;
+}
+function applyChongyang(){
+  const on=isChongyangDay();
+  document.body.classList.toggle('chongyang',on);
+  const b1=document.getElementById('cyBannerTop'),b2=document.getElementById('cyBannerLogin');
+  if(b1)b1.style.display=on?'':'none';
+  if(b2)b2.style.display=on?'':'none';
+}
+applyChongyang();
 function showAuth(mode){
   document.getElementById('tabLogin').classList.toggle('active',mode==='login');
   document.getElementById('tabReg').classList.toggle('active',mode==='reg');
