@@ -286,14 +286,6 @@ button{font-family:inherit;cursor:pointer}
 .nav-item.active{color:var(--cyan);background:linear-gradient(90deg, rgba(55,230,255,.13), transparent 85%);border-color:var(--line-strong)}
 .nav-item.active::before{content:"";position:absolute;left:-13px;top:0;bottom:0;width:3px;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
 .nav-item.active .n-idx{color:var(--cyan)}
-.nation-banner{display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#A01E2C,#E23B3B 45%,#C8102E);color:#FFD873;font-size:clamp(11px,1.6vw,14px);font-weight:700;letter-spacing:.08em;padding:8px 14px;margin:0 0 14px;border-radius:4px;box-shadow:0 0 18px rgba(226,59,59,.35),inset 0 0 12px rgba(255,216,115,.12);position:relative;overflow:hidden;text-align:center}
-.nation-banner::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,216,115,.14),transparent);animation:nbSweep 3.2s linear infinite;pointer-events:none}
-.nation-banner svg{width:16px;height:16px;flex:none;filter:drop-shadow(0 0 5px rgba(255,216,115,.8))}
-body.national .btn-primary{background:linear-gradient(145deg,#E23B3B,#A01E2C);color:#FFE9B8;box-shadow:0 0 12px rgba(226,59,59,.4)}
-body.national .brand .t1{color:#FFE9B8}
-body.national .mode-opt.active{background:linear-gradient(145deg,#E23B3B,#A01E2C);color:#FFE9B8}
-body.national .status-dot{background:#E23B3B;box-shadow:0 0 8px #E23B3B}
-body.national .lang-btn:hover{border-color:rgba(255,216,115,.6);color:#FFD873}
 .sidebar .nav-sep{font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:var(--text-faint);padding:16px 13px 8px}
 
 .content{flex:1;padding:22px 24px 40px;min-width:0;max-width:1280px;margin:0 auto;width:100%}
@@ -772,11 +764,6 @@ body.printing .cert-card{position:fixed;left:50%;top:40px;transform:translateX(-
     </div>
     <div class="frame">
       <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
-      <div class="nation-banner">
-        <svg viewBox="0 0 24 24" fill="#FFD873"><path d="M12 2l2.4 6.9L21.5 9l-5.6 4.4 2 7L12 16.8 6.1 20.4l2-7L2.5 9l7.1-.1z"/></svg>
-        <span id="nbText">盛世华诞 · 举国同庆 · 热烈庆祝中华人民共和国成立 77 周年</span>
-        <svg viewBox="0 0 24 24" fill="#FFD873"><path d="M12 2l2.4 6.9L21.5 9l-5.6 4.4 2 7L12 16.8 6.1 20.4l2-7L2.5 9l7.1-.1z"/></svg>
-      </div>
       <div class="frame-kicker">IDENTIFICATION PROTOCOL v4.0 · 身份认证协议</div>
       <div class="scan-bar"><i></i></div>
       <div id="authWrap">
@@ -859,7 +846,6 @@ body.printing .cert-card{position:fixed;left:50%;top:40px;transform:translateX(-
       </div>
     </div>
     <div class="spacer"></div>
-    <button class="lang-btn" id="btnNational" title="国庆版 / 标准版">国庆版</button>
     <button class="lang-btn" id="langBtn" title="切换语言">中 / EN</button>
     <div class="sys-status">
       <div class="mode-switch" id="modeSwitch">
@@ -879,11 +865,6 @@ body.printing .cert-card{position:fixed;left:50%;top:40px;transform:translateX(-
     </div>
   </header>
 
-  <div class="nation-banner nation-top" id="nationTop" style="margin:0 0 12px">
-    <svg viewBox="0 0 24 24" fill="#FFD873"><path d="M12 2l2.4 6.9L21.5 9l-5.6 4.4 2 7L12 16.8 6.1 20.4l2-7L2.5 9l7.1-.1z"/></svg>
-    <span id="nbTextTop">盛世华诞 · 举国同庆 · 热烈庆祝中华人民共和国成立 77 周年</span>
-    <svg viewBox="0 0 24 24" fill="#FFD873"><path d="M12 2l2.4 6.9L21.5 9l-5.6 4.4 2 7L12 16.8 6.1 20.4l2-7L2.5 9l7.1-.1z"/></svg>
-  </div>
 
   <div class="broadcast-bar" id="broadcastBar" style="display:none">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10v4h4l6 5V5L7 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
@@ -2811,8 +2792,6 @@ const I18N={
 function t(k){const pair=I18N[k];return pair?(LANG==='zh'?pair[0]:pair[1]):k;}
 function applyLang(){
   document.getElementById('langBtn').textContent=LANG==='zh'?'中 / EN':'EN / 中';
-  const nbt=document.getElementById('nbText');if(nbt)nbt.textContent=LANG==='zh'?'盛世华诞 · 举国同庆 · 热烈庆祝中华人民共和国成立 77 周年':'NATIONAL DAY · 77th Anniversary of the People\'s Republic of China';
-  const nbtt=document.getElementById('nbTextTop');if(nbtt)nbtt.textContent=LANG==='zh'?'盛世华诞 · 举国同庆 · 热烈庆祝中华人民共和国成立 77 周年':'NATIONAL DAY · 77th Anniversary of the People\'s Republic of China';
   document.querySelectorAll('.nav-item').forEach(el=>{
     const v=el.getAttribute('data-view');
     const map={profile:'nav-profile',cert:'nav-cert',digital:'nav-digital',undercity:'nav-undercity',nationality:'nav-nationality',settings:'nav-settings',moss:'nav-moss',log:'nav-log',occupations:'nav-occupations',priv:'nav-priv',engine:'nav-engine',nav:'nav-nav',map:'nav-map',driverview:'nav-driverview',vehicles:'nav-vehicles',vehcard:'nav-vehcard',admin:'nav-admin',privileged:'nav-privileged',broadcast:'nav-broadcast',announce:'nav-announce',emergency:'nav-emergency'};
@@ -3088,22 +3067,6 @@ document.getElementById('langBtn').addEventListener('click',()=>{
   localStorage.setItem(LS_LANG,LANG);
   location.reload();
 });
-const LS_NATIONAL='ueg_national';
-function applyNational(){
-  const on=localStorage.getItem(LS_NATIONAL)!=='0';
-  document.body.classList.toggle('national',on);
-  const bn=document.getElementById('btnNational');
-  if(bn)bn.textContent=on?(LANG==='zh'?'国庆版':'NATIONAL'):(LANG==='zh'?'标准版':'STANDARD');
-}
-(function(){
-  const bn=document.getElementById('btnNational');
-  if(bn)bn.addEventListener('click',()=>{
-    const on=localStorage.getItem(LS_NATIONAL)!=='0';
-    localStorage.setItem(LS_NATIONAL,on?'0':'1');
-    applyNational();
-  });
-})();
-applyNational();
 function showAuth(mode){
   document.getElementById('tabLogin').classList.toggle('active',mode==='login');
   document.getElementById('tabReg').classList.toggle('active',mode==='reg');
