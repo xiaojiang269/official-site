@@ -1,1 +1,1 @@
-{"versionCode":7,"versionName":"1.3.3","apkUrl":"https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk","notes":"飞行模拟器 1.3.3：新增 15 款全球真实名机（A380/A330/C919/ARJ21/F-22 等共 31 款），全部真实翼型放样建模（发动机短舱/雷达罩/起落架/舱门/天线），并修复飞机显示位置同步。"}
+{"versionCode":8,"versionName":"1.3.4","apkUrl":"https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk","notes":"飞行模拟器 1.3.4：修复打开游戏时的低频嗡鸣——引擎未启动（冷舱）时引擎音效完全静音，启动发动机后声音随转速渐进出现。"}
