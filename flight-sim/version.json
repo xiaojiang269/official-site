@@ -1,1 +1,1 @@
-{"versionCode":1,"versionName":"1.0.0-placeholder","apkUrl":"https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk","notes":"阶段1占位版本：流水线与自动更新通路验证中。"}
+{"versionCode":1,"versionName":"1.0.0","apkUrl":"https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk","notes":"飞行模拟器 1.0.0 正式版：类 RFS 单文件 Web 飞行模拟（three.js 0.160.0），WebView 全屏沉浸式打包，含应用内自动更新。"}
