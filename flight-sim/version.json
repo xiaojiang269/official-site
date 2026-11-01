@@ -1,1 +1,1 @@
-{"versionCode":14,"versionName":"1.4.5","apkUrl":"https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk","notes":"飞行模拟器 1.4.5：新增「真机图鉴」——31 款机型全部配上真实照片/官方三视图/3D模型参考图（A380阿联酋、747全日空、C919东航、F-22猛禽、DC-3、湾流G650等，附机型型号与航司备注），主菜单一键进入，点击任意卡片看大图，随时对照真实外观。"}
+{"versionCode":15,"versionName":"1.4.6","apkUrl":"https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk","notes":"飞行模拟器 1.4.6：修复「起飞不了」——开局自动启动引擎，启动完成后轮挡自动移除（此前需手动进地勤面板撤轮挡，冷舱推油门会被锁死）；现在进入飞行后约 5 秒引擎就绪，推满油门即可加速抬轮离地。"}
