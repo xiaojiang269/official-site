@@ -1,1 +1,1 @@
-{"versionCode":15,"versionName":"1.4.6","apkUrl":"https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk","notes":"飞行模拟器 1.4.6：修复「起飞不了」——开局自动启动引擎，启动完成后轮挡自动移除（此前需手动进地勤面板撤轮挡，冷舱推油门会被锁死）；现在进入飞行后约 5 秒引擎就绪，推满油门即可加速抬轮离地。"}
+{"versionCode":16,"versionName":"1.4.7","apkUrl":"https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk","notes":"飞行模拟器 1.4.7：修复「一打开游戏就有嗡嗡声」——失速蜂鸣的断续节奏此前用 LFO 直接调制音量，导致静默态仍在发声；现已改为时间驱动的开关，并把引擎颤音移到独立后级节点。实测：冷舱/静音态输出电平严格为 0，推油门后引擎声正常。"}
