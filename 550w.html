@@ -178,7 +178,20 @@ body{background:
   font-family:inherit;font-size:.72rem;
   padding:3px 6px;outline:none;cursor:pointer;
 }
-#editor{flex:1;min-height:0;background:#0a0800}
+#editor{flex:1;min-height:0;background:#0a0800;position:relative}
+#editor.fallback-active{display:flex;align-items:stretch}
+.fallback-editor{
+  flex:1;width:100%;height:100%;min-height:0;
+  margin:0;padding:10px 12px;
+  background:#0a0800;color:#ffb000;
+  border:1px solid rgba(255,176,0,.28);
+  font-family:"Courier New",Consolas,monospace;
+  font-size:13px;line-height:1.55;
+  resize:none;outline:none;caret-color:#ffb000;
+  tab-size:4;
+  scrollbar-width:thin;scrollbar-color:var(--a-amber-dark) transparent;
+  white-space:pre;overflow:auto;
+}
 #ideTerminal{
   flex:1;min-height:0;
   overflow-y:auto;padding:12px;
@@ -894,6 +907,7 @@ for(var ni=0;ni<navBtns.length;ni++){
       else{document.body.classList.remove('ide-mode');}
       syncViewport();
       if(v==='term'&&cmd)cmd.focus();
+      if(v==='code'&&fallbackTA){setTimeout(focusEditor,60);}
       if(v==='code'&&monacoEditor){
         layoutEditorSoon();
         setTimeout(layoutEditorSoon,80);
@@ -919,8 +933,11 @@ function syncViewport(){
   var h=vv?Math.round(vv.height):window.innerHeight;
   var app=$id('app');
   var ideMode=document.body.classList.contains('ide-mode');
+  /* 仅窄屏（移动端）才接管高度；桌面窗口交给 CSS 100dvh，
+     避免 WebView2/DPI 缩放下 visualViewport 与窗口高度不一致导致点击与光标偏移 */
+  var narrow=window.innerWidth<=900;
   if(app&&h>0){
-    if(ideMode){
+    if(ideMode&&narrow){
       if(Math.abs(app.clientHeight-h)>1)app.style.height=h+'px';
     }else{
       app.style.height='';
@@ -1283,6 +1300,57 @@ async function runBootAnimation(){
    编程视图
    ========================================================= */
 var monacoReady=false;
+var fallbackTA=null;
+/* ---- 编辑器统一取值/设值：Monaco 或内置 textarea ---- */
+function editorReady(){ return (monacoReady&&monacoEditor) || !!fallbackTA; }
+function getCode(){
+  if(monacoReady&&monacoEditor)return monacoEditor.getValue();
+  if(fallbackTA)return fallbackTA.value;
+  return '';
+}
+function setCode(v){
+  if(monacoReady&&monacoEditor){monacoEditor.setValue(v);return;}
+  if(fallbackTA)fallbackTA.value=v;
+}
+function focusEditor(){
+  if(monacoReady&&monacoEditor){try{monacoEditor.focus();}catch(e){}return;}
+  if(fallbackTA){try{fallbackTA.focus();}catch(e){}}
+}
+function ensureFallbackEditor(reason){
+  if(fallbackTA)return;
+  var box=$id('editor'); if(!box)return;
+  var draft=loadDraft(curCodeLang);
+  box.innerHTML='';
+  box.classList.add('fallback-active');
+  var ta=document.createElement('textarea');
+  ta.className='fallback-editor';
+  ta.spellcheck=false; ta.autocapitalize='off'; ta.autocomplete='off'; ta.wrap='off';
+  ta.value=(draft!==null?draft:getDefaultCode(curCodeLang));
+  ta.addEventListener('input',function(){saveDraft();});
+  ta.addEventListener('keydown',function(e){
+    if(e.key==='Tab'){
+      e.preventDefault();
+      var s=this.selectionStart,t=this.selectionEnd;
+      this.value=this.value.slice(0,s)+'    '+this.value.slice(t);
+      this.selectionStart=this.selectionEnd=s+4;
+      saveDraft(); return;
+    }
+    if(e.ctrlKey||e.metaKey){
+      if(e.key==='s'||e.key==='S'){e.preventDefault();saveCodeToFile();}
+      else if(e.key==='Enter'){e.preventDefault();var rb=$id('runBtn');if(rb&&!rb.disabled)rb.click();}
+    }
+  });
+  ta.addEventListener('paste',function(){setTimeout(function(){saveDraft();},0);});
+  ta.addEventListener('click',function(){try{ta.focus();}catch(e){}});
+  box.appendChild(ta);
+  fallbackTA=ta;
+  ideTermLog('已启用内置编辑器（'+reason+'）','warn');
+  ideTermLog('支持输入、Ctrl+V 粘贴、Tab 缩进、Ctrl+S 保存、Ctrl+Enter 执行','sys');
+  setRuntimeStatus('内置编辑器');
+  setTimeout(function(){try{ta.focus();}catch(e){}},50);
+  saveDraft();
+  checkIdeReady();
+}
 var pyodideReady=false,pyodideInstance=null;
 var ideInited=false;
 var curCodeLang='python';
@@ -1347,8 +1415,9 @@ function checkIdeReady(){
 /* ===== 自动草稿 ===== */
 var DRAFT_KEY='550w_draft_';
 function saveDraft(){
-  if(!monacoEditor)return;
-  try{localStorage.setItem(DRAFT_KEY+curCodeLang,monacoEditor.getValue());}catch(e){}
+  var code=getCode();
+  if(!code&&!editorReady())return;
+  try{localStorage.setItem(DRAFT_KEY+curCodeLang,code);}catch(e){}
 }
 function loadDraft(lang){
   try{return localStorage.getItem(DRAFT_KEY+lang);}catch(e){return null;}
@@ -1365,12 +1434,12 @@ function makeFilename(){
 }
 /* ===== 保存代码 ===== */
 async function saveCodeToFile(){
-  if(!monacoReady||!monacoEditor){
+  if(!editorReady()){
     ideTermLog('编辑器尚未就绪，无法保存。','err');
     showToast({type:'err',title:'✘ 保存失败',desc:'编辑器尚未就绪'});
     return;
   }
-  var code = monacoEditor.getValue();
+  var code = getCode();
   if(!code.trim()){
     ideTermLog('代码为空，无需保存。','warn');
     showToast({type:'err',title:'⚠ 代码为空',desc:'没有内容可以保存'});
@@ -1451,8 +1520,8 @@ function handleFileOpen(file){
   var reader = new FileReader();
   reader.onload = function(){
     var content = reader.result;
-    if(!monacoEditor){ideTermLog('编辑器未就绪。','err');return;}
-    monacoEditor.setValue(content);
+    if(!editorReady()){ideTermLog('编辑器未就绪。','err');return;}
+    setCode(content);
     var name = (file.name || '').toLowerCase();
     var newLang = null;
     if(name.endsWith('.py')) newLang = 'python';
@@ -1461,7 +1530,7 @@ function handleFileOpen(file){
       curCodeLang = newLang;
       var sel = $id('langSelect');
       if(sel)sel.value = newLang;
-      monaco.editor.setModelLanguage(monacoEditor.getModel(), newLang);
+      if(monacoReady&&monacoEditor)monaco.editor.setModelLanguage(monacoEditor.getModel(), newLang);
       ideTermLog('已根据扩展名切换为 ' + newLang.toUpperCase(), 'sys');
     }
     saveDraft();
@@ -1496,13 +1565,17 @@ function initIDE(){
       var draft = loadDraft(lang);
       monacoEditor.setValue(draft !== null ? draft : getDefaultCode(lang));
       if(draft !== null) ideTermLog('已恢复 ' + lang.toUpperCase() + ' 草稿','sys');
+    }else if(fallbackTA){
+      var draft2 = loadDraft(lang);
+      fallbackTA.value = (draft2 !== null ? draft2 : getDefaultCode(lang));
+      if(draft2 !== null) ideTermLog('已恢复 ' + lang.toUpperCase() + ' 草稿','sys');
     }
     ideTermLog('语言切换为 '+lang.toUpperCase(),'sys');
     checkIdeReady();
   });
   var runBtn=$id('runBtn');
   if(runBtn)runBtn.addEventListener('click',async function(){
-    var code=monacoEditor?monacoEditor.getValue():'';
+    var code=getCode();
     var lang=sel?sel.value:'python';
     if(!code.trim()){ideTermLog('源代码为空。','err');return;}
     this.disabled=true;
@@ -1583,8 +1656,15 @@ function createMonacoEditor(){
         }
       });
       var draft = loadDraft('python');
+      /* 若内置编辑器已先行启用，先把用户输入迁移过来 */
+      var seedValue = fallbackTA ? fallbackTA.value : (draft !== null ? draft : getDefaultCode('python'));
+      if(fallbackTA){
+        try{fallbackTA.remove();}catch(e){}
+        fallbackTA=null;
+        var box0=$id('editor'); if(box0)box0.classList.remove('fallback-active');
+      }
       monacoEditor=monaco.editor.create($id('editor'),{
-        value: draft !== null ? draft : getDefaultCode('python'),
+        value: seedValue,
         language:'python',
         theme:'550c-amber',
         fontSize:13,
@@ -1613,6 +1693,10 @@ function createMonacoEditor(){
 }
 async function setupMonaco(){
   var lastErr=null;
+  /* 10 秒内未就绪就先给一个可输入的内置编辑器，避免用户对着空白区干等 */
+  var fallbackTimer=setTimeout(function(){
+    if(!monacoReady&&!fallbackTA)ensureFallbackEditor('编辑器源加载较慢，已先启用内置编辑器（Monaco 就绪后会自动接管）');
+  },10000);
   for(var i=0;i<MONACO_CDNS.length;i++){
     var cdn=MONACO_CDNS[i];
     var host=cdn.split('/')[2];
@@ -1628,6 +1712,7 @@ async function setupMonaco(){
         require(['vs/editor/editor.main'],function(){if(done)return;done=true;clearTimeout(t);resolve();},function(err){if(done)return;done=true;clearTimeout(t);reject(new Error('editor.main 加载失败'));});
       });
       await createMonacoEditor();
+      clearTimeout(fallbackTimer);
       ideTermLog('✔ 编辑器从 '+host+' 加载成功。','ok');
       setRuntimeStatus('编辑器 ✓');
       initPyodide();
@@ -1637,6 +1722,7 @@ async function setupMonaco(){
       ideTermLog('✘ '+host+' 失败：'+(e.message||e),'err');
     }
   }
+  clearTimeout(fallbackTimer);
   setRuntimeStatus('Monaco 加载失败');
   ideTermLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','err');
   ideTermLog('所有 '+MONACO_CDNS.length+' 个 CDN 源均加载失败','err');
@@ -1646,6 +1732,7 @@ async function setupMonaco(){
   ideTermLog('  2. 终端 / 引擎监控 / 训练 MOSS 仍可正常使用','warn');
   ideTermLog('  3. 刷新页面可再次尝试加载','warn');
   ideTermLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','err');
+  ensureFallbackEditor('CDN 不可达，编辑器源全部失败');
   checkIdeReady();
 }
 var PYODIDE_CDNS = [

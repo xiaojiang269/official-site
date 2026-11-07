@@ -22,7 +22,7 @@ def get_base_dir():
 APP_DIR = os.path.join(get_base_dir(), 'app')
 PORT_FILE = '550w.html'
 REMOTE_PAGE = 'https://xiaojiang269.github.io/official-site/550w.html'
-SYNC_INTERVAL = 6 * 3600
+SYNC_INTERVAL = 0  # 每次启动都检查官网页面，保证网页端改动重启即生效
 CACHE_DIR = os.path.join(os.environ.get('LOCALAPPDATA') or tempfile.gettempdir(), '550W')
 CACHE_FILE = os.path.join(CACHE_DIR, PORT_FILE)
 
@@ -40,6 +40,12 @@ def sync_latest_page():
             data = resp.read()
         if len(data) < 50000 or b'550W' not in data[:3000]:
             return
+        try:
+            with open(CACHE_FILE, 'rb') as f:
+                if f.read() == data:
+                    return  # 内容未变，不重复写盘
+        except Exception:
+            pass
         os.makedirs(CACHE_DIR, exist_ok=True)
         tmp = CACHE_FILE + '.tmp'
         with open(tmp, 'wb') as f:

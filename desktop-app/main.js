@@ -8,7 +8,7 @@ const fs = require('fs');
 const APP_DIR = path.join(__dirname, 'app');
 const PORT_FILE = '550w.html';
 const REMOTE_PAGE = 'https://xiaojiang269.github.io/official-site/550w.html';
-const SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const SYNC_INTERVAL_MS = 0;  /* 每次启动都检查官网页面，改动重启即生效 */
 
 function cacheFile() {
   return path.join(app.getPath('userData'), 'cache', PORT_FILE);
@@ -81,11 +81,12 @@ function syncLatestPage() {
           try {
             let old = null;
             try { old = fs.readFileSync(cf); } catch (e) {}
+            if (old && old.equals(buf)) return done(false);  /* 内容未变，不重复写盘 */
             fs.mkdirSync(path.dirname(cf), { recursive: true });
             const tmp = cf + '.tmp';
             fs.writeFileSync(tmp, buf);
             fs.renameSync(tmp, cf);
-            done(!old || !old.equals(buf));
+            done(true);
           } catch (e) { done(false); }
         });
       });
