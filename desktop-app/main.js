@@ -2,10 +2,17 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 
 const APP_DIR = path.join(__dirname, 'app');
 const PORT_FILE = '550w.html';
+const REMOTE_PAGE = 'https://xiaojiang269.github.io/official-site/550w.html';
+const SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
+function cacheFile() {
+  return path.join(app.getPath('userData'), 'cache', PORT_FILE);
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -27,8 +34,12 @@ function startServer() {
     try {
       let p = decodeURIComponent(req.url.split('?')[0]);
       if (p === '/') p = '/' + PORT_FILE;
-      const file = path.join(APP_DIR, p.replace(/^\/+/, ''));
-      if (!file.startsWith(APP_DIR)) { res.writeHead(403); res.end('403'); return; }
+      let file = path.join(APP_DIR, p.replace(/^\/+/, ''));
+      if (p === '/' + PORT_FILE) {
+        const cf = cacheFile();
+        if (fs.existsSync(cf)) file = cf;   /* 优先加载官网同步下来的最新页面 */
+      }
+      if (file !== cacheFile() && !file.startsWith(APP_DIR)) { res.writeHead(403); res.end('403'); return; }
       fs.readFile(file, (err, data) => {
         if (err) { res.writeHead(404); res.end('404 Not Found'); return; }
         res.writeHead(200, { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream' });
@@ -46,6 +57,43 @@ function startServer() {
 }
 
 let mainWindow = null;
+
+/* 启动后在后台从官网拉取最新 550w.html：成功则缓存并立即刷新窗口，失败静默用内置页面 */
+function syncLatestPage() {
+  return new Promise((resolve) => {
+    const cf = cacheFile();
+    try {
+      if (fs.existsSync(cf) && Date.now() - fs.statSync(cf).mtimeMs < SYNC_INTERVAL_MS) {
+        return resolve(false);
+      }
+    } catch (e) { /* 缓存状态异常时继续尝试同步 */ }
+    let settled = false;
+    const done = (v) => { if (!settled) { settled = true; resolve(v); } };
+    let req;
+    try {
+      req = https.get(REMOTE_PAGE + '?ts=' + Date.now(), { timeout: 6000 }, (res) => {
+        if (res.statusCode !== 200) { res.resume(); return done(false); }
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => {
+          const buf = Buffer.concat(chunks);
+          if (buf.length < 50000 || buf.indexOf('550W') === -1) return done(false);
+          try {
+            let old = null;
+            try { old = fs.readFileSync(cf); } catch (e) {}
+            fs.mkdirSync(path.dirname(cf), { recursive: true });
+            const tmp = cf + '.tmp';
+            fs.writeFileSync(tmp, buf);
+            fs.renameSync(tmp, cf);
+            done(!old || !old.equals(buf));
+          } catch (e) { done(false); }
+        });
+      });
+      req.on('timeout', () => { req.destroy(); done(false); });
+      req.on('error', () => done(false));
+    } catch (e) { done(false); }
+  });
+}
 
 function createWindow(port) {
   mainWindow = new BrowserWindow({
@@ -71,6 +119,11 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   const port = await startServer();
   createWindow(port);
+  syncLatestPage().then((changed) => {
+    if (changed && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.reload();
+    }
+  });
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow(port);
   });
