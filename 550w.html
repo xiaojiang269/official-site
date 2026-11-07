@@ -479,6 +479,17 @@ body{background:
 @keyframes loginShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .login-box.shake{animation:loginShake .35s}
 @media(max-width:860px){.login-box{padding:26px 20px 20px}.login-brand{font-size:29px;letter-spacing:4px}}
+/* ========== 登录过场动画（视频） ========== */
+#loginAnim{position:fixed;inset:0;z-index:320;background:#000;display:none;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .34s ease;pointer-events:none;overflow:hidden}
+#loginAnim.show{display:flex;opacity:1;pointer-events:auto}
+#loginAnim.fade-out{opacity:0}
+#loginAnim video{width:100%;height:100%;object-fit:cover;background:#000;display:block}
+.login-anim-skip{position:absolute;right:20px;bottom:18px;padding:6px 12px;border:1px solid rgba(255,176,0,.5);
+  border-radius:3px;background:rgba(0,0,0,.55);color:#ffb000;font-family:var(--mono);font-size:11px;
+  letter-spacing:2px;cursor:pointer;opacity:.75;transition:.2s;user-select:none}
+.login-anim-skip:hover{opacity:1;box-shadow:0 0 14px rgba(255,176,0,.35)}
+@media(max-width:860px){.login-anim-skip{right:12px;bottom:12px;font-size:10px;padding:5px 9px}}
 </style>
 </head>
 <body class="theme-red">
@@ -502,6 +513,11 @@ body{background:
     <button class="login-btn" id="loginBtn">进入系统</button>
     <div class="login-foot">初始账号 <b>ueg</b> · 初始密码 <b>admin123</b><br>登录状态保存在本机浏览器</div>
   </div>
+</div>
+<!-- 登录成功后的过场动画 -->
+<div id="loginAnim" aria-hidden="true">
+  <video id="loginAnimVideo" src="https://xiaojiang269.github.io/official-site/assets/550w-boot.mp4" preload="auto" playsinline webkit-playsinline></video>
+  <div class="login-anim-skip">点击跳过 ▶</div>
 </div>
 <!-- Toast 容器 -->
 <div id="toastBox"></div>
@@ -743,6 +759,40 @@ function authFail(msg){
     loginBoxDom.classList.add('shake');
   }
 }
+/* 登录成功后的视频过场：播放完成/跳过返回 true；视频不可用返回 false（回退原启动动画） */
+function playLoginAnim(){
+  var layer=$id('loginAnim'), v=$id('loginAnimVideo');
+  if(!layer||!v)return Promise.resolve(false);
+  if(v.error)return Promise.resolve(false);
+  layer.style.display='flex';
+  void layer.offsetWidth;
+  layer.classList.add('show');
+  try{v.currentTime=0;}catch(e){}
+  try{
+    var p=v.play();
+    if(p&&p.catch)p.catch(function(){try{v.muted=true;v.play().catch(function(){});}catch(e){}});
+  }catch(e){}
+  return new Promise(function(resolve){
+    var finished=false, tHard=null, tData=null;
+    function finish(played){
+      if(finished)return; finished=true;
+      clearTimeout(tHard); clearTimeout(tData);
+      if(played)startSystem(true);   /* 立即切系统，动画层再渐隐，避免中间露出启动层 */
+      layer.classList.add('fade-out');
+      setTimeout(function(){
+        layer.classList.remove('show','fade-out');
+        layer.style.display='none';
+        try{v.pause();}catch(e){}
+        resolve(played);
+      },360);
+    }
+    v.addEventListener('ended',function(){finish(true);},{once:true});
+    v.addEventListener('error',function(){finish(false);},{once:true});
+    layer.addEventListener('click',function(){finish(true);},{once:true});
+    tData=setTimeout(function(){if(v.readyState<2)finish(false);},6000);
+    tHard=setTimeout(function(){finish(true);},13500);
+  });
+}
 function tryLogin(){
   var uv=$id('loginUser'), pv=$id('loginPass');
   var u=(uv&&uv.value||'').trim();
@@ -751,7 +801,7 @@ function tryLogin(){
     setAuthed(true);
     if(loginErrDom)loginErrDom.textContent='';
     closeLoginGate();
-    startSystem();
+    playLoginAnim().then(function(played){startSystem(played);});
     return;
   }
   authFail('账号或密码错误，访问被拒绝');
@@ -761,10 +811,15 @@ function logoutSystem(){
   setAuthed(false);
   location.reload();
 }
-function startSystem(){
+function startSystem(skipBoot){
   if(window.__550wStarted)return;
   window.__550wStarted=true;
-  runBootAnimation();
+  if(skipBoot){
+    bootCancelled=true;
+    hideBootOverlay();
+  }else{
+    runBootAnimation();
+  }
   setTimeout(bootTerminal, 200);
   setTimeout(initIDE, 600);
 }

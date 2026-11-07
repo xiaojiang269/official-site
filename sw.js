@@ -1,5 +1,5 @@
 /* 550W 综合指挥系统 - Service Worker（PWA 离线缓存） */
-var CACHE_NAME = '550w-cache-v1';
+var CACHE_NAME = '550w-cache-v2';
 var CORE_ASSETS = [
   '550w.html',
   'assets/550w-icon-192.png',
@@ -31,7 +31,11 @@ self.addEventListener('fetch', function(e) {
       caches.open(CACHE_NAME).then(function(cache) { cache.put(e.request, copy); }).catch(function() {});
       return res;
     }).catch(function() {
-      return caches.match(e.request).then(function(hit) { return hit || caches.match('550w.html'); });
+      return caches.match(e.request).then(function(hit) {
+        if (hit) return hit;
+        if (e.request.destination === 'document') return caches.match('550w.html');
+        return Response.error();
+      });
     })
   );
 });
