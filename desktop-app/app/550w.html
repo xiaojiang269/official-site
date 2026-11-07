@@ -411,10 +411,66 @@ body{background:
   .ide-main-550c{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
   .pane-550c{border-right:none;border-bottom:1px solid var(--a-amber-dark)}
 }
+/* ========== 登录门 ========== */
+#loginGate{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:
+    radial-gradient(900px 620px at 50% 28%,var(--main-glow),transparent 62%),
+    radial-gradient(700px 500px at 12% 108%,rgba(111,224,255,.07),transparent 60%),
+    #030406;
+  opacity:1;transition:opacity .38s ease}
+#loginGate.hide{opacity:0;pointer-events:none}
+.login-box{position:relative;width:min(430px,100%);padding:34px 30px 26px;border:1px solid var(--pline);border-radius:8px;
+  background:linear-gradient(180deg,rgba(18,10,10,.94),rgba(7,9,13,.96));
+  box-shadow:0 0 44px rgba(0,0,0,.65),inset 0 0 34px rgba(255,77,59,.05)}
+.login-box::before,.login-box::after{content:"";position:absolute;width:15px;height:15px;border:1px solid var(--main)}
+.login-box::before{left:-1px;top:-1px;border-right:none;border-bottom:none}
+.login-box::after{right:-1px;bottom:-1px;border-left:none;border-top:none}
+.login-badge{position:absolute;right:12px;top:11px;padding:2px 7px;border:1px solid var(--pline);border-radius:2px;
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--dim)}
+.login-brand{text-align:center;font-family:var(--mono);font-size:36px;font-weight:900;letter-spacing:5px;
+  color:var(--main);text-shadow:0 0 20px var(--main-glow)}
+.login-title{margin-top:5px;text-align:center;font-size:12px;letter-spacing:4px;color:var(--dim)}
+.login-line{height:1px;margin:22px 0 20px;background:linear-gradient(90deg,transparent,var(--pline),transparent)}
+.login-field{margin-bottom:15px}
+.login-field label{display:block;margin-bottom:6px;font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--main-dim)}
+.login-field input{width:100%;padding:11px 12px;border:1px solid var(--pline);border-radius:4px;outline:none;
+  background:rgba(0,0,0,.45);color:var(--text);font-family:var(--mono);font-size:15px;transition:.15s}
+.login-field input:focus{border-color:var(--main);box-shadow:0 0 0 1px var(--main),0 0 16px var(--main-glow)}
+.login-err{min-height:18px;margin:-3px 0 10px;font-family:var(--mono);font-size:12px;letter-spacing:.5px;color:var(--red)}
+.login-btn{width:100%;padding:12px;border:1px solid var(--main);border-radius:4px;cursor:pointer;
+  background:linear-gradient(180deg,var(--main),#c8321f);color:#140506;font-family:var(--mono);
+  font-size:14px;font-weight:700;letter-spacing:5px;transition:.15s}
+.login-btn:hover{box-shadow:0 0 24px var(--main-glow);filter:brightness(1.08)}
+.login-btn:active{transform:translateY(1px)}
+.login-foot{margin-top:16px;text-align:center;font-size:11px;line-height:1.8;color:var(--dim)}
+.login-foot b{color:var(--main-dim);font-family:var(--mono);letter-spacing:1px}
+@keyframes loginShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+.login-box.shake{animation:loginShake .35s}
+@media(max-width:860px){.login-box{padding:26px 20px 20px}.login-brand{font-size:29px;letter-spacing:4px}}
 </style>
 </head>
 <body class="theme-red">
 <div class="scanlines"></div><div class="crt"></div>
+<!-- ===== 登录门 ===== -->
+<div id="loginGate">
+  <div class="login-box" id="loginBox">
+    <span class="login-badge">SECURE ACCESS</span>
+    <div class="login-brand">550W</div>
+    <div class="login-title">自编译核心 · 身份认证</div>
+    <div class="login-line"></div>
+    <div class="login-field">
+      <label for="loginUser">操作员编号 / 账号</label>
+      <input id="loginUser" type="text" autocomplete="username" spellcheck="false" placeholder="请输入账号">
+    </div>
+    <div class="login-field">
+      <label for="loginPass">访问密钥 / 密码</label>
+      <input id="loginPass" type="password" autocomplete="current-password" placeholder="请输入密码">
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <button class="login-btn" id="loginBtn">进入系统</button>
+    <div class="login-foot">初始账号 <b>ueg</b> · 初始密码 <b>admin123</b><br>登录状态保存在本机浏览器</div>
+  </div>
+</div>
 <!-- Toast 容器 -->
 <div id="toastBox"></div>
 <div id="bootOverlay">
@@ -455,6 +511,7 @@ body{background:
       <button class="tool-btn" id="btnTheme" title="切换主题">◐</button>
       <button class="tool-btn" id="btnVoice" title="语音朗读">🔊</button>
       <button class="tool-btn" id="btnFull" title="全屏">⛶</button>
+      <button class="tool-btn" id="btnLogout" title="退出登录">⏻</button>
     </div>
   </header>
   <div class="main">
@@ -619,6 +676,75 @@ window.onerror=function(msg,url,line){
   }catch(e){}
   return false;
 };
+/* ========== 登录认证 ========== */
+var AUTH_KEY='550w_auth_v1';
+var AUTH_USER='ueg';
+var AUTH_PASS='admin123';
+var loginGateDom=$id('loginGate');
+var loginBoxDom=$id('loginBox');
+var loginErrDom=$id('loginErr');
+function isAuthed(){
+  try{return localStorage.getItem(AUTH_KEY)==='1';}catch(e){return false;}
+}
+function setAuthed(v){
+  try{if(v)localStorage.setItem(AUTH_KEY,'1');else localStorage.removeItem(AUTH_KEY);}catch(e){}
+}
+function openLoginGate(){
+  if(!loginGateDom)return;
+  loginGateDom.style.display='flex';
+  setTimeout(function(){loginGateDom.classList.remove('hide');},30);
+  if(window.innerWidth>860){
+    var u=$id('loginUser');
+    if(u)setTimeout(function(){u.focus();},180);
+  }
+}
+function closeLoginGate(){
+  if(!loginGateDom)return;
+  loginGateDom.classList.add('hide');
+  setTimeout(function(){loginGateDom.style.display='none';},400);
+}
+function authFail(msg){
+  if(loginErrDom)loginErrDom.textContent=msg||'';
+  if(loginBoxDom){
+    loginBoxDom.classList.remove('shake');
+    void loginBoxDom.offsetWidth;
+    loginBoxDom.classList.add('shake');
+  }
+}
+function tryLogin(){
+  var uv=$id('loginUser'), pv=$id('loginPass');
+  var u=(uv&&uv.value||'').trim();
+  var p=(pv&&pv.value)||'';
+  if(u===AUTH_USER && p===AUTH_PASS){
+    setAuthed(true);
+    if(loginErrDom)loginErrDom.textContent='';
+    closeLoginGate();
+    startSystem();
+    return;
+  }
+  authFail('账号或密码错误，访问被拒绝');
+  if(pv){pv.value='';pv.focus();}
+}
+function logoutSystem(){
+  setAuthed(false);
+  location.reload();
+}
+function startSystem(){
+  if(window.__550wStarted)return;
+  window.__550wStarted=true;
+  runBootAnimation();
+  setTimeout(bootTerminal, 200);
+  setTimeout(initIDE, 600);
+}
+var loginBtnDom=$id('loginBtn');
+if(loginBtnDom)loginBtnDom.addEventListener('click',tryLogin);
+var luDom=$id('loginUser'), lpDom=$id('loginPass');
+if(luDom)luDom.addEventListener('keydown',function(e){if(e.key==='Enter'&&lpDom)lpDom.focus();});
+if(lpDom)lpDom.addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+var logoutBtnDom=$id('btnLogout');
+if(logoutBtnDom)logoutBtnDom.addEventListener('click',function(){
+  if(confirm('确认退出登录？'))logoutSystem();
+});
 /* ========== Toast 通知 ========== */
 function showToast(opts){
   var box=$id('toastBox');
@@ -1799,9 +1925,12 @@ function trainedReply(t){
 }
 renderHistory();
 window.addEventListener('load',function(){
-  runBootAnimation();
-  setTimeout(bootTerminal, 200);
-  setTimeout(initIDE, 600);
+  if(isAuthed()){
+    if(loginGateDom){loginGateDom.classList.add('hide');loginGateDom.style.display='none';}
+    startSystem();
+  }else{
+    openLoginGate();
+  }
 });
 window.__550w={tele:tele,kb:kb,trainedReply:trainedReply};
 /* ===== PWA：注册 Service Worker（可安装为应用） ===== */
