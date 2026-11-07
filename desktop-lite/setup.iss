@@ -1,6 +1,6 @@
 ; 550W 综合指挥系统 轻量桌面版安装程序（Inno Setup）
 #define MyAppName "550W 综合指挥系统"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.0.1"
 #define MyAppExe "550W.exe"
 
 [Setup]

@@ -53,13 +53,15 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: lite-v1.${{ github.run_number }}
-          name: 550W 桌面版（轻量版）v1.${{ github.run_number }}
+          tag_name: lite-latest
+          name: 550W 桌面版（轻量版）· 最新
           body: |
             550W 综合指挥系统 · Windows 轻量安装包（约 20MB，下载快）
             - 使用系统自带浏览器内核（Windows 10/11 64 位）
             - 双击 setup 安装，桌面生成 550W 图标
             - 独立窗口运行，内置本地服务，Python 编程功能可用
           files: desktop-lite/Output/*.exe
+          make_latest: true
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
