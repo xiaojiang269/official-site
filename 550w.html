@@ -1399,7 +1399,7 @@ function ensureFallbackEditor(reason){
   ta.addEventListener('click',function(){try{ta.focus();}catch(e){}});
   box.appendChild(ta);
   fallbackTA=ta;
-  ideTermLog('已启用内置编辑器（'+reason+'）','warn');
+  ideTermLog('内置编辑器启用：'+reason,'warn');
   ideTermLog('支持输入、Ctrl+V 粘贴、Tab 缩进、Ctrl+S 保存、Ctrl+Enter 执行','sys');
   setRuntimeStatus('内置编辑器');
   setTimeout(function(){try{ta.focus();}catch(e){}},50);
@@ -1661,7 +1661,7 @@ function initIDE(){
     ideTermLog('终端已清空。','sys');
   });
   /* 先给一个立刻可点击、可输入的内置编辑器，避免加载空窗期点不动；Monaco 就绪后自动接管并迁移内容 */
-  ensureFallbackEditor('已启用内置编辑器');
+  ensureFallbackEditor('内置编辑器已就绪，增强编辑器在后台加载');
   setupMonaco();
 }
 /* ===== Monaco 多 CDN 动态加载（jsDelivr → Cloudflare cdnjs → unpkg） ===== */
