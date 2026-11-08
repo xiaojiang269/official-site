@@ -1660,13 +1660,16 @@ function initIDE(){
     ideTermClear();
     ideTermLog('终端已清空。','sys');
   });
+  /* 先给一个立刻可点击、可输入的内置编辑器，避免加载空窗期点不动；Monaco 就绪后自动接管并迁移内容 */
+  ensureFallbackEditor('已启用内置编辑器');
   setupMonaco();
 }
 /* ===== Monaco 多 CDN 动态加载（jsDelivr → Cloudflare cdnjs → unpkg） ===== */
 var MONACO_CDNS = [
+  'https://fastly.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs',
   'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs',
-  'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs',
-  'https://unpkg.com/monaco-editor@0.52.0/min/vs'
+  'https://unpkg.com/monaco-editor@0.52.0/min/vs',
+  'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs'
 ];
 function loadScriptOnce(src, timeoutMs){
   timeoutMs = timeoutMs || 12000;
