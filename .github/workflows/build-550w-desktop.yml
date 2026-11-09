@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'desktop-app/**'
+      - '.github/workflows/build-550w-desktop.yml'
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -27,13 +29,54 @@ jobs:
           copy /Y assets\550w-icon-192.png desktop-app\app\assets\
           copy /Y assets\550w-icon-512.png desktop-app\app\assets\
 
+      - name: Cache electron binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-win-${{ hashFiles('desktop-app/package-lock.json', 'desktop-app/package.json') }}
+          restore-keys: |
+            electron-win-
+
       - name: Install dependencies
         working-directory: desktop-app
-        run: npm install
+        shell: pwsh
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw "npm install 失败" }
+
+          # Electron 二进制单独下载，官方源 504 时切换镜像并重试
+          $ok = $false
+          for ($i = 1; $i -le 6; $i++) {
+            if (Test-Path "node_modules/electron/dist/electron.exe") { $ok = $true; break }
+            if ($i -le 3) {
+              $env:ELECTRON_MIRROR = ""
+            } else {
+              Write-Host "切换 Electron 镜像源（npmmirror）"
+              $env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"
+            }
+            node node_modules/electron/install.js
+            if (Test-Path "node_modules/electron/dist/electron.exe") { $ok = $true; break }
+            Write-Host "Electron 二进制下载失败（第 $i 次），10 秒后重试"
+            Remove-Item -Recurse -Force "node_modules/electron/dist" -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 10
+          }
+          if (-not $ok) { throw "Electron 二进制多次下载失败" }
+          node -e "console.log('Electron 就绪:', require('electron'))"
 
       - name: Build installer
         working-directory: desktop-app
-        run: npx electron-builder --win --publish never
+        shell: pwsh
+        run: |
+          $ok = $false
+          for ($i = 1; $i -le 3; $i++) {
+            npx electron-builder --win --publish never
+            if ($LASTEXITCODE -eq 0) { $ok = $true; break }
+            Write-Host "打包失败（第 $i 次），可能为 NSIS/签名资源下载超时，20 秒后重试"
+            Start-Sleep -Seconds 20
+          }
+          if (-not $ok) { throw "electron-builder 多次失败" }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -46,14 +89,15 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: 550W 桌面版 v1.0.${{ github.run_number }}
+          tag_name: desktop-latest
+          name: 550W 桌面版（完整版 · 最新）
           body: |
-            550W 综合指挥系统 · Windows 安装包
+            550W 综合指挥系统 · Windows 完整版安装包
             - 支持 Windows 10 / 11（64 位）
             - 双击 setup 安装，桌面生成 550W 图标
             - 独立窗口运行，内置本地服务，Python 编程功能可用
             - 自动同步官网最新版（本次构建于 commit `${{ github.sha }}`）
           files: desktop-app/dist/*.exe
+          make_latest: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
