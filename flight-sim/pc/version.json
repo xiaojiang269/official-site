@@ -1,7 +1,7 @@
 {
-  "version": "1.5.2",
-  "versionCode": 152,
-  "exeUrl": "https://github.com/xiaojiang269/official-site/releases/download/pc-v1.5.2/Kaolu-Flight-Sim-1.5.2-win64.exe",
-  "sha256": "b4de4439241b5bb3be04f6ab7c6dea4d94ce2627d90a424acc6051c3934a47f4",
-  "notes": "电脑版 1.5.2：首次内置自动更新。启动 8 秒后会自检远端版本，有新版就后台下载并校验，弹窗选择立即重启即可自动替换 exe。"
+  "version": "1.5.3",
+  "versionCode": 153,
+  "exeUrl": "https://github.com/xiaojiang269/official-site/releases/download/pc-v1.5.3/Kaolu-Flight-Sim-1.5.3-win64.exe",
+  "sha256": "f91785a3f04bd93cfc9ba7446f2c46db0b39e73fee29dad4c5e69874e53ad972",
+  "notes": "1.5.3 性能专项：面板打开时暂停 3D 渲染、HUD 30fps、触屏关 AA 与降像素比、拖动视角时自动降分辨率、去掉毛玻璃；真机模型改走官网 CDN。"
 }
