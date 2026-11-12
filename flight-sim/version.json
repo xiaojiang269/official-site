@@ -1,1 +1,1 @@
-{"versionCode": 22, "versionName": "1.5.4", "apkUrl": "https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk", "notes": "1.5.4：恢复原画质（抗锯齿/高清像素比/阴影全部回来），修复飞机模型浮空、跑道灯变成满地圆球、偶发彩屏；新增起飞位置选择（停机坪/跑道）；设置里新增“流畅模式”，手机卡的时候手动开一下即可。"}
+{"versionCode": 23, "versionName": "1.5.5", "apkUrl": "https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk", "notes": "1.5.5：全部 145 个机场按真实跑道数据重建——跑道长度/宽度/磁航向、平行与交叉跑道条数和位置全部取自实测量（如浦东 4000m 三跑道、首都 3800+3200 平行跑道），跑道可直接用于起降。"}
