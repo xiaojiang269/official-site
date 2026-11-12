@@ -1,1 +1,1 @@
-{"versionCode": 20, "versionName": "1.5.1", "apkUrl": "https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk", "notes": "1.5.1：电脑版油门改用 ↑/↓ 键（Shift/Ctrl 兼容），去掉电脑版左右竖带与顶部航向带，画面更干净。手游横屏重新排版：摇杆/方向舵贴左下角、油门条贴右下角、右侧按钮收窄从顶部单列排、姿态仪缩小贴底、去掉被裁的文字标签与舱框遮罩、消息最多两条。APK 内置 3D 引擎，断网也能玩。"}
+{"versionCode": 21, "versionName": "1.5.3", "apkUrl": "https://xiaojiang269.github.io/official-site/flight-sim/flight-sim.apk", "notes": "1.5.3 性能专项：手机端关掉多重采样、像素比降到 1.25、阴影贴图减半、去掉全部毛玻璃；拖动视角时自动降分辨率、松手恢复；HUD 改为 30fps；打开菜单/地图/机库时暂停 3D 渲染，界面不再排队等 GPU；真机模型改从官网 CDN 取（比第三方源快），已内置的机型零等待。"}
