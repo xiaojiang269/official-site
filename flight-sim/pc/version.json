@@ -1,7 +1,7 @@
 {
-  "version": "1.5.4",
-  "versionCode": 154,
-  "exeUrl": "https://github.com/xiaojiang269/official-site/releases/download/pc-v1.5.4/Kaolu-Flight-Sim-1.5.4-win64.exe",
-  "sha256": "8910831d6d64a551c9e1921f65201ba41c7026f8d2c45f0a14710d3df8f3c79a",
-  "notes": "恢复原画质；修复模型浮空、跑道灯圆球、偶发彩屏；新增停机坪/跑道起飞位置选择与流畅模式。"
+  "version": "1.5.5",
+  "versionCode": 155,
+  "exeUrl": "https://github.com/xiaojiang269/official-site/releases/download/pc-v1.5.5/Kaolu-Flight-Sim-1.5.5-win64.exe",
+  "sha256": "219f34486bda71688487d054983779500379e77b9f8775b0be70237fb55b2d14",
+  "notes": "145 个机场全部按真实跑道数据重建：跑道长宽、磁航向、平行/交叉跑道条数与位置。"
 }
